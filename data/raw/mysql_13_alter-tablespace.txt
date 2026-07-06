@@ -1,0 +1,68 @@
+13.1.10 ALTER TABLESPACE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.10 ALTER TABLESPACE 语句
+13.1.10 ALTER TABLESPACE 语句
+ALTER [UNDO] TABLESPACE tablespace_name NDB only: {ADD | DROP} DATAFILE ' file_name '
+[INITIAL_SIZE [=] size]
+[WAIT] InnoDB and NDB: [RENAME TO tablespace_name ] InnoDB only: [AUTOEXTEND_SIZE [=] ' value ']
+[SET {ACTIVE | INACTIVE}]
+[ENCRYPTION [=] {'Y' | 'N'}] InnoDB and NDB: [ENGINE [=] engine_name ] Reserved for future use: [ENGINE_ATTRIBUTE [=] ' string ']
+此语句 NDB 与 InnoDB 表空间一起使用。它可用于向表空间添加新数据文件或从 NDB 表空间删除数据文件。它还可用于重命名 NDB Cluster Disk Data 表空间、重命名 InnoDB 通用表空间、加密 InnoDB 通用表空间或将 InnoDB 撤消表空间标记为活动或非活动。
+该 UNDO 关键字在 MySQL 8.0.14 中引入，与 SET {ACTIVE | INACTIVE} 子句一起用于将 InnoDB 撤消表空间标记为活动或非活动。有关详细信息，请参阅 第 15.6.3.4 节，“撤消表空间” 。
+该变体使您能够使用子句
+指定磁盘数据表空间 ADD DATAFILE 的初始大小，其中以字节为单位；默认值为 134217728 (128 MB)。您可以选择
+在一个数量级后跟一个单字母缩写，类似于
+. 通常，这是字母
+(megabytes) 或
+(gigabytes) 之一。 NDB INITIAL_SIZE size size my.cnf M G
+在 32 位系统上，支持的最大值为 INITIAL_SIZE 4294967296 (4 GB)。（漏洞 #29186）
+INITIAL_SIZE 明确地四舍五入，至于 CREATE TABLESPACE 。
+数据文件一旦创建，其大小就无法更改； ALTER TABLESPACE ... ADD DATAFILE 但是，您可以使用其他语句
+将更多数据文件添加到 NDB 表空间。
+ALTER TABLESPACE ... ADD DATAFILE 与 一起使用时
+，在每个 Cluster 数据节点上创建一个数据文件，但在表 ENGINE = NDB 中只生成一行
+。 INFORMATION_SCHEMA.FILES 有关更多信息，请参阅此表的描述以及 第 23.6.10.1 节，“NDB Cluster Disk Data Objects” 。 ADD DATAFILE 表空间不支持 InnoDB 。
+使用 DROP DATAFILE with
+从 NDB 表空间中 ALTER TABLESPACE 删除数据文件 ' '。 file_name 您不能从任何表正在使用的表空间中删除数据文件；换句话说，数据文件必须是空的（没有使用范围）。请参阅 第 23.6.10.1 节，“NDB Cluster 磁盘数据对象” 。此外，任何要删除的数据文件之前必须已使用 CREATE TABLESPACE 或添加到表空间中 ALTER TABLESPACE 。 DROP
+DATAFILE 表空间不支持 InnoDB 。
+WAIT 被解析但被忽略。它旨在用于未来的扩展。
+指定表空间使用的存储引擎的 ENGINE 子句已弃用；希望在未来的版本中将其删除。数据字典知道表空间存储引擎，使该 ENGINE 子句过时。如果指定了存储引擎，则必须匹配数据字典中定义的表空间存储引擎。 engine_name 与表空间兼容的唯一值 NDB 是 NDB 和 NDBCLUSTER 。
+RENAME TO autocommit 无论设置如何，操作都在模式中隐式执行 autocommit 。
+对于驻留在表空间中的表， RENAME TO 无法执行操作 LOCK TABLES 或
+对表有效。 FLUSH TABLES WITH READ
+LOCK
+在重命名表空间时，对驻留在通用表空间中的表采用
+独占 元数据锁，从而防止并发 DDL。 支持并发 DML。
+重命名通用表空间
+
+需要 CREATE TABLESPACE 特权。 InnoDB
+该 AUTOEXTEND_SIZE 选项定义 InnoDB 当表空间变满时扩展表空间大小的量。在 MySQL 8.0.23 中引入。该设置必须是 4MB 的倍数。默认设置为 0，这会导致表空间根据隐式默认行为进行扩展。有关详细信息，请参阅 第 15.6.3.9 节，“表空间 AUTOEXTEND_SIZE 配置” 。
+该子句为
+通用表空间或系统表空间 ENCRYPTION 启用或禁用页级数据加密。MySQL 8.0.13 中引入了对通用表空间的加密支持。MySQL 8.0.16 中引入了
+对系统表空间的加密支持
+。 InnoDB mysql mysql
+在启用加密之前，必须安装和配置密钥环插件。
+从 MySQL 8.0.16 开始，如果 table_encryption_privilege_check 启用了该变量，
+则需要特权才能使用不同于该
+设置 TABLE_ENCRYPTION_ADMIN 的子句设置来更改通用表空间
+。 ENCRYPTION default_table_encryption
+如果表空间中的任何表属于用 定义的架构，则为通用表空间启用加密会失败 DEFAULT
+ENCRYPTION='N' 。同样，如果通用表空间中的任何表属于用定义的架构，则禁用加密会失败 DEFAULT
+ENCRYPTION='Y' 。 DEFAULT
+ENCRYPTION 模式选项是在 MySQL 8.0.16 中引入的
+。
+如果 ALTER TABLESPACE 在通用表空间上执行的语句不包含 ENCRYPTION 子句，则表空间将保留其当前的加密状态，而不管 default_table_encryption 设置如何。
+当对通用表空间或 mysql 系统表空间进行加密时，驻留在该表空间中的所有表都将被加密。同样，在加密表空间中创建的表也是加密的。
+在更改通用表空间或系统表空间的属性时使用
+该 INPLACE 算法
+。该
+算法允许对驻留在表空间中的表进行并发 DML。并发 DDL 被阻止。 ENCRYPTION mysql INPLACE
+有关更多信息，请参阅 第 15.13 节，“InnoDB 静态数据加密” 。
+该 ENGINE_ATTRIBUTE 选项（自 MySQL 8.0.21 起可用）用于指定主存储引擎的表空间属性。该选项保留供将来使用。
+允许的值是包含有效 JSON 文档或空字符串 ('') 的字符串文字。无效 JSON 被拒绝。
+ALTER TABLESPACE ts1 ENGINE_ATTRIBUTE='{" key ":" value "}';
+ENGINE_ATTRIBUTE 值可以重复而不会出错。在这种情况下，使用最后指定的值。
+ENGINE_ATTRIBUTE 服务器不检查值，也不会在表的存储引擎更改时清除它们。
+不允许更改 JSON 属性值的单个元素。您只能添加或替换一个属性。

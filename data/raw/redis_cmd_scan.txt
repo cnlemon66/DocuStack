@@ -1,0 +1,91 @@
+Redis SCAN 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SCAN 命令
+以游标方式分批遍历 key，不阻塞 Redis 主线程。
+* 语法
+SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]
+* 参数说明
+参数 类型 必填 说明
+cursor Integer 是 游标，第一次为 0，后续用上一次的返回值
+MATCH String 否 匹配模式，glob 风格
+COUNT Integer 否 每次扫描的槽位数量，默认 10，建议 100-1000
+TYPE String 否 只返回指定类型的 key（Redis 6.0+）
+* 返回值
+返回 [next_cursor, [key1, key2, ...]] ，next_cursor 为 0 表示遍历完成。
+* 时间复杂度
+O(1) 每次调用 + O(N) 返回 N 个元素。由于 COUNT 控制每次扫描量，单步不阻塞。
+* 示例
+# 基础用法
+> SCAN 0
+1) "17"
+2) 1) "key:12"
+2) "key:8"
+
+> SCAN 17
+1) "0"
+2) 1) "key:25"
+2) "key:3"
+
+# 带 MATCH 过滤
+> SCAN 0 MATCH user:* COUNT 100
+1) "42"
+2) 1) "user:1001"
+2) "user:1002"
+
+# 带 TYPE 过滤（Redis 6.0+）
+> SCAN 0 TYPE hash
+1) "5"
+2) 1) "config:app"
+* 常见错误
+游标处理错误 ：游标不是递增的，不能按页码处理。必须用上一次返回的游标值。
+COUNT 过小 ：COUNT 默认 10，扫描大实例时需要大量次循环。建议 COUNT 100-1000。
+遍历期间数据变化 ：SCAN 不保证返回最新数据，不保证不重复/不遗漏。业务需兼容。
+* 最佳实践
+生产环境替代 KEYS ：所有遍历场景用 SCAN，设置 COUNT 100-1000 平衡单次开销和总时间。
+批量删除 ： SCAN 0 MATCH old:* COUNT 1000 + DEL 分批删除，避免一次 DEL 太多。
+遍历完所有 key ：游标返回 0 时完成，过程中可能出现重复 key，业务层去重。
+* FAQ
+Q: SCAN 一定会在一次循环内返回 COUNT 个 key 吗？ A: 不一定。COUNT 只是给 Redis 的扫描槽位提示，实际返回数量可能多也可能少。
+Q: SCAN 遍历期间新增/删除 key 会有问题吗？ A: 可能返回重复 key，也可能遗漏极少数 key。不影响绝大多数场景，不要假设结果集精确不变。
+Q: 有 HSCAN / SSCAN / ZSCAN 吗？ A: 有。分别用于遍历 Hash field、Set member、Sorted Set member，语法与 SCAN 类似。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

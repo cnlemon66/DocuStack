@@ -1,0 +1,84 @@
+Redis GETBIT 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis GETBIT 命令
+GETBIT 返回字符串键值在指定偏移量（offset）处的比特位（0 或 1）。
+* 语法
+GETBIT key offset
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+offset Integer 是 偏移量（以比特为单位），从 0 开始计数
+* 返回值
+Integer (0 或 1) ：指定偏移量处的比特位值
+Integer (0) ：如果 key 不存在，或 offset 超出了字符串长度，返回 0
+Error ：offset 为负数或不是整数
+* 时间复杂度
+O(1)
+*
+* 示例
+* 基本用法
+> SETBIT mybit 7 1
+(integer) 0
+> GETBIT mybit 7
+(integer) 1
+> GETBIT mybit 0
+(integer) 0
+* 读取不存在的键
+> GETBIT nonexist 100
+(integer) 0
+* 超出字符串长度的偏移量
+> SET mystr "A"
+OK
+> GETBIT mystr 100
+(integer) 0
+* 常见错误
+错误 原因 解决
+ERR bit offset is not an integer or out of range offset 为负数或超出范围 offset 必须为非负整数，最大支持 2 32 - 1（Redis < 7.0）或 2 64 - 1（Redis ≥ 7.0）
+* 最佳实践
+将 GETBIT 与 SETBIT 、 BITCOUNT 、 BITOP 配合使用可实现高效的位图（Bitmap）统计
+位图非常适合大规模布尔标记场景（如用户签到、在线状态、广告曝光等），相比传统字符串可节省大量内存
+字符串最大支持 512MB，即位图最大可存储 2 32 个比特位（约 42.9 亿）
+* FAQ
+Q1: GETBIT 读取越界的 offset 会报错吗？ A: 不会。如果 offset 超出了当前字符串长度，GETBIT 返回 0，不会报错或修改数据。
+Q2: GETBIT 和 SETBIT 支持的最大 offset 是多少？ A: Redis 7.0 之前最大为 2 32 - 1（约 42.9 亿）；Redis 7.0 及之后扩展为 2 64 - 1。
+Q3: 字符串键值不是通过 SETBIT 设置的，GETBIT 还能用吗？ A: 可以。Redis 的字符串是二进制安全的，任何字符串键值都可以按位读取。例如 "A" 的 ASCII 码是 65（二进制 01000001），所以 GETBIT mystr 0 返回 0，GETBIT mystr 1 返回 1。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

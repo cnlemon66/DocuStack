@@ -1,0 +1,57 @@
+Redis SUNION 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SUNION 命令
+返回多个 Set 的并集。
+* 语法
+SUNION key [key ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 一个或多个 Set 键名
+* 返回值
+条件 返回值
+key 存在 并集的成员数组
+key 不存在 视为空 Set
+* 时间复杂度
+O(N)，N 为所有 Set 成员总数。
+* 示例
+> SADD set1 a b c
+(integer) 3
+> SADD set2 b c d
+(integer) 3
+
+> SUNION set1 set2
+1) "a"
+2) "b"
+3) "c"
+4) "d"
+* 常见错误
+大 Set 并集阻塞 ：多个大 Set 做 SUNION 可能耗时较长，阻塞 Redis。
+* 最佳实践
+标签推荐 ：用户 A 的标签 Set 和用户 B 的标签 Set 取并集，推荐两者都感兴趣的标签。
+离线计算 ：大数据量集合运算应在离线任务中执行，或使用 SUNIONSTORE 存入新 Set 而非直接返回。
+* FAQ
+Q: SUNION 和 SUNIONSTORE 有什么区别？ A: SUNION 返回结果数组； SUNIONSTORE 将结果存入新 Set，不返回全部成员（避免网络传输大数组）。
+相关命令
+SADD
+SCARD
+SDIFF
+SDIFFSTORE
+SINTER
+SINTERCARD
+SINTERSTORE
+SISMEMBER
+SMEMBERS
+SMISMEMBER
+SMOVE
+SPOP
+SRANDMEMBER
+SREM
+SSCAN
+SUNION
+SUNIONSTORE

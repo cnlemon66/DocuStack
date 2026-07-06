@@ -1,0 +1,90 @@
+12.10.8 ngram 全文解析器_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.10 全文搜索功能 / 
+12.10.8 ngram 全文解析器
+12.10.8 ngram 全文解析器
+内置的 MySQL 全文解析器使用单词之间的空格作为分隔符来确定单词的开始和结束位置，这是使用不使用单词分隔符的表意语言时的限制。为了解决这个限制，MySQL 提供了一个支持中文、日文和韩文 (CJK) 的 ngram 全文解析器。ngram 全文解析器支持与 InnoDB 和
+一起使用 MyISAM 。
+笔记
+MySQL 还为日语提供了一个 MeCab 全文解析器插件，它将文档标记为有意义的单词。有关详细信息，请参阅 第 12.10.9 节，“MeCab 全文解析器插件” 。
+n ngram 是来自给定文本序列
+的连续
+字符序列。ngram 解析器将文本序列标记为连续的 n 字符序列。例如，您可以使用 ngram 全文解析器将 “ abcd ” 标记为不同的值。 n
+n=1: 'a', 'b', 'c', 'd'
+n=2: 'ab', 'bc', 'cd'
+n=3: 'abc', 'bcd'
+n=4: 'abcd'
+ngram 全文解析器是一个内置的服务器插件。与其他内置服务器插件一样，它会在服务器启动时自动加载。
+第 12.10 节“全文搜索功能” 中描述的全文搜索语法
+适用于 ngram 解析器插件。本节描述了解析行为的差异。与全文相关的配置选项，除了最小和最大字长选项 ( innodb_ft_min_token_size , innodb_ft_max_token_size , ft_min_word_len , ft_max_word_len ) 也适用。
+配置 ngram 令牌大小
+ngram 解析器的默认 ngram 标记大小为 2（二元语法）。例如，标记大小为 2 时，ngram 解析器将字符串 “ abc def ” 解析为四个标记： “ ab ” 、 “ bc ” 、 “ de ” 和 “ ef ” 。
+ngram 令牌大小可使用 ngram_token_size 配置选项进行配置，其最小值为 1，最大值为 10。
+通常， ngram_token_size 设置为您要搜索的最大标记的大小。如果您只打算搜索单个字符，请设置 ngram_token_size 为 1。较小的标记大小会产生较小的全文搜索索引和更快的搜索。如果您需要搜索由多个字符组成的单词，请 ngram_token_size 相应地进行设置。例如， “ Happy Birthday ” 在简体中文中
+是 “ 生日快乐 ” ，其中 “ 生日 ” 是 “ 生日 ” ，而 “ 快乐 ” 译为 “ 快乐 ” 。要搜索诸如此类的双字符词，请将 ngram_token_size 值设置为 2 或更高。
+作为只读变量， ngram_token_size 只能设置为启动字符串的一部分或在配置文件中：
+启动字符串：
+mysqld --ngram_token_size=2
+配置文件：
+[mysqld]
+ngram_token_size=2
+笔记
+FULLTEXT 对于使用 ngram 解析器
+
+的索引，将忽略以下最小和最大字长配置选项： innodb_ft_min_token_size 、 innodb_ft_max_token_size 、 ft_min_word_len 和 ft_max_word_len 。
+创建使用 ngram 解析器的 FULLTEXT 索引
+要创建 FULLTEXT 使用 ngram 解析器的索引，请指定 WITH PARSER ngram with CREATE TABLE 、 ALTER TABLE 或 CREATE INDEX 。
+以下示例演示了创建带 ngram FULLTEXT 索引的表、插入示例数据（简体中文文本）以及查看 INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE 表中标记化的数据。
+mysql> USE test;
+
+mysql> CREATE TABLE articles (
+id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+title VARCHAR(200),
+body TEXT,
+FULLTEXT (title,body) WITH PARSER ngram
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+mysql> SET NAMES utf8mb4;
+
+INSERT INTO articles (title,body) VALUES
+('数据库管理','在本教程中我将向你展示如何管理数据库'),
+('数据库应用开发','学习开发数据库应用程序');
+
+mysql> SET GLOBAL innodb_ft_aux_table="test/articles";
+
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE ORDER BY doc_id, position;
+FULLTEXT 要向现有表
+添加索引，您可以使用 ALTER TABLE 或 CREATE INDEX 。例如：
+CREATE TABLE articles (
+id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+title VARCHAR(200),
+body TEXT
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+ALTER TABLE articles ADD FULLTEXT INDEX ft_index (title,body) WITH PARSER ngram;
+
+# Or:
+
+CREATE FULLTEXT INDEX ft_index ON articles (title,body) WITH PARSER ngram;
+ngram 解析器空间处理
+ngram 解析器在解析时消除了空格。例如：
+“ ab cd ” 被解析为 “ ab ” 、 “ cd ”
+“ a bc ” 被解析为 “ bc ”
+ngram 解析器停用词处理
+内置的 MySQL 全文解析器将单词与停用词列表中的条目进行比较。如果一个词等于停用词列表中的一个条目，则该词将从索引中排除。对于 ngram 解析器，停用词处理的执行方式不同。ngram 解析器不排除与停用词列表中的条目相等的标记，而是排除 包含 停用词的标记。例如，假设 ngram_token_size=2 包含 “ a,b ” 的文档被解析为 “ a, ” 和 “ ,b ” 。如果将逗号 ( “ , ” ) 定义为停用词，则两者 “ a, ” 和 “ ,b ” 被排除在索引之外，因为它们包含逗号。
+默认情况下，ngram 解析器使用默认停用词列表，其中包含英语停用词列表。对于适用于中文、日语或韩语的停用词列表，您必须创建自己的停用词列表。有关创建停用词列表的信息，请参阅 第 12.10.4 节，“全文停用词” 。
+长度大于
+的停用词 ngram_token_size 将被忽略。
+ngram 解析器术语搜索
+对于 自然语言模式 搜索，搜索词被转换为 ngram 词的并集。例如，字符串 “ abc ” （假设 ngram_token_size=2 ）被转换为 “ ab bc ” 。给定两个文档，一个包含 “ ab ” ，另一个包含 “ abc ” ，搜索词 “ ab bc ” 匹配两个文档。
+对于 布尔模式搜索 ，搜索词被转换为 ngram 短语搜索。例如，字符串 'abc'（假设 ngram_token_size=2 ）被转换为 ' “ ab bc ” '。给定两个文档，一个包含“ab”，另一个包含“abc”，搜索短语“ “ ab bc ” ”仅匹配包含“abc”的文档。
+ngram 解析器通配符搜索
+由于 FULLTEXT ngram 索引仅包含 ngram，并且不包含有关术语开头的信息，因此通配符搜索可能会返回意外结果。以下行为适用于使用 ngram FULLTEXT 搜索索引的通配符搜索：
+如果通配符搜索的前缀项短于 ngram 标记大小，则查询将返回包含以前缀项开头的 ngram 标记的所有索引行。例如，假设 ngram_token_size=2 搜索 “ a* ”返回所有以 “ a ” 开头的行
+。
+如果通配符搜索的前缀项长于 ngram 标记大小，则前缀项将转换为 ngram 短语并忽略通配符运算符。例如，假设 ngram_token_size=2 “ abc * ” 通配符搜索转换为 “ ab bc ” 。
+ngram 解析器短语搜索
+短语搜索转换为 ngram 短语搜索。例如，搜索短语 “ abc ” 被转换为 “ ab bc ” ，返回包含 “ abc ” 和 “ ab bc ” 的文档。
+搜索短语 “ abc def ” 转换为 “ ab bc de ef ” ，返回包含 “ abc def ” 和 “ ab bc de ef ” 的文档。不返回
+包含 “ abcdef ”的文档。

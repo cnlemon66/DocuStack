@@ -1,0 +1,20 @@
+15.7.6 事务调度_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.7 InnoDB 锁定和事务模型 / 
+15.7.6 事务调度
+15.7.6 事务调度
+InnoDB 使用竞争感知事务调度 (CATS) 算法来确定等待锁的事务的优先级。当多个事务在等待同一对象上的锁时，CATS 算法确定哪个事务先获得锁。
+CATS 算法通过分配调度权重来确定等待事务的优先级，调度权重是根据事务阻塞的事务数计算的。例如，如果两个事务正在等待同一对象上的锁，则阻塞最多事务的事务将分配更大的调度权重。如果权重相等，则优先考虑等待时间最长的事务。
+笔记
+在 MySQL 8.0.20 之前， InnoDB 也使用先进先出 (FIFO) 算法来调度事务，而 CATS 算法仅在严重的锁争用下使用。MySQL 8.0.20 中的 CATS 算法增强功能使 FIFO 算法变得冗余，允许将其删除。从 MySQL 8.0.20 开始，以前由 FIFO 算法执行的事务调度由 CATS 算法执行。在某些情况下，此更改可能会影响事务被授予锁的顺序。
+TRX_SCHEDULE_WEIGHT 您可以通过查询表中的列
+
+来查看事务调度权重 INFORMATION_SCHEMA.INNODB_TRX 。仅为等待交易计算权重。等待事务是那些处于 LOCK WAIT 事务执行状态的事务，如 TRX_STATE 列中所报告的那样。不等待锁定的事务报告 NULL TRX_SCHEDULE_WEIGHT 值。
+INNODB_METRICS 提供计数器用于监视代码级事务调度事件。有关使用 INNODB_METRICS 计数器的信息，请参阅 第 15.15.6 节，“InnoDB INFORMATION_SCHEMA 指标表” 。
+lock_rec_release_attempts
+尝试释放记录锁的次数。一次尝试可能导致释放零个或多个记录锁，因为在单个结构中可能有零个或多个记录锁。
+lock_rec_grant_attempts
+尝试授予记录锁的次数。一次尝试可能会导致授予零个或多个记录锁。
+lock_schedule_refreshes
+分析等待图以更新预定事务权重的次数。

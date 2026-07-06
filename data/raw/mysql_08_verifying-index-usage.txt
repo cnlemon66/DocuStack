@@ -1,0 +1,7 @@
+8.3.7 验证索引使用_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.3 优化和索引 / 
+8.3.7 验证索引使用
+8.3.7 验证索引使用
+始终检查您的所有查询是否真的使用了您在表中创建的索引。使用 第 8.8.1 节“使用 EXPLAIN 优化查询” EXPLAIN 中所述的语句。

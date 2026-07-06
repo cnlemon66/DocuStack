@@ -1,0 +1,93 @@
+15.5.2 更改缓冲区_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.5 InnoDB 内存结构 / 
+15.5.2 更改缓冲区
+15.5.2 更改缓冲区
+更改缓冲区是一种特殊的数据结构，当这些页面不在 缓冲池中 时
+，它会缓存对 二级索引 页面的更改。可能由 、 或 操作 (DML) 产生的缓冲更改
+稍后
+会
+在其他读取操作将页面加载到缓冲池中时合并。 INSERT UPDATE DELETE
+图 15.3 更改缓冲区
+与 聚集索引 不同，二级索引通常是非唯一的，并且以相对随机的顺序插入二级索引。同样，删除和更新可能会影响索引树中不相邻的二级索引页。当其他操作将受影响的页面读入缓冲池时，稍后合并缓存的更改可避免将二级索引页面从磁盘读入缓冲池所需的大量随机访问 I/O。
+在系统大部分空闲时或缓慢关闭期间运行的清除操作会定期将更新的索引页写入磁盘。与立即将每个值写入磁盘相比，清除操作可以更有效地为一系列索引值写入磁盘块。
+当有许多受影响的行和许多二级索引要更新时，更改缓冲区合并可能需要几个小时。在此期间，磁盘 I/O 增加，这可能会导致磁盘绑定查询显着减慢。更改缓冲区合并也可能在提交事务后继续发生，甚至在服务器关闭并重新启动后（有关更多信息，请参阅 第 15.21.3 节，“强制 InnoDB 恢复” ）。
+在内存中，变化缓冲区占据缓冲池的一部分。在磁盘上，更改缓冲区是系统表空间的一部分，当数据库服务器关闭时，索引更改将被缓冲。
+更改缓冲区中缓存的数据类型由 innodb_change_buffering 变量控制。有关详细信息，请参阅 配置更改缓冲 。您还可以配置最大更改缓冲区大小。有关详细信息，请参阅 配置更改缓冲区的最大大小 。
+如果索引包含降序索引列或主键包含降序索引列，则二级索引不支持更改缓冲。
+有关更改缓冲区的常见问题的答案，请参阅 第 A.16 节，“MySQL 8.0 FAQ：InnoDB 更改缓冲区” 。
+配置更改缓冲
+当对表执行 INSERT 、 UPDATE 和 DELETE 操作时，索引列的值（尤其是辅助键的值）通常处于未排序的顺序，需要大量 I/O 才能使辅助索引保持最新。当
+相关 页面 不在 缓冲池中时， 更改缓冲区 缓存对二级索引条目的更改
+，从而通过不立即从磁盘读取页面来避免昂贵的 I/O 操作。当页面加载到缓冲池中时，缓冲的更改被合并，更新后的页面稍后刷新到磁盘。这 InnoDB 主线程在服务器接近空闲时和 缓慢关闭 期间合并缓冲的更改。
+因为它可以减少磁盘读写，所以更改缓冲对于受 I/O 限制的工作负载最有价值；例如，具有大量 DML 操作（如批量插入）的应用程序受益于更改缓冲。
+但是，更改缓冲区占用了缓冲池的一部分，减少了可用于缓存数据页的内存。如果工作集几乎适合缓冲池，或者如果您的表的二级索引相对较少，则禁用更改缓冲可能会有用。如果工作数据集完全适合缓冲池，则更改缓冲不会造成额外开销，因为它仅适用于不在缓冲池中的页面。
+该 innodb_change_buffering 变量控制 InnoDB 执行更改缓冲的程度。您可以为插入、删除操作（当索引记录最初被标记为删除时）和清除操作（当索引记录被物理删除时）启用或禁用缓冲。更新操作是插入和删除的组合。默认 innodb_change_buffering 值为 all 。
+允许 innodb_change_buffering 的值包括：
+all
+默认值：缓冲区插入、删除标记操作和清除。
+none
+不要缓冲任何操作。
+inserts
+缓冲区插入操作。
+deletes
+缓冲区删除标记操作。
+changes
+缓冲插入和删除标记操作。
+purges
+缓冲在后台发生的物理删除操作。
+您可以 innodb_change_buffering 在 MySQL 选项文件 ( my.cnf 或 my.ini ) 中设置变量或使用语句动态更改它 SET GLOBAL ，这需要足够的权限来设置全局系统变量。请参阅 第 5.1.9.1 节，“系统变量权限” 。更改设置会影响新操作的缓冲；现有缓冲条目的合并不受影响。
+配置更改缓冲区的最大大小
+该 innodb_change_buffer_max_size 变量允许将更改缓冲区的最大大小配置为缓冲池总大小的百分比。默认情况下， innodb_change_buffer_max_size 设置为 25。最大设置为 50。
+考虑 innodb_change_buffer_max_size 在具有大量插入、更新和删除活动的 MySQL 服务器上增加，其中更改缓冲区合并跟不上新的更改缓冲区条目，导致更改缓冲区达到其最大大小限制。
+考虑 innodb_change_buffer_max_size 在具有用于报告的静态数据的 MySQL 服务器上减少，或者如果更改缓冲区消耗过多与缓冲池共享的内存空间，导致页面比预期更快地从缓冲池中老化。
+使用具有代表性的工作负载测试不同的设置以确定最佳配置。该 innodb_change_buffer_max_size 变量是动态的，允许在不重新启动服务器的情况下修改设置。
+监视更改缓冲区
+以下选项可用于更改缓冲区监视：
+InnoDB 标准监视器输出包括更改缓冲区状态信息。要查看监视器数据，请发出该 SHOW ENGINE INNODB STATUS 语句。
+mysql> SHOW ENGINE INNODB STATUS\G
+更改缓冲区状态信息位于 INSERT BUFFER AND ADAPTIVE HASH INDEX 标题下，类似于以下内容：
+-------------------------------------
+INSERT BUFFER AND ADAPTIVE HASH INDEX
+-------------------------------------
+Ibuf: size 1, free list len 0, seg size 2, 0 merges
+merged operations:
+insert 0, delete mark 0, delete 0
+discarded operations:
+insert 0, delete mark 0, delete 0
+Hash table size 4425293, used cells 32, node heap has 1 buffer(s)
+13577.57 hash searches/s, 202.47 non-hash searches/s
+有关详细信息，请参阅 第 15.17.3 节，“InnoDB 标准监视器和锁定监视器输出” 。
+该
+表提供了标准监视器输出 INFORMATION_SCHEMA.INNODB_METRICS 中的大部分数据点
+以及其他数据点。 InnoDB 要查看更改缓冲区指标和每个指标的描述，请发出以下查询：
+mysql> SELECT NAME, COMMENT FROM INFORMATION_SCHEMA.INNODB_METRICS WHERE NAME LIKE '%ibuf%'\G
+有关 INNODB_METRICS 表使用信息，请参阅 第 15.15.6 节，“InnoDB INFORMATION_SCHEMA 指标表” 。
+该 INFORMATION_SCHEMA.INNODB_BUFFER_PAGE 表提供有关缓冲池中每个页面的元数据，包括更改缓冲区索引和更改缓冲区位图页面。更改缓冲区页面由 标识 PAGE_TYPE 。 IBUF_INDEX 是更改缓冲区索引页面 IBUF_BITMAP 的页面类型，是更改缓冲区位图页面的页面类型。
+警告
+查询 INNODB_BUFFER_PAGE 表会带来显着的性能开销。为避免影响性能，请在测试实例上重现要调查的问题并在测试实例上运行查询。
+例如，您可以查询该 INNODB_BUFFER_PAGE 表以确定
+页数 IBUF_INDEX 和 IBUF_BITMAP 页数占总缓冲池页数的百分比。
+mysql> SELECT (SELECT COUNT(*) FROM INFORMATION_SCHEMA.INNODB_BUFFER_PAGE
+WHERE PAGE_TYPE LIKE 'IBUF%') AS change_buffer_pages,
+(SELECT COUNT(*) FROM INFORMATION_SCHEMA.INNODB_BUFFER_PAGE) AS total_pages,
+(SELECT ((change_buffer_pages/total_pages)*100))
+AS change_buffer_page_percentage;
++---------------------+-------------+-------------------------------+
+| change_buffer_pages | total_pages | change_buffer_page_percentage |
++---------------------+-------------+-------------------------------+
+| 25 | 8192 | 0.3052 |
++---------------------+-------------+-------------------------------+
+有关该 INNODB_BUFFER_PAGE 表提供的其他数据的信息，请参阅 第 26.4.2 节，“INFORMATION_SCHEMA INNODB_BUFFER_PAGE 表” 。有关使用信息，请参阅 第 15.15.5 节，“InnoDB INFORMATION_SCHEMA 缓冲池表” 。
+Performance Schema 为高级性能监控提供更改缓冲区互斥等待检测。要查看更改缓冲区检测，请发出以下查询：
+mysql> SELECT * FROM performance_schema.setup_instruments
+WHERE NAME LIKE '%wait/synch/mutex/innodb/ibuf%';
++-------------------------------------------------------+---------+-------+
+| NAME | ENABLED | TIMED |
++-------------------------------------------------------+---------+-------+
+| wait/synch/mutex/innodb/ibuf_bitmap_mutex | YES | YES |
+| wait/synch/mutex/innodb/ibuf_mutex | YES | YES |
+| wait/synch/mutex/innodb/ibuf_pessimistic_insert_mutex | YES | YES |
++-------------------------------------------------------+---------+-------+
+有关监视 InnoDB 互斥等待的信息，请参阅 第 15.16.2 节，“使用性能模式监视 InnoDB 互斥等待” 。

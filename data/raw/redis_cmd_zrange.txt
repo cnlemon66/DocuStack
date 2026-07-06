@@ -1,0 +1,104 @@
+Redis ZRANGE 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis ZRANGE 命令
+返回 Sorted Set 中指定排名区间（rank range）的成员，按 score 从小到大排序。
+* 语法
+ZRANGE key start stop [BYSCORE | BYLEX] [REV] [LIMIT offset count] [WITHSCORES]
+Redis 6.2+ 支持 BYSCORE、BYLEX、REV 和 LIMIT。
+* 参数说明
+参数 类型 必填 说明
+key String 是 Sorted Set 的键名
+start Integer/Double 是 起始索引（0 开始）或 score
+stop Integer/Double 是 结束索引或 score
+BYSCORE 标志 否 按 score 范围查询（Redis 6.2+）
+BYLEX 标志 否 按 member 字典序范围查询（score 相同，Redis 6.2+）
+REV 标志 否 反向排序（大到小，Redis 6.2+）
+LIMIT 标志 否 分页偏移和数量（配合 BYSCORE/BYLEX）
+WITHSCORES 标志 否 同时返回 score
+* 返回值
+条件 返回值
+key 存在 成员数组；带 WITHSCORES 时返回 [member1, score1, ...]
+key 不存在 空数组 []
+* 时间复杂度
+O(log(N)+ M)，N 为成员数量，M 为返回成员数量。
+⚠️ 注意 ：ZRANGE 比 LRANGE 安全，因为 ZRANGE 是 O(log(N)+ M)，而 LRANGE 在 start 较大时也是 O(N)。但返回大量成员（>5000）仍会阻塞 Redis。
+* 示例
+> ZADD leaderboard 100 "p1" 200 "p2" 300 "p3" 400 "p4" 500 "p5"
+(integer) 5
+
+# 按排名取前 3
+> ZRANGE leaderboard 0 2
+1) "p1"
+2) "p2"
+3) "p3"
+
+# 带 score
+> ZRANGE leaderboard 0 2 WITHSCORES
+1) "p1"
+2) "100"
+3) "p2"
+4) "200"
+5) "p3"
+6) "300"
+
+# 反向取前 3（高分在前，Redis 6.2+）
+> ZRANGE leaderboard 0 2 REV
+1) "p5"
+2) "p4"
+3) "p3"
+
+# 按 score 范围（Redis 6.2+）
+> ZRANGE leaderboard 150 350 BYSCORE
+1) "p2"
+2) "p3"
+
+# 分页（Redis 6.2+）
+> ZRANGE leaderboard 0 100 BYSCORE LIMIT 0 2
+1) "p1"
+2) "p2"
+* 常见错误
+BYSCORE/BYLEX 不支持负数索引 ：使用具体 score 或 member 值。
+旧版本不支持新参数 ：BYSCORE/REV/LIMIT 需要 Redis 6.2+。
+* 最佳实践
+排行榜分页 ： ZREVRANGE key offset offset+limit-1 实现排名分页。
+时间范围查询 ：score 为时间戳时， ZRANGE key start_ts end_ts BYSCORE 查询时间段。
+附近的人 ：Geo 用 GEORADIUS ，底层基于 Sorted Set。
+* FAQ
+Q: ZRANGE 和 ZREVRANGE 有什么区别？ A: ZREVRANGE 是 Redis 5.0 以前的命令，反向排序。Redis 6.2+ 推荐用 ZRANGE ... REV 替代 ZREVRANGE 。
+Q: ZRANGE BYSCORE 和 ZRANGEBYSCORE 有什么区别？ A: ZRANGEBYSCORE 是旧命令，Redis 6.2+ 已废弃，统一用 ZRANGE ... BYSCORE 。
+Q: 如何实现 Top N 排行榜？ A: ZREVRANGE key 0 N-1 WITHSCORES 返回分数最高的 N 个成员及分数。
+相关命令
+BZPOPMAX
+BZPOPMIN
+ZADD
+ZCARD
+ZCOUNT
+ZINCRBY
+ZINTER
+ZINTERSTORE
+ZLEXCOUNT
+ZMSCORE
+ZPOPMAX
+ZPOPMIN
+ZRANGE
+ZRANGEBYLEX
+ZRANGEBYSCORE
+ZRANK
+ZREM
+ZREMRANGEBYLEX
+ZREMRANGEBYRANK
+ZREMRANGEBYSCORE
+ZREVRANGE
+ZREVRANGEBYLEX
+ZREVRANGEBYSCORE
+ZREVRANK
+ZSCAN
+ZSCORE
+ZUNION
+ZUNIONSTORE

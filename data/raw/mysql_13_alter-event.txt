@@ -1,0 +1,67 @@
+13.1.3 ALTER EVENT 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.3 ALTER EVENT 语句
+13.1.3 ALTER EVENT 语句
+ALTER
+[DEFINER = user ]
+EVENT event_name [ON SCHEDULE schedule ]
+[ON COMPLETION [NOT] PRESERVE]
+[RENAME TO new_event_name ]
+[ENABLE | DISABLE | DISABLE ON SLAVE]
+[COMMENT ' string ']
+[DO event_body ]
+该 ALTER EVENT 语句更改现有事件的一个或多个特征，而无需删除并重新创建它。每个 DEFINER 、 ON SCHEDULE 、 ON COMPLETION 、 COMMENT 、 ENABLE / DISABLE 和 DO 子句的语法与与 一起使用时完全相同 CREATE EVENT 。（请参阅 第 13.1.13 节，“CREATE EVENT 语句” 。）
+任何用户都可以更改在该用户拥有 EVENT 权限的数据库上定义的事件。当用户执行成功的 ALTER
+EVENT 语句时，该用户将成为受影响事件的定义者。
+ALTER EVENT 仅适用于现有事件：
+mysql> ALTER EVENT no_such_event
+> ON SCHEDULE
+> EVERY '2:3' DAY_HOUR;
+ERROR 1517 (HY000): Unknown event 'no_such_event'
+在以下每个示例中，假设命名事件 myevent 的定义如下所示：
+CREATE EVENT myevent
+ON SCHEDULE
+EVERY 6 HOUR
+COMMENT 'A sample comment.'
+DO
+UPDATE myschema.mytable SET mycol = mycol + 1;
+以下语句将计划 myevent 从立即开始的每六小时一次更改为每十二小时一次，从语句运行后的四个小时开始：
+ALTER EVENT myevent
+ON SCHEDULE
+EVERY 12 HOUR
+STARTS CURRENT_TIMESTAMP + INTERVAL 4 HOUR;
+可以在单个语句中更改事件的多个特征。此示例将执行的 SQL 语句更改为 myevent 从中删除所有记录
+的语句 mytable ； ALTER EVENT 它还会更改事件的计划，使其在该语句运行
+一天后执行一次
+。
+ALTER EVENT myevent
+ON SCHEDULE
+AT CURRENT_TIMESTAMP + INTERVAL 1 DAY
+DO
+TRUNCATE TABLE myschema.mytable;
+ALTER
+EVENT 仅在语句中为您要更改的那些特征
+指定选项；省略的选项保留其现有值。这包括任何默认值， CREATE
+EVENT 例如 ENABLE .
+要禁用 myevent ，请使用以下 ALTER EVENT 语句：
+ALTER EVENT myevent
+DISABLE;
+该 ON SCHEDULE 子句可以使用涉及内置 MySQL 函数和用户变量的表达式来获取它包含的任何 timestamp 或
+值。 interval 您不能在此类表达式中使用存储例程或可加载函数，也不能使用任何表引用；但是，您可以使用 SELECT FROM DUAL . 对于 ALTER EVENT and CREATE EVENT 语句都是如此。在这种情况下，对存储例程、可加载函数和表的引用是明确不允许的，并且会因错误而失败（参见错误 #22830）。
+尽管
+在其子句 ALTER EVENT 中包含另一个语句的语句似乎成功，但当服务器尝试执行生成的计划事件时，执行会失败并出现错误。 ALTER EVENT DO
+要重命名事件，请使用 ALTER
+EVENT 语句的 RENAME TO 子句。此语句将事件重命名 myevent 为 yourevent ：
+ALTER EVENT myevent
+RENAME TO yourevent;
+您还可以使用 ALTER EVENT ... RENAME TO ... 和 db_name.event_name 符号将事件移动到不同的数据库，如下所示：
+ALTER EVENT olddb.myevent
+RENAME TO newdb.myevent;
+要执行前面的语句，执行它的用户必须同时拥有和数据库
+的 EVENT 权限
+。 olddb newdb
+笔记
+没有 RENAME EVENT 声明。
+该值 DISABLE ON SLAVE 用于副本而不是 ENABLE 或 DISABLE 指示在复制源服务器上创建并复制到副本但不在副本上执行的事件。正常情况下， DISABLE ON SLAVE 根据需要自动设置；但是，在某些情况下您可能希望或需要手动更改它。有关详细信息，请参阅 第 17.5.1.16 节，“调用功能的复制” 。

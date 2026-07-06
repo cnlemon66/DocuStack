@@ -1,0 +1,514 @@
+12.12 XML函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 
+12.12 XML函数
+12.12 XML函数
+表 12.16 XML 函数
+姓名 描述
+ExtractValue() 使用 XPath 表示法从 XML 字符串中提取值
+UpdateXML() 返回替换的 XML 片段
+本节讨论 XML 和 MySQL 中的相关功能。
+笔记
+通过使用选项
+调用 mysql 和 mysqldump 客户端，
+可以从 MySQL 中获取 XML 格式的输出
+。 --xml 请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 和 第 4.5.4 节，“mysqldump — 数据库备份程序” 。
+提供基本 XPath 1.0（XML 路径语言，版本 1.0）功能的两个函数可用。本节稍后提供有关 XPath 语法和用法的一些基本信息；但是，对这些主题的深入讨论超出了本手册的范围，您应该参考 XML 路径语言 (XPath) 1.0 标准 以获得权威信息。 Zvon.org XPath 教程 是 XPath 新手或希望复习基础知识的有用资源，它有多种语言版本。
+笔记
+这些功能仍在开发中。我们在 MySQL 8.0 及更高版本中继续改进 XML 和 XPath 功能的这些和其他方面。 您可以在MySQL XML 用户论坛 中讨论这些问题，提出有关它们的问题，并从其他用户那里获得帮助。
+与这些函数一起使用的 XPath 表达式支持用户变量和本地存储的程序变量。用户变量被弱检查；对存储程序的局部变量进行严格检查（另请参见错误 #26518）：
+用户变量（弱检查）。 不检查使用语法的变量
+
+（即用户变量）。如果变量类型错误或之前未分配值，服务器不会发出警告或错误。这也意味着用户对任何印刷错误负全部责任，因为如果（例如）
+在预期的地方使用，
+则不会发出警告。 $@ variable_name $@myvairable $@myvariable
+例子：
+mysql> SET @xml = '<a><b>X</b><b>Y</b></a>';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SET @i =1, @j = 2;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT @i, ExtractValue(@xml, '//b[$@i]');
++------+--------------------------------+
+| @i | ExtractValue(@xml, '//b[$@i]') |
++------+--------------------------------+
+| 1 | X |
++------+--------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT @j, ExtractValue(@xml, '//b[$@j]');
++------+--------------------------------+
+| @j | ExtractValue(@xml, '//b[$@j]') |
++------+--------------------------------+
+| 2 | Y |
++------+--------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT @k, ExtractValue(@xml, '//b[$@k]');
++------+--------------------------------+
+| @k | ExtractValue(@xml, '//b[$@k]') |
++------+--------------------------------+
+| NULL | |
++------+--------------------------------+
+1 row in set (0.00 sec)
+存储程序中的变量（强检查）。 当在存储程序中调用这些函数时，可以声明
+使用语法的变量
+并与这些函数一起使用。这些变量对于定义它们的存储程序是本地的，并且会严格检查类型和值。 $ variable_name
+例子：
+mysql> DELIMITER |
+
+mysql> CREATE PROCEDURE myproc ()
+-> BEGIN
+-> DECLARE i INT DEFAULT 1;
+-> DECLARE xml VARCHAR(25) DEFAULT '<a>X</a><a>Y</a><a>Z</a>';
+->
+-> WHILE i < 4 DO
+-> SELECT xml, i, ExtractValue(xml, '//a[$i]');
+-> SET i = i+1;
+-> END WHILE;
+-> END |
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DELIMITER ;
+
+mysql> CALL myproc();
++--------------------------+---+------------------------------+
+| xml | i | ExtractValue(xml, '//a[$i]') |
++--------------------------+---+------------------------------+
+| <a>X</a><a>Y</a><a>Z</a> | 1 | X |
++--------------------------+---+------------------------------+
+1 row in set (0.00 sec)
+
++--------------------------+---+------------------------------+
+| xml | i | ExtractValue(xml, '//a[$i]') |
++--------------------------+---+------------------------------+
+| <a>X</a><a>Y</a><a>Z</a> | 2 | Y |
++--------------------------+---+------------------------------+
+1 row in set (0.01 sec)
+
++--------------------------+---+------------------------------+
+| xml | i | ExtractValue(xml, '//a[$i]') |
++--------------------------+---+------------------------------+
+| <a>X</a><a>Y</a><a>Z</a> | 3 | Z |
++--------------------------+---+------------------------------+
+1 row in set (0.01 sec)
+参数。 作为参数传入的存储例程内的 XPath 表达式中使用的变量也需要进行强检查。
+包含用户变量或存储程序本地变量的表达式必须符合 XPath 1.0 规范中给出的包含变量的 XPath 表达式的规则（符号除外）。
+笔记
+用于存储 XPath 表达式的用户变量被视为空字符串。因此，不可能将 XPath 表达式存储为用户变量。（漏洞 #32911）
+ExtractValue( xml_frag , xpath_expr )
+ExtractValue() 采用两个字符串参数，一个 XML 标记片段 xml_frag 和一个 XPath 表达式 xpath_expr （也称为 定位器 ）；它返回 CDATA 第一个文本节点的文本 ( )，该文本节点是与 XPath 表达式匹配的一个或多个元素的子元素。
+使用此函数等同于使用 xpath_expr after appending执行匹配 /text() 。换句话说， ExtractValue('<a><b>Sakila</b></a>',
+'/a/b') 和 ExtractValue('<a><b>Sakila</b></a>',
+'/a/b/text()') 产生相同的结果。如果 xml_frag 或 xpath_expr 是 NULL ，函数返回 NULL 。
+如果找到多个匹配项，则每个匹配元素的第一个子文本节点的内容（按匹配顺序）作为单个以空格分隔的字符串返回。
+如果没有为表达式找到匹配的文本节点（包括隐式 /text() ）——无论出于何种原因，只要 xpath_expr 有效，并且 xml_frag 由正确嵌套和闭合的元素组成——返回一个空字符串。匹配空元素和完全不匹配之间没有区别。这是设计使然。
+如果您需要确定是否没有找到匹配的元素，或者找到了这样的元素但不包含子文本节点，您应该测试使用 XPath函数 xml_frag 的表达式的结果
+。 count() 例如，这两个语句都返回一个空字符串，如下所示：
+mysql> SELECT ExtractValue('<a><b/></a>', '/a/b');
++-------------------------------------+
+| ExtractValue('<a><b/></a>', '/a/b') |
++-------------------------------------+
+| |
++-------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue('<a><c/></a>', '/a/b');
++-------------------------------------+
+| ExtractValue('<a><c/></a>', '/a/b') |
++-------------------------------------+
+| |
++-------------------------------------+
+1 row in set (0.00 sec)
+但是，您可以使用以下方法确定是否确实存在匹配元素：
+mysql> SELECT ExtractValue('<a><b/></a>', 'count(/a/b)');
++-------------------------------------+
+| ExtractValue('<a><b/></a>', 'count(/a/b)') |
++-------------------------------------+
+| 1 |
++-------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue('<a><c/></a>', 'count(/a/b)');
++-------------------------------------+
+| ExtractValue('<a><c/></a>', 'count(/a/b)') |
++-------------------------------------+
+| 0 |
++-------------------------------------+
+1 row in set (0.01 sec)
+重要的
+ExtractValue() 仅返回 CDATA ，并且不返回任何可能包含在匹配标签中的标签，也不返回它们的任何内容（请参阅 val1 以下示例中返回的结果）。
+mysql> SELECT
+-> ExtractValue('<a>ccc<b>ddd</b></a>', '/a') AS val1,
+-> ExtractValue('<a>ccc<b>ddd</b></a>', '/a/b') AS val2,
+-> ExtractValue('<a>ccc<b>ddd</b></a>', '//b') AS val3,
+-> ExtractValue('<a>ccc<b>ddd</b></a>', '/b') AS val4,
+-> ExtractValue('<a>ccc<b>ddd</b><b>eee</b></a>', '//b') AS val5;
+
++------+------+------+------+---------+
+| val1 | val2 | val3 | val4 | val5 |
++------+------+------+------+---------+
+| ccc | ddd | ddd | | ddd eee |
++------+------+------+------+---------+
+此函数使用当前 SQL 归类与 进行比较 contains() ，执行与其他字符串函数（例如 CONCAT() ）相同的归类聚合，同时考虑到它们参数的归类强制性；有关管理此行为的规则的解释，
+请参阅 第 10.8.4 节，“表达式中的排序规则强制性” 。
+（以前，总是使用二进制——即区分大小写——比较。）
+NULL 如果 xml_frag 包含未正确嵌套或关闭的元素，则返回，并生成警告，如本例所示：
+mysql> SELECT ExtractValue('<a>c</a><b', '//a');
++-----------------------------------+
+| ExtractValue('<a>c</a><b', '//a') |
++-----------------------------------+
+| NULL |
++-----------------------------------+
+1 row in set, 1 warning (0.00 sec)
+
+mysql> SHOW WARNINGS\G
+*************************** 1. row ***************************
+Level: Warning
+Code: 1525
+Message: Incorrect XML value: 'parse error at line 1 pos 11:
+END-OF-INPUT unexpected ('>' wanted)'
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue('<a>c</a><b/>', '//a');
++-------------------------------------+
+| ExtractValue('<a>c</a><b/>', '//a') |
++-------------------------------------+
+| c |
++-------------------------------------+
+1 row in set (0.00 sec)
+UpdateXML( xml_target , xpath_expr , new_xml )
+xml_target 此函数用新的 XML 片段
+替换给定 XML 标记片段的单个部分 new_xml ，然后返回更改后的 XML。被替换的部分 xml_target 匹配用户提供的 XPath 表达式 xpath_expr 。
+如果未 xpath_expr 找到匹配的表达式，或者找到多个匹配项，该函数将返回原始 xml_target XML 片段。所有三个参数都应该是字符串。如果 的任何参数 UpdateXML() 是 NULL ，则函数返回 NULL 。
+mysql> SELECT
+-> UpdateXML('<a><b>ccc</b><d></d></a>', '/a', '<e>fff</e>') AS val1,
+-> UpdateXML('<a><b>ccc</b><d></d></a>', '/b', '<e>fff</e>') AS val2,
+-> UpdateXML('<a><b>ccc</b><d></d></a>', '//b', '<e>fff</e>') AS val3,
+-> UpdateXML('<a><b>ccc</b><d></d></a>', '/a/d', '<e>fff</e>') AS val4,
+-> UpdateXML('<a><d></d><b>ccc</b><d></d></a>', '/a/d', '<e>fff</e>') AS val5
+-> \G
+
+*************************** 1. row ***************************
+val1: <e>fff</e>
+val2: <a><b>ccc</b><d></d></a>
+val3: <a><e>fff</e><d></d></a>
+val4: <a><b>ccc</b><e>fff</e></a>
+val5: <a><d></d><b>ccc</b><d></d></a>
+笔记
+对 XPath 语法和用法的深入讨论超出了本手册的范围。有关权威信息，请参阅 XML 路径语言 (XPath) 1.0 规范 。对于 XPath 新手或希望复习基础知识的人来说，一个有用的资源是 Zvon.org XPath 教程 ，它有多种语言版本。
+一些基本 XPath 表达式的描述和示例如下：
+/ tag
+当且仅当
+是根元素
+时才
+匹配
+。 < tag /> < tag />
+示例： /a 有一个匹配项， <a><b/></a> 因为它匹配最外层（根）标签。它不匹配 in 中的内部 a 元素， <b><a/></b> 因为在本例中它是另一个元素的子元素。
+/ tag1 / tag2
+当且仅当它是 的子
+元素并且
+是根元素
+时才
+匹配
+。 < tag2 /> < tag1 /> < tag1 />
+示例： /a/b 匹配 b XML 片段中的元素， <a><b/></a> 因为它是根元素的子元素 a 。它没有匹配项， <b><a/></b> 因为在这种情况下， b 是根元素（因此没有其他元素的子元素）。XPath 表达式也没有匹配项 <a><c><b/></c></a> ；在这里， b 是 的后代 a ，但实际上不是 的子代 a 。
+该构造可扩展到三个或更多元素。例如，XPath 表达式 /a/b/c 匹配 c 片段中的元素 <a><b><c/></b></a> 。
+// tag
+匹配 的任何实例
+。 < tag >
+示例： //a 匹配 a 以下任一元素： <a><b><c/></b></a> ; <c><a><b/></a></b> ; <c><b><a/></b></c> .
+// 可以结合 / . 例如， //a/b 匹配 b 片段 <a><b/></a> 或
+中的元素 <c><a><b/></a></c> 。
+笔记
+// tag 相当于
+. 一个常见的错误是将 this 与 混淆
+，尽管后一个表达式实际上会导致截然不同的结果，如下所示： /descendant-or-self::*/ tag /descendant-or-self:: tag
+mysql> SET @xml = '<a><b><c>w</c><b>x</b><d>y</d>z</b></a>';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT @xml;
++-----------------------------------------+
+| @xml |
++-----------------------------------------+
+| <a><b><c>w</c><b>x</b><d>y</d>z</b></a> |
++-----------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue(@xml, '//b[1]');
++------------------------------+
+| ExtractValue(@xml, '//b[1]') |
++------------------------------+
+| x z |
++------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue(@xml, '//b[2]');
++------------------------------+
+| ExtractValue(@xml, '//b[2]') |
++------------------------------+
+| |
++------------------------------+
+1 row in set (0.01 sec)
+
+mysql> SELECT ExtractValue(@xml, '/descendant-or-self::*/b[1]');
++---------------------------------------------------+
+| ExtractValue(@xml, '/descendant-or-self::*/b[1]') |
++---------------------------------------------------+
+| x z |
++---------------------------------------------------+
+1 row in set (0.06 sec)
+
+mysql> SELECT ExtractValue(@xml, '/descendant-or-self::*/b[2]');
++---------------------------------------------------+
+| ExtractValue(@xml, '/descendant-or-self::*/b[2]') |
++---------------------------------------------------+
+| |
++---------------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue(@xml, '/descendant-or-self::b[1]');
++-------------------------------------------------+
+| ExtractValue(@xml, '/descendant-or-self::b[1]') |
++-------------------------------------------------+
+| z |
++-------------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue(@xml, '/descendant-or-self::b[2]');
++-------------------------------------------------+
+| ExtractValue(@xml, '/descendant-or-self::b[2]') |
++-------------------------------------------------+
+| x |
++-------------------------------------------------+
+1 row in set (0.00 sec)
+* 运算符充当
+匹配任何元素
+的 “ 通配符 ” 。 例如，表达式 /*/b 与 b XML 片段 <a><b/></a> 或 <c><b/></c> . 但是，该表达式不会在片段中产生匹配
+项， <b><a/></b> 因为 b 它必须是某个其他元素的子元素。通配符可以用在任何位置：表达式匹配本身不是根元素 /*/b/* 的元素的任何子
+元素。 b
+| 您可以使用( UNION ) 运算符
+匹配多个定位器中的任何一个
+。例如，表达式 //b|//c 匹配 XML 目标中的所有 b 和 c 元素。
+也可以根据元素的一个或多个属性的值来匹配元素。这是使用语法完成的
+。例如，表达式
+匹配片段中的第二个元素。要匹配
+具有 的 任何 元素
+，请使用 XPath 表达式
+。 tag [@ attribute =" value "] //b[@id="idB"] b <a><b id="idA"/><c/><b
+id="idB"/></a> attribute =" value " //*[ attribute =" value "]
+要过滤多个属性值，只需连续使用多个属性比较子句即可。例如，表达式 //b[@c="x"][@d="y"] 匹配 <b c="x" d="y"/> 出现在给定 XML 片段中任何位置的元素。
+要查找相同属性与多个值中的任何一个相匹配的元素，您可以使用由 | 运算符连接的多个定位器。例如，要匹配
+属性值为 23 或 17 的
+所有 b 元素
+，请使用表达式。为此，
+您还可以使用逻辑运算符： . c //b[@c="23"]|//b[@c="17"] or //b[@c="23" or @c="17"]
+笔记
+or 和
+
+的区别 | 是 or 连接条件，while | 连接结果集。
+XPath 限制。 这些函数支持的 XPath 语法目前受到以下限制：
+'/a/b[@c=@d]' 不支持
+
+节点集到节点集的比较（例如
+）。
+支持所有标准 XPath 比较运算符。（漏洞 #22823）
+相对定位器表达式在根节点的上下文中解析。例如，考虑以下查询和结果：
+mysql> SELECT ExtractValue(
+-> '<a><b c="1">X</b><b c="2">Y</b></a>',
+-> 'a/b'
+-> ) AS result;
++--------+
+| result |
++--------+
+| X Y |
++--------+
+1 row in set (0.03 sec)
+在这种情况下，定位器 a/b 解析为 /a/b .
+谓词也支持相对定位符。在以下示例中， d[../@c="1"] 解析为 /a/b[@c="1"]/d ：
+mysql> SELECT ExtractValue(
+-> '<a>
+-> <b c="1"><d>X</d></b>
+-> <b c="2"><d>X</d></b>
+-> </a>',
+-> 'a/b/d[../@c="1"]')
+-> AS result;
++--------+
+| result |
++--------+
+| X |
++--------+
+1 row in set (0.00 sec)
+定位器以作为标量值的表达式为前缀——包括变量引用、文字、数字和标量函数调用——是不允许的，它们的使用会导致错误。
+:: 不支持运算符与以下节点类型结合使用
+
+：
+axis ::comment()
+axis ::text()
+axis ::processing-instructions()
+axis ::node()
+但是，支持名称测试（例如
+
+和），如以下示例所示： axis :: name axis ::*
+mysql> SELECT ExtractValue('<a><b>x</b><c>y</c></a>','/a/child::b');
++-------------------------------------------------------+
+| ExtractValue('<a><b>x</b><c>y</c></a>','/a/child::b') |
++-------------------------------------------------------+
+| x |
++-------------------------------------------------------+
+1 row in set (0.02 sec)
+
+mysql> SELECT ExtractValue('<a><b>x</b><c>y</c></a>','/a/child::*');
++-------------------------------------------------------+
+| ExtractValue('<a><b>x</b><c>y</c></a>','/a/child::*') |
++-------------------------------------------------------+
+| x y |
++-------------------------------------------------------+
+1 row in set (0.01 sec)
+在路径 “ 高于 ” 根元素的情况下，不支持 “ 上下 ”导航。 也就是说，您不能使用匹配给定元素祖先的后代的表达式，其中当前元素的一个或多个祖先也是根元素的祖先（参见错误 #16321）。
+不支持以下 XPath 函数，或者存在已知问题，如所示：
+id()
+lang()
+local-name()
+name()
+namespace-uri()
+normalize-space()
+starts-with()
+string()
+substring-after()
+substring-before()
+translate()
+不支持以下轴：
+following-sibling
+following
+preceding-sibling
+preceding
+XPath 表达式作为参数传递给
+元素选择器 ExtractValue() 并且 UpdateXML() 可能在元素选择器中包含冒号字符 ( : )，这使得它们可以与采用 XML 名称空间表示法的标记一起使用。例如：
+mysql> SET @xml = '<a>111<b:c>222<d>333</d><e:f>444</e:f></b:c></a>';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT ExtractValue(@xml, '//e:f');
++-----------------------------+
+| ExtractValue(@xml, '//e:f') |
++-----------------------------+
+| 444 |
++-----------------------------+
+1 row in set (0.00 sec)
+
+mysql> SELECT UpdateXML(@xml, '//b:c', '<g:h>555</g:h>');
++--------------------------------------------+
+| UpdateXML(@xml, '//b:c', '<g:h>555</g:h>') |
++--------------------------------------------+
+| <a>111<g:h>555</g:h></a> |
++--------------------------------------------+
+1 row in set (0.00 sec)
+这在某些方面类似于 Apache Xalan 和其他一些解析器允许的内容，并且比要求命名空间声明或使用 namespace-uri() 和 local-name() 函数要简单得多。
+错误处理。 对于 ExtractValue() 和 UpdateXML() ，使用的 XPath 定位器必须有效，并且要搜索的 XML 必须包含正确嵌套和闭合的元素。如果定位器无效，则会生成错误：
+mysql> SELECT ExtractValue('<a>c</a><b/>', '/&a');
+ERROR 1105 (HY000): XPATH syntax error: '&a'
+如果 xml_frag 不包含正确嵌套和关闭的元素， NULL 则返回并生成警告，如本例所示：
+mysql> SELECT ExtractValue('<a>c</a><b', '//a');
++-----------------------------------+
+| ExtractValue('<a>c</a><b', '//a') |
++-----------------------------------+
+| NULL |
++-----------------------------------+
+1 row in set, 1 warning (0.00 sec)
+
+mysql> SHOW WARNINGS\G
+*************************** 1. row ***************************
+Level: Warning
+Code: 1525
+Message: Incorrect XML value: 'parse error at line 1 pos 11:
+END-OF-INPUT unexpected ('>' wanted)'
+1 row in set (0.00 sec)
+
+mysql> SELECT ExtractValue('<a>c</a><b/>', '//a');
++-------------------------------------+
+| ExtractValue('<a>c</a><b/>', '//a') |
++-------------------------------------+
+| c |
++-------------------------------------+
+1 row in set (0.00 sec)
+重要的
+不 检查
+用作第三个参数的替换 XML UpdateXML() 以
+确定它是否仅由正确嵌套和封闭的元素组成。
+XPath 注入。 当恶意代码被引入系统以获得对特权和数据的未授权访问时，就会发生 代码注入。 它基于开发人员对用户输入数据的类型和内容所做的假设。XPath 在这方面也不例外。
+可能发生这种情况的一个常见场景是应用程序通过将登录名和密码的组合与在 XML 文件中找到的组合进行匹配来处理授权，使用如下所示的 XPath 表达式：
+//user[login/text()='neapolitan' and password/text()='1c3cr34m']/attribute::id
+这是 XPath 等效的 SQL 语句，如下所示：
+SELECT id FROM users WHERE login='neapolitan' AND password='1c3cr34m';
+使用 XPath 的 PHP 应用程序可能会像这样处理登录过程：
+<?php
+
+$file = "users.xml";
+
+$login = $POST["login"];
+$password = $POST["password"];
+
+$xpath = "//user[login/text()=$login and password/text()=$password]/attribute::id";
+
+if( file_exists($file) )
+{
+$xml = simplexml_load_file($file);
+
+if($result = $xml->xpath($xpath))
+echo "You are now logged in as user $result[0].";
+else
+echo "Invalid login name or password.";
+}
+else
+exit("Failed to open $file.");
+
+?>
+不对输入执行任何检查。这意味着恶意用户可以通过输入登录名和密码来 “ 短路 ” 测试
+，从而导致如下所示的评估： ' or 1=1 $xpath
+//user[login/text()='' or 1=1 and password/text()='' or 1=1]/attribute::id
+由于方括号内的表达式始终计算为 true ，因此它实际上与这个表达式相同，它匹配XML 文档中每个元素
+的 id 属性
+： user
+//user/attribute::id
+可以规避这种特殊攻击的一种方法是简单地在 的定义中引用要插入的变量名 $xpath ，强制将从 Web 表单传递的值转换为字符串：
+$xpath = "//user[login/text()='$login' and password/text()='$password']/attribute::id";
+这与通常推荐用于防止 SQL 注入攻击的策略相同。通常，防止 XPath 注入攻击应遵循的做法与防止 SQL 注入相同：
+永远不要在您的应用程序中接受来自用户的未经测试的数据。
+检查所有用户提交的数据的类型；拒绝或转换错误类型的数据
+测试数值数据是否超出范围；截断、舍入或拒绝超出范围的值。测试字符串中是否存在非法字符，然后将其删除或拒绝包含它们的输入。
+不要输出可能为未经授权的用户提供可用于破坏系统的线索的显式错误消息；而是将这些记录到文件或数据库表中。
+正如 SQL 注入攻击可用于获取有关数据库模式的信息一样，XPath 注入也可用于遍历 XML 文件以揭示其结构，如 Amit Klein 的论文 Blind XPath Injection （PDF 文件，46KB）中所述。
+检查发送回客户端的输出也很重要。考虑一下当我们使用 MySQL ExtractValue() 函数时会发生什么：
+mysql> SELECT ExtractValue(
+-> LOAD_FILE('users.xml'),
+-> '//user[login/text()="" or 1=1 and password/text()="" or 1=1]/attribute::id'
+-> ) AS id;
++-------------------------------+
+| id |
++-------------------------------+
+| 00327 13579 02403 42354 28570 |
++-------------------------------+
+1 row in set (0.01 sec)
+由于 ExtractValue() 以单个空格分隔的字符串形式返回多个匹配项，因此此注入攻击将其中包含的每个有效 ID users.xml 作为单行输出提供给用户。作为额外的保障，您还应该在将输出返回给用户之前对其进行测试。这是一个简单的例子：
+mysql> SELECT @id = ExtractValue(
+-> LOAD_FILE('users.xml'),
+-> '//user[login/text()="" or 1=1 and password/text()="" or 1=1]/attribute::id'
+-> );
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT IF(
+-> INSTR(@id, ' ') = 0,
+-> @id,
+-> 'Unable to retrieve user ID')
+-> AS singleID;
++----------------------------+
+| singleID |
++----------------------------+
+| Unable to retrieve user ID |
++----------------------------+
+1 row in set (0.00 sec)
+通常，安全地将数据返回给用户的准则与接受用户输入的准则相同。这些可以概括为：
+始终测试传出数据的类型和允许值。
+绝不允许未经授权的用户查看错误消息，这些错误消息可能提供有关可用于利用它的应用程序的信息。

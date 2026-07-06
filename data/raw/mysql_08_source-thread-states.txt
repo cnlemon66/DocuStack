@@ -1,0 +1,24 @@
+8.14.4 复制源线程状态_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.14 查看服务器线程（进程）信息 / 
+8.14.4 复制源线程状态
+8.14.4 复制源线程状态
+以下列表显示了您可能会在复制源线程的 State 列中看到的最常见状态。 Binlog
+Dump 如果您 Binlog Dump 在源上看不到任何线程，这意味着复制没有运行；也就是说，当前没有连接任何副本。
+在 MySQL 8.0.26 中，对仪器名称进行了不兼容的更改，包括线程阶段的名称，其中包含术语 “ master ” 更改为 “ source ” ， “ slave ” 更改为 “ replica ” ，以及 “ mts ” （代表 “ 多线程从 机” ），改为 “ mta ” （代表 “ 多线程应用 程序” ). 使用这些工具名称的监视工具可能会受到影响。如果不兼容的更改对您有影响，请将 terminology_use_previous 系统变量设置为 BEFORE_8_0_26 以使 MySQL 服务器使用先前列表中指定的对象的旧版本名称。这使得依赖旧名称的监视工具能够继续工作，直到它们可以更新为使用新名称。
+将 terminology_use_previous 具有会话范围的系统变量设置为支持单个函数，或将全局范围设置为所有新会话的默认值。使用全局范围时，慢速查询日志包含名称的旧版本。
+Finished reading one binlog; switching to next
+binlog
+线程已完成二进制日志文件的读取，正在打开下一个文件以发送到副本。
+Master has sent all binlog to slave; waiting for
+more updates
+从 MySQL 8.0.26 开始： Source has sent all binlog to
+replica; waiting for more updates
+该线程已从二进制日志中读取所有剩余的更新并将它们发送到副本。该线程现在处于空闲状态，等待新事件出现在二进制日志中，这些事件是由源上发生的新更新引起的。
+Sending binlog event to slave
+从 MySQL 8.0.26 开始： Sending binlog event to
+replica
+二进制日志由 events 组成，其中 event 通常是更新加上一些其他信息。该线程已从二进制日志中读取了一个事件，现在正在将其发送到副本。
+Waiting to finalize termination
+线程停止时出现的非常短暂的状态。

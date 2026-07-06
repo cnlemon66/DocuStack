@@ -1,0 +1,98 @@
+redis使用管道(Pipelining)提高查询速度
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* redis使用管道(Pipelining)提高查询速度
+* 请求/响应协议和RTT redis 管道(Pipelining)
+Redis是一种基于客户端-服务端模型以及请求/响应协议的TCP服务器。
+这意味着请求通常按如下步骤处理：
+客户端发送一个请求到服务器，并以阻塞的方式从socket读取数据，获取服务端响应
+。
+服务端处理请求命令并发送响应回给客户端。
+所以对于四个命令的处理流程如下：
+Client: INCR X
+Server: 1
+Client: INCR X
+Server: 2
+Client: INCR X
+Server: 3
+Client: INCR X
+Server: 4
+Clients 和 Servers 通过网络连接.
+可以是本地非常快的网络，或者是通过互联网连接很远的网络。不管网络延迟如何，数据包从客户端发给服务端，再从服务端返回给客户端都要花费一个时间。
+这个时间叫做 RTT (Round Trip Time往返时间).
+所以如果客户端需要连续发送多个请求的情况下，RTT对性能的影响是很严重的。例如在延迟很大的网络中RRT是250ms，即使服务端每秒能处理10万个请求，我们也只能每秒最多处理四个请求。
+如果使用本机网络，这个RTT回非常小，一般小于1ms，但是如果大量请求累加起来仍然会影响性能。
+一个好的办法就是使用管道
+* Redis Pipelining
+对于基于 Request/Response
+的服务器可以被实现成处理新的请求，即使客户端还没收到旧的响应。这样就可以同时发送多个命令给服务器而不用等待响应，最后统一读回多个返回。
+这种方式被叫做 pipelining,
+是一个广泛使用多年的技术，批量发送，批量返回。例如POP3协议也是这样，来加速从服务器上下载邮件。
+Redis 很早就开始支持 pipelining , 所以不管什么版本的Redis都能使用
+pipelining 命令。下面是使用netcat命令的例子:
+$ (printf "PING\r\nPING\r\nPING\r\n"; sleep 1) | nc localhost 6379
++PONG
++PONG
++PONG
+不再每个命令都花费一次RTT，只用了一个RTT就执行了所有命令。第一个例子修改如下:
+Client: INCR X
+Client: INCR X
+Client: INCR X
+Client: INCR X
+Server: 1
+Server: 2
+Server: 3
+Server: 4
+特别注意 : 当客户端使用管道
+pipelining发送命令时，服务器端需要消耗内存来存放响应，所以如果你需要发送大量的命令，最好分批发送，例如一次发送1万个，读取回报，再循环发剩余的命令。速度上几乎无差异，但是内存最大消耗1万个命令回复结果的内存。
+* 基准测试
+下面使用的是Redis Ruby客户端，来测试 pipelining 对速度的提升:
+require 'rubygems'
+require 'redis'
+
+def bench(descr)
+start = Time.now
+yield
+puts "#{descr} #{Time.now-start} seconds"
+end
+
+def without_pipelining
+r = Redis.new
+10000.times {
+r.ping
+}
+end
+
+def with_pipelining
+r = Redis.new
+r.pipelined {
+10000.times {
+r.ping
+}
+}
+end
+
+bench("without pipelining") {
+without_pipelining
+}
+bench("with pipelining") {
+with_pipelining
+}
+在mac上执行上面的脚本得到如下输出，因为是本机访问，提升并不明显，本机环境下RTT已经很小：
+不用pipelining 1.185238 seconds
+使用 pipelining 0.250783 seconds
+使用pipelining, 我们能大概提高5倍速度。
+* Pipelining VS Scripting
+通过使用 Redis scripting (2.6以后)
+，许多使用管道的场景可以更有效，脚本执行许多服务端需要的工作。 scripting
+的一个大的优势是它可以以最小的延迟同时读和写数据，使 read, compute,
+write 这些操作都非常快。
+(pipelining在这种场景没有效果，因为客户端需要得到返回之后才能继续写)
+有时应用程序想在pipeline中发送 EVAL 或 EVALSHA 命令。Redis使用 SCRIPT
+LOAD 命令支持
+(它确保 EVALSHA 能被调用而没有失败的风险)。

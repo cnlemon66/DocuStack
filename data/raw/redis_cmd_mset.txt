@@ -1,0 +1,80 @@
+Redis MSET 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis MSET 命令
+同时设置一个或多个 key-value 对。
+* 语法
+MSET key value [key value ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+value String 是 值（二进制安全）
+* 返回值
+条件 返回值
+总是 OK
+* 时间复杂度
+O(N)，N 为 key-value 对的数量。对单个是 O(1)。
+* 示例
+> MSET k1 v1 k2 v2 k3 v3
+OK
+
+> MGET k1 k2 k3
+1) "v1"
+2) "v2"
+3) "v3"
+
+# 覆盖已有 key
+> SET old "original"
+> MSET old "new" newkey "value"
+OK
+> GET old
+"new"
+* 常见错误
+参数不成对 ：key 和 value 必须成对出现，否则报错。
+* 最佳实践
+批量写入减少 RTT ：一次 MSET 100 对，大幅降低网络延迟。
+无原子性保证 ：MSET 对每个 key 是原子设置，但整体不是事务。需要事务用 MULTI/EXEC 或 Lua 脚本。
+无 TTL 设置 ：MSET 不支持 EX/PX，需要过期时间时用 MSETEX （Redis 不存在，需用 Lua 脚本或 Pipeline + SET EX）。
+* FAQ
+Q: MSET 和 Pipeline 多次 SET 有什么区别？ A: 类似 MGET vs Pipeline GET 。MSET 更简洁，一次命令完成。但 MSET 不支持带 TTL ，Pipeline SET EX 更灵活。
+Q: MSET 是原子操作吗？ A: 所有 key 的设置是依次执行的，中间不插入其他命令，但不是一个原子事务（失败不会回滚）。
+Q: 如何批量设置带 TTL ？ A: Redis 没有原生 MSETEX 。方案：1) Lua 脚本原子批量 SET + EXPIRE ；2) Pipeline 发送 SET key value EX 60 多个命令。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

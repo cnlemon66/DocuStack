@@ -1,0 +1,74 @@
+Redis SETNX 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SETNX 命令
+仅在 key 不存在时设置 key-value。若 key 存在则不执行任何操作。
+* 语法
+SETNX key value
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+value String 是 值
+* 返回值
+条件 返回值
+key 不存在，设置成功 1
+key 已存在，未设置 0
+* 时间复杂度
+O(1)
+*
+* 示例
+> SETNX lock:resource "owner1"
+(integer) 1
+
+> SETNX lock:resource "owner2"
+(integer) 0
+
+> GET lock:resource
+"owner1"
+* 常见错误
+无过期时间导致死锁 ：SETNX 成功但客户端崩溃未删除 key，锁永久持有。
+* 最佳实践
+分布式锁（老方案） ： SETNX lock EX 10 不可行（SETNX 不支持 EX）。正确做法是 SET key value NX EX seconds 。
+SETNX 已废弃 ：Redis 2.6.12+ 推荐用 SET key value NX EX 替代，原子性更好且支持 TTL 。
+* FAQ
+Q: SETNX 和 SET NX 有什么区别？ A: 效果相同。SETNX 是老命令，不支持 EX/PX。 SET key value NX EX 是推荐写法。
+Q: SETNX 可以设置过期时间吗？ A: 命令本身不支持。旧版方案是 SETNX + EXPIRE （非原子，可能死锁）。新版用 SET NX EX 。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

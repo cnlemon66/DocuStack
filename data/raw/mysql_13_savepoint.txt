@@ -1,0 +1,21 @@
+13.3.4 SAVEPOINT、ROLLBACK TO SAVEPOINT 和 RELEASE SAVEPOINT 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.3 事务和锁定语句 / 
+13.3.4 SAVEPOINT、ROLLBACK TO SAVEPOINT 和 RELEASE SAVEPOINT 语句
+13.3.4 SAVEPOINT、ROLLBACK TO SAVEPOINT 和 RELEASE SAVEPOINT 语句
+SAVEPOINT identifier ROLLBACK [WORK] TO [SAVEPOINT] identifier RELEASE SAVEPOINT identifier
+InnoDB 支持 SQL 语句 SAVEPOINT , ROLLBACK TO
+SAVEPOINT 和 RELEASE
+SAVEPOINT 可选 WORK 关键字 for ROLLBACK 。
+该 SAVEPOINT 语句设置一个名为 的命名事务保存点 identifier 。如果当前事务有一个同名的保存点，则删除旧的保存点并设置一个新的保存点。
+该 ROLLBACK TO
+SAVEPOINT 语句将事务回滚到指定的保存点而不终止事务。当前事务在设置保存点之后对行所做的修改在回滚中被撤消，但 不会 InnoDB 释放
+在保存点之后存储在内存中的行锁。（对于新插入的行，锁信息由该行存储的事务ID携带，锁不单独存储在内存中，此时在undo中释放行锁。）晚于指定保存点的时间将被删除。
+如果该 ROLLBACK TO
+SAVEPOINT 语句返回以下错误，则表示不存在具有指定名称的保存点：
+ERROR 1305 (42000): SAVEPOINT identifier does not exist
+该 RELEASE
+SAVEPOINT 语句从当前事务的保存点集中删除指定的保存点。没有提交或回滚发生。如果保存点不存在则报错。
+如果执行 COMMIT , 或未 ROLLBACK 命名保存点的操作，则当前事务的所有保存点都将被删除。
+当调用存储函数或激活触发器时，将创建一个新的保存点级别。先前级别上的保存点变得不可用，因此不会与新级别上的保存点冲突。当函数或触发器终止时，它创建的任何保存点都会被释放，并且会恢复之前的保存点级别。

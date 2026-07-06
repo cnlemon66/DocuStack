@@ -1,0 +1,77 @@
+Redis HDEL 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis HDEL 命令
+删除 Hash 中一个或多个 field。
+* 语法
+HDEL key field [field ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 Hash 的键名
+field String 是 要删除的字段名，可一次删除多个
+* 返回值
+条件 返回值
+成功删除的 field 数量 整数
+field 不存在 不计入
+key 不存在 0
+* 时间复杂度
+O(1)（单个 field），O(N)（N 个 field）
+* 示例
+> HSET user:1001 name Alice age 30 city Beijing
+(integer) 3
+
+> HDEL user:1001 age
+(integer) 1
+
+> HDEL user:1001 name city
+(integer) 2
+
+# field 不存在
+> HDEL user:1001 email
+(integer) 0
+
+# key 不存在
+> HDEL nokey field
+(integer) 0
+* 常见错误
+对非 Hash 使用 ：返回 WRONGTYPE。
+* 最佳实践
+清理过期字段 ：Hash 存储动态属性时，用 HDEL 清理已失效的 field。
+批量删除 ：一次 HDEL 多个 field，减少网络往返。
+* FAQ
+Q: HDEL 会删除 key 吗？ A: 当 Hash 最后一个 field 被删除后，key 自动删除。
+Q: HDEL 和 DEL 有什么区别？ A: HDEL 删除 Hash 中的 field； DEL 删除整个 key（包括所有 field）。
+相关命令
+HDEL
+HEXISTS
+HEXPIRE
+HEXPIREAT
+HEXPIRETIME
+HGET
+HGETALL
+HGETDEL
+HGETEX
+HINCRBY
+HINCRBYFLOAT
+HKEYS
+HLEN
+HMGET
+HMSET
+HPERSIST
+HPEXPIRE
+HPEXPIREAT
+HPEXPIRETIME
+HPTTL
+HRANDFIELD
+HSCAN
+HSET
+HSETEX
+HSETNX
+HSTRLEN
+HTTL
+HVALS

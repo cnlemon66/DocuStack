@@ -1,0 +1,155 @@
+13.1.19 CREATE SPATIAL REFERENCE SYSTEM 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.19 CREATE SPATIAL REFERENCE SYSTEM 语句
+13.1.19 CREATE SPATIAL REFERENCE SYSTEM 语句
+CREATE OR REPLACE SPATIAL REFERENCE SYSTEM srid srs_attribute ...
+
+CREATE SPATIAL REFERENCE SYSTEM
+[IF NOT EXISTS] srid srs_attribute ... srs_attribute : {
+NAME ' srs_name '
+| DEFINITION ' definition '
+| ORGANIZATION ' org_name ' IDENTIFIED BY org_id | DESCRIPTION ' description '
+} srid , org_id : 32-bit unsigned integer
+此语句创建 空间参考系统 (SRS) 定义并将其存储在数据字典中。它需要 SUPER 特权。可以使用该 INFORMATION_SCHEMA ST_SPATIAL_REFERENCE_SYSTEMS 表检查生成的数据字典条目。
+SRID 值必须是唯一的，因此如果既未指定 OR
+REPLACE 也未指定，并且具有给定值的 SRS 定义已经存在 IF NOT EXISTS ，则会发生错误
+。 srid
+使用 CREATE OR REPLACE 语法，任何具有相同 SRID 值的现有 SRS 定义都将被替换，除非 SRID 值被现有表中的某些列使用。在这种情况下，会发生错误。例如：
+mysql> CREATE OR REPLACE SPATIAL REFERENCE SYSTEM 4326 ...;
+ERROR 3716 (SR005): Can't modify SRID 4326. There is at
+least one column depending on it.
+要确定哪些列使用 SRID，请使用此查询，将 4326 替换为您尝试创建的定义的 SRID：
+SELECT * FROM INFORMATION_SCHEMA.ST_GEOMETRY_COLUMNS WHERE SRS_ID=4326;
+使用 CREATE ... IF NOT EXISTS 语法，任何具有相同 SRID 值的现有 SRS 定义都会导致忽略新定义并出现警告。
+SRID 值必须在 32 位无符号整数范围内，但有以下限制：
+SRID 0 是有效的 SRID，但不能与 一起使用 CREATE SPATIAL REFERENCE
+SYSTEM 。
+如果该值在保留的 SRID 范围内，则会出现警告。保留范围是 [0, 32767]（由 EPSG 保留），[60,000,000, 69,999,999]（由 EPSG 保留）和 [2,000,000,000, 2,147,483,647]（由 MySQL 保留）。EPSG 代表 欧洲石油调查组 。
+用户不应使用保留范围内的 SRID 创建 SRS。这样做会冒 SRID 与未来随 MySQL 分发的 SRS 定义发生冲突的风险，结果是不会为 MySQL 升级安装新的系统提供的 SRS，或者用户定义的 SRS 被覆盖。
+语句的属性必须满足以下条件：
+属性可以按任何顺序给出，但不能多次给出属性。
+NAME 和 DEFINITION 属性是必需的
+
+。
+NAME srs_name 属性值必须是唯一的
+。 ORGANIZATION org_name 和
+属性值的组合 org_id 必须是唯一的。
+NAME srs_name 属性值和 ORGANIZATION org_name 属性值不能为空，也不能以空格开头或结尾
+
+。
+属性规范中的字符串值不能包含控制字符，包括换行符。
+下表显示了字符串属性值的最大长度。
+表 13.6 创建空间参考系统属性长度
+属性 最大长度（字符）
+NAME 80
+DEFINITION 4096
+ORGANIZATION 256
+DESCRIPTION 2048
+这是一个示例 CREATE SPATIAL REFERENCE
+SYSTEM 语句。为了便于阅读，该 DEFINITION 值跨多行重新格式化。（为了使语句合法，值实际上必须在一行中给出。）
+CREATE SPATIAL REFERENCE SYSTEM 4120
+NAME 'Greek'
+ORGANIZATION 'EPSG' IDENTIFIED BY 4120
+DEFINITION
+'GEOGCS["Greek",DATUM["Greek",SPHEROID["Bessel 1841",
+6377397.155,299.1528128,AUTHORITY["EPSG","7004"]],
+AUTHORITY["EPSG","6120"]],PRIMEM["Greenwich",0,
+AUTHORITY["EPSG","8901"]],UNIT["degree",0.017453292519943278,
+AUTHORITY["EPSG","9122"]],AXIS["Lat",NORTH],AXIS["Lon",EAST],
+AUTHORITY["EPSG","4120"]]';
+SRS 定义的语法基于 OpenGIS 实施规范中定义的语法：坐标转换服务 ，修订版 1.00，OGC 01-009，2001 年 1 月 12 日，第 7.2 节。该规范可从 http://www.opengeospatial.org/standards/ct 获得。
+MySQL 将这些更改合并到规范中：
+仅实施 <horz cs> 生产规则（即地理和预计的 S​​RS）。
+有一个可选的非标准 <authority> 子句 <parameter> 。这使得可以通过权限而不是名称来识别投影参数。
+该规范没有使空间参考系统定义 AXIS 中的条款成为强制性条款。 GEOGCS 但是，如果没有 AXIS 子句，MySQL 无法确定定义中的轴是经纬度顺序还是经纬度顺序。 GEOGCS MySQL 强制执行每个定义必须包含两个 AXIS 子句的非标准要求。一个必须是 NORTH or SOUTH ，另一个 EAST or WEST 。 AXIS 子句顺序确定定义中的轴是按纬度-经度顺序还是经度-纬度顺序
+。
+SRS 定义可能不包含换行符。
+如果 SRS 定义为投影指定了权限代码（推荐），如果定义缺少强制参数，则会发生错误。在这种情况下，错误消息会指出问题所在。MySQL 支持的投影方法和强制参数显示在 表 13.7，“支持的空间参考系统投影方法” 和 表 13.8，“空间参考系统投影参数” 。
+有关为 MySQL 编写 SRS 定义的其他信息，请参阅 MySQL 8.0 中的地理空间参考系统和 MySQL 8.0 中 的 投影空间参考系统
+下表显示了 MySQL 支持的投影方法。MySQL 允许未知投影方法，但无法检查强制参数的定义，也无法将空间数据与未知投影相互转换。有关每个预测如何工作的详细说明，包括公式，请参阅 EPSG 指导说明 7-2 。
+表 13.7 支持的空间参考系统投影方法
+EPSG代码 投影名称 强制参数（EPSG 代码）
+1024 流行的可视化伪墨卡托 8801, 8802, 8806, 8807
+1027 朗伯方位角等面积（球面） 8801, 8802, 8806, 8807
+1028 等距圆柱 8823, 8802, 8806, 8807
+1029 等距圆柱（球形） 8823, 8802, 8806, 8807
+1041 Krovak（北向） 8811, 8833, 1036, 8818, 8819, 8806, 8807
+1042 克罗瓦克改良型 8811, 8833, 1036, 8818, 8819, 8806, 8807, 8617, 8618, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035
+1043 Krovak 改进型（北向） 8811, 8833, 1036, 8818, 8819, 8806, 8807, 8617, 8618, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035
+1051 Lambert Conic Conformal (2SP 密歇根) 8821, 8822, 8823, 8824, 8826, 8827, 1038
+1052 哥伦比亚城市 8801, 8802, 8806, 8807, 1039
+9801 兰伯特圆锥形 (1SP) 8801, 8802, 8805, 8806, 8807
+9802 兰伯特圆锥形 (2SP) 8821, 8822, 8823, 8824, 8826, 8827
+9803 Lambert Conic Conformal (2SP 比利时) 8821, 8822, 8823, 8824, 8826, 8827
+9804 墨卡托（变体 A） 8801, 8802, 8805, 8806, 8807
+9805 墨卡托（变体 B） 8823, 8802, 8806, 8807
+9806 卡西尼-索尔纳 8801, 8802, 8806, 8807
+9807 横轴墨卡托 8801, 8802, 8805, 8806, 8807
+9808 横向墨卡托（南向） 8801, 8802, 8805, 8806, 8807
+9809 斜立体 8801, 8802, 8805, 8806, 8807
+9810 极地立体摄影（变体 A） 8801, 8802, 8805, 8806, 8807
+9811 新西兰地图网格 8801, 8802, 8806, 8807
+9812 Hotine Oblique Mercator（变体 A） 8811, 8812, 8813, 8814, 8815, 8806, 8807
+9813 拉伯德斜轴墨卡托 8811, 8812, 8813, 8815, 8806, 8807
+9815 Hotine Oblique Mercator（变体 B） 8811, 8812, 8813, 8814, 8815, 8816, 8817
+9816 突尼斯矿业网 8821, 8822, 8826, 8827
+9817 兰伯特圆锥近保形 8801, 8802, 8805, 8806, 8807
+9818 美国多锥形 8801, 8802, 8806, 8807
+9819 克罗瓦克 8811, 8833, 1036, 8818, 8819, 8806, 8807
+9820 朗伯方位角等积 8801, 8802, 8806, 8807
+9822 阿尔伯斯等积 8821, 8822, 8823, 8824, 8826, 8827
+9824 横向墨卡托分区网格系统 8801, 8830, 8831, 8805, 8806, 8807
+9826 Lambert Conic Conformal（西向） 8801, 8802, 8805, 8806, 8807
+9828 Bonne（朝南） 8801, 8802, 8806, 8807
+9829 极地立体摄影（变体 B） 8832, 8833, 8806, 8807
+9830 极地立体摄影（变体 C） 8832, 8833, 8826, 8827
+9831 关岛投影 8801, 8802, 8806, 8807
+9832 修正等距方位角 8801, 8802, 8806, 8807
+9833 双曲卡西尼-索尔德纳 8801, 8802, 8806, 8807
+9834 朗伯等积圆柱（球形） 8823, 8802, 8806, 8807
+9835 兰伯等积圆柱 8823, 8802, 8806, 8807
+下表显示了 MySQL 识别的投影参数。识别主要通过权限代码发生。如果没有权限代码，MySQL 将回退到参数名称上的不区分大小写的字符串匹配。 关于每个参数的详细信息，请在EPSG Online Registry 中按代码查找
+。
+表 13.8 空间参考系统投影参数
+EPSG代码 回退名称（MySQL 识别） EPSG名称
+1026 c1 C1
+1027 c2 C2
+1028 c3 C3
+1029 c4 C4
+1030 c5 C5
+1031 c6 C6
+1032 c7 C7
+1033 c8 C8
+1034 c9 C9
+1035 c10 C10
+1036 方位角 锥轴余纬
+1038 ellipsoid_scale_factor 椭球比例因子
+1039 projection_plane_height_at_origin 投影平面原点高度
+8617 evaluation_point_ordinate_1 评价点纵坐标1
+8618 evaluation_point_ordinate_2 评价点纵坐标2
+8801 纬度_of_origin 自然起源的纬度
+8802 中央子午线 自然原点经度
+8805 比例因子 自然起源的比例因子
+8806 false_easting 东假
+8807 false_northing 北偏
+8811 中心纬度 投影中心纬度
+8812 longitude_of_center 投影中心经度
+8813 方位角 初始线的方位角
+8814 rectified_grid_angle 从整流到倾斜网格的角度
+8815 比例因子 初始线的比例因子
+8816 false_easting 投影中心东移
+8817 false_northing 投影中心向北
+8818 pseudo_standard_parallel_1 伪标准纬度
+8819 比例因子 伪标准平行的比例因子
+8821 纬度_of_origin 假产地纬度
+8822 中央子午线 伪经度
+8823 standard_parallel_1, standard_parallel1 第一标准纬度的纬度
+8824 标准_parallel_2，标准_parallel2 第二标准纬度
+8826 false_easting 东移在错误的起源
+8827 false_northing 以错误的原点北移
+8830 初始_经度 初始经度
+8831 zone_width 区域宽度
+8832 标准_平行 标准纬度
+8833 longitude_of_center 起点经度

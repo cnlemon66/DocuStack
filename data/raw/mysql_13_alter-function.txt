@@ -1,0 +1,17 @@
+13.1.4 ALTER FUNCTION 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.4 ALTER FUNCTION 语句
+13.1.4 ALTER FUNCTION 语句
+ALTER FUNCTION func_name [ characteristic ...] characteristic : {
+COMMENT ' string '
+| LANGUAGE SQL
+| { CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }
+| SQL SECURITY { DEFINER | INVOKER }
+}
+此语句可用于更改存储函数的特性。 ALTER FUNCTION 一个语句中可以指定多个更改
+。但是，您不能使用此语句更改存储函数的参数或主体； DROP
+FUNCTION 要进行此类更改，您必须删除并使用和重新创建函数 CREATE
+FUNCTION 。
+您必须拥有该 ALTER ROUTINE 功能的权限。（该权限自动授予函数创建者。）如果启用了二进制日志记录，则该 ALTER FUNCTION 语句可能还需要该 SUPER 权限，如 第 25.7 节“存储程序二进制日志记录” 中所述。

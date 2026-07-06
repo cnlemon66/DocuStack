@@ -1,0 +1,82 @@
+Redis TTL 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis TTL 命令
+返回 key 剩余的生存时间（秒）。
+* 语法
+TTL key
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+* 返回值
+条件 返回值
+key 存在且有 TTL 剩余秒数
+key 存在但无 TTL -1
+key 不存在 -2
+* 时间复杂度
+O(1)
+*
+* 示例
+> SET mykey hello EX 100
+OK
+> TTL mykey
+(integer) 97
+
+# 永不过期
+> SET permkey value
+> TTL permkey
+(integer) -1
+
+# 不存在
+> TTL nokey
+(integer) -2
+* 常见错误
+混淆 -1 和 -2 ：-1 表示 key 存在但无 TTL；-2 表示 key 不存在。
+过期精度 ：TTL 返回的是秒，实际过期可能存在秒级误差。
+* 最佳实践
+缓存诊断 ：用 TTL 检查缓存是否设置了合理的过期时间。
+会话续期 ：TTL < 阈值时重新 EXPIRE ，实现会话保持。
+需要毫秒精度 ：使用 PTTL key 返回毫秒级剩余时间。
+* FAQ
+Q: TTL 返回负数是什么意思？ A: -1 = key 存在但无过期时间；-2 = key 不存在。
+Q: TTL 和 PTTL 有什么区别？ A: TTL 返回秒， PTTL 返回毫秒。精度要求高时用 PTTL 。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

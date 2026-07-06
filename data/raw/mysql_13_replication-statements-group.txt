@@ -1,0 +1,8 @@
+13.4.3 控制组复制的SQL语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.4 复制语句 / 
+13.4.3 控制组复制的SQL语句
+13.4.3 控制组复制的SQL语句
+13.4.3.1 START GROUP_REPLICATION 语句 13.4.3.2 STOP GROUP_REPLICATION 语句 13.4.3.3 配置Group Replication Primary的函数 13.4.3.4 配置组复制模式的函数 13.4.3.5 检查和配置组的最大共识实例的功能 13.4.3.6 组复制通信协议版本检查和设置函数 13.4.3.7 设置和重置组复制成员操作的函数
+本节提供有关用于控制组复制的语句的信息。

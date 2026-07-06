@@ -1,0 +1,9 @@
+13.1.14 CREATE FUNCTION 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.14 CREATE FUNCTION 语句
+13.1.14 CREATE FUNCTION 语句
+该 CREATE FUNCTION 语句用于创建存储函数和可加载函数：
+有关创建存储函数的信息，请参阅 第 13.1.17 节，“CREATE PROCEDURE 和 CREATE FUNCTION 语句” 。
+有关创建可加载函数的信息，请参阅 第 13.7.4.1 节，“为可加载函数创建函数语句” 。

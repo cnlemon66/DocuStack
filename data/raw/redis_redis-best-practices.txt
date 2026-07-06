@@ -1,0 +1,139 @@
+Redis 最佳实践
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis 最佳实践
+* 概述
+本文档总结 Redis 在实际项目中的最佳实践，帮助开发者避免常见问题，提高系统稳定性和性能。
+* 键设计规范
+* 1. 命名规范
+使用冒号分隔的层级命名，便于管理和查询：
+# 用户相关
+user:1000:profile
+user:1000:settings
+user:1000:session
+
+# 订单相关
+order:2024:10001
+order:2024:10002
+* 2. 设置过期时间
+为临时数据设置合理的过期时间：
+SET session:abc123 "user_data" EX 3600
+SET cache:product:1001 "product_data" EX 300
+* 3. 避免大键
+单个键值不宜过大，建议：
+String 类型值不超过 10KB
+Hash、List、Set、ZSet 元素数量不超过 5000
+* 数据类型选择
+* 1. 字符串（String）
+适用场景：
+缓存对象
+计数器
+分布式锁
+Session 存储
+SET page:view:1001 100
+INCR page:view:1001
+SETNX lock:resource:1001 "owner_id" EX 30
+* 2. 哈希（Hash）
+适用场景：
+存储对象属性
+购物车数据
+用户信息
+HSET cart:user:1001 product:2001 2
+HGETALL cart:user:1001
+* 3. 列表（List）
+适用场景：
+消息队列
+时间线
+最新 N 条数据
+LPUSH timeline:user:1001 "post:5001"
+LRANGE timeline:user:1001 0 9
+* 4. 集合（Set）
+适用场景：
+标签系统
+共同好友
+去重统计
+SADD tags:post:1001 "redis"
+SADD tags:post:1001 "database"
+SINTER tags:post:1001 tags:post:1002
+* 5. 有序集合（Sorted Set）
+适用场景：
+排行榜
+延迟队列
+范围查询
+ZADD leaderboard 1000 "user:1001"
+ZADD leaderboard 950 "user:1002"
+ZREVRANGE leaderboard 0 9 WITHSCORES
+* 安全实践
+* 1. 设置密码
+requirepass your_strong_password
+* 2. 绑定指定 IP
+bind 127.0.0.1 192.168.1.100
+* 3. 禁用危险命令
+rename-command FLUSHALL ""
+rename-command FLUSHDB ""
+rename-command CONFIG "config_b9f2a3"
+* 4. 使用 ACL（Redis 6.0+）
+ACL SETUSER app_user on >app_password ~app:* +get +set +del
+* 高可用实践
+* 1. 主从复制配置
+# 从节点
+replicaof 192.168.1.100 6379
+masterauth your_password
+* 2. 哨兵配置
+sentinel monitor mymaster 192.168.1.100 6379 2
+sentinel down-after-milliseconds mymaster 5000
+sentinel failover-timeout mymaster 10000
+* 3. 集群配置
+cluster-enabled yes
+cluster-config-file nodes-6379.conf
+cluster-node-timeout 5000
+cluster-require-full-coverage no
+* 缓存设计模式
+* 1. 缓存穿透防护
+使用布隆过滤器或空值缓存：
+# 空值缓存
+if not data:
+redis.set(f"null:{key}", "1", ex=60)
+* 2. 缓存击穿防护
+使用互斥锁或热点数据永不过期：
+# 互斥锁
+if not redis.setnx(f"lock:{key}", "1", ex=10):
+return cache_data
+* 3. 缓存雪崩防护
+设置随机过期时间：
+import random
+expire_time = 300 + random.randint(0, 60)
+redis.set(key, value, ex=expire_time)
+* 监控告警
+* 1. 关键指标监控
+内存使用率
+连接数
+命令执行时间
+命中率
+复制延迟
+* 2. 告警阈值设置
+# 内存使用率超过 80%
+# 连接数超过 10000
+# 慢查询超过 10ms
+# 复制延迟超过 1 秒
+* 常见问题
+* 1. 内存不足
+检查是否有大键
+调整 maxmemory-policy
+增加物理内存或使用集群
+* 2. 连接数过多
+使用连接池
+调整 timeout 配置
+检查是否有连接泄漏
+* 3. 性能下降
+检查慢查询日志
+分析命令使用模式
+考虑使用 Pipeline
+* 总结
+遵循以上最佳实践，可以帮助您构建稳定、高效、安全的 Redis 应用。建议定期审查配置和使用模式，持续优化系统性能。
+Redis配置详解 Redis性能优化

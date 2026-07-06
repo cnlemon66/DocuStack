@@ -1,0 +1,117 @@
+15.8.11 配置索引页的合并阈值_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.11 配置索引页的合并阈值
+15.8.11 配置索引页的合并阈值
+您可以配置 MERGE_THRESHOLD 索引页的值。如果索引页的 “ page-full ” 百分比在删除行或通过操作 MERGE_THRESHOLD 缩短行时
+低于该值，则尝试将索引页与相邻索引页合并。默认
+值为 50，这是以前硬编码的值。最小值
+为 1，最大值为 50。 UPDATE InnoDB MERGE_THRESHOLD MERGE_THRESHOLD
+当索引页面的 “ page-full ” 百分比低于 50%（默认 MERGE_THRESHOLD 设置）时， InnoDB 会尝试将索引页面与相邻页面合并。如果两个页面都接近 50% 满，则页面拆分可能会在页面合并后很快发生。如果这种合并-拆分行为频繁发生，可能会对性能产生不利影响。为避免频繁的合并拆分，您可以降低该 MERGE_THRESHOLD 值，以便 InnoDB 尝试以较低的 “ 页面已满 ” 百分比合并页面。以较低的页面填充百分比合并页面会在索引页面中留出更多空间，并有助于减少合并拆分行为。
+MERGE_THRESHOLD 可以为表或单个索引定义索引页
+。为单个索引定义的
+值 MERGE_THRESHOLD 优先于 MERGE_THRESHOLD 为表定义的值。如果未定义，则该 MERGE_THRESHOLD 值默认为 50。
+为表设置 MERGE_THRESHOLD
+您可以使用语句的子句
+设置 MERGE_THRESHOLD 表的值。例如： table_option COMMENT CREATE TABLE
+CREATE TABLE t1 (
+id INT,
+KEY id_index (id)
+) COMMENT='MERGE_THRESHOLD=45';
+您还可以使用
+子句 with MERGE_THRESHOLD 为现有表设置值
+： table_option COMMENT ALTER TABLE
+CREATE TABLE t1 (
+id INT,
+KEY id_index (id)
+);
+
+ALTER TABLE t1 COMMENT='MERGE_THRESHOLD=40';
+为单个索引设置 MERGE_THRESHOLD
+要设置 MERGE_THRESHOLD 单个索引的值，您可以使用
+带有、
+或
+的
+子句，如以下示例所示： index_option COMMENT CREATE TABLE ALTER TABLE CREATE INDEX
+使用以下方法设置 MERGE_THRESHOLD 单个索引 CREATE TABLE ：
+CREATE TABLE t1 (
+id INT,
+KEY id_index (id) COMMENT 'MERGE_THRESHOLD=40'
+);
+使用以下方法设置 MERGE_THRESHOLD 单个索引 ALTER TABLE ：
+CREATE TABLE t1 (
+id INT,
+KEY id_index (id)
+);
+
+ALTER TABLE t1 DROP KEY id_index;
+ALTER TABLE t1 ADD KEY id_index (id) COMMENT 'MERGE_THRESHOLD=40';
+使用以下方法设置 MERGE_THRESHOLD 单个索引 CREATE INDEX ：
+CREATE TABLE t1 (id INT);
+CREATE INDEX id_index ON t1 (id) COMMENT 'MERGE_THRESHOLD=40';
+笔记
+您不能修改 MERGE_THRESHOLD 索引级别的值，它是在没有主键或唯一键索引的情况下创建表时 GEN_CLUST_INDEX 创建的聚集索引。您只能
+通过表的设置
+来修改值
+。 InnoDB InnoDB MERGE_THRESHOLD GEN_CLUST_INDEX MERGE_THRESHOLD
+查询索引的 MERGE_THRESHOLD 值
+索引的当前 MERGE_THRESHOLD 值可以通过查询 INNODB_INDEXES 表来获得。例如：
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_INDEXES WHERE NAME='id_index' \G
+*************************** 1. row ***************************
+INDEX_ID: 91
+NAME: id_index
+TABLE_ID: 68
+TYPE: 0
+N_FIELDS: 1
+PAGE_NO: 4
+SPACE: 57
+MERGE_THRESHOLD: 40
+如果使用子句
+明确定义，
+
+您可以使用 SHOW CREATE TABLE 查看表的值： MERGE_THRESHOLD table_option COMMENT
+mysql> SHOW CREATE TABLE t2 \G
+*************************** 1. row ***************************
+Table: t2
+Create Table: CREATE TABLE `t2` (
+`id` int(11) DEFAULT NULL,
+KEY `id_index` (`id`) COMMENT 'MERGE_THRESHOLD=40'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+笔记
+在索引级别定义的值 MERGE_THRESHOLD 优先于 MERGE_THRESHOLD 为表定义的值。如果未定义，
+则 MERGE_THRESHOLD 默认为 50% ( MERGE_THRESHOLD=50 ，这是之前硬编码的值。
+同样，如果使用子句
+明确定义
+
+，您可以使用 SHOW INDEX 查看索引的值： MERGE_THRESHOLD index_option COMMENT
+mysql> SHOW INDEX FROM t2 \G
+*************************** 1. row ***************************
+Table: t2
+Non_unique: 1
+Key_name: id_index
+Seq_in_index: 1
+Column_name: id
+Collation: A
+Cardinality: 0
+Sub_part: NULL
+Packed: NULL
+Null: YES
+Index_type: BTREE
+Comment:
+Index_comment: MERGE_THRESHOLD=40
+测量 MERGE_THRESHOLD 设置的效果
+该 INNODB_METRICS 表提供了两个计数器，可用于衡量 MERGE_THRESHOLD 设置对索引页面合并的影响。
+mysql> SELECT NAME, COMMENT FROM INFORMATION_SCHEMA.INNODB_METRICS
+WHERE NAME like '%index_page_merge%';
++-----------------------------+----------------------------------------+
+| NAME | COMMENT |
++-----------------------------+----------------------------------------+
+| index_page_merge_attempts | Number of index page merge attempts |
+| index_page_merge_successful | Number of successful index page merges |
++-----------------------------+----------------------------------------+
+降低 MERGE_THRESHOLD 价值时，目标是：
+更少的页面合并尝试和成功的页面合并
+相似数量的页面合并尝试和成功的页面合并
+由于过多的 MERGE_THRESHOLD 空白页面空间，设置太小可能会导致数据文件很大。
+有关使用 INNODB_METRICS 计数器的信息，请参阅 第 15.15.6 节，“InnoDB INFORMATION_SCHEMA 指标表” 。

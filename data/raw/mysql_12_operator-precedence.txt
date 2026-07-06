@@ -1,0 +1,37 @@
+12.4.1 运算符优先级_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.4 运营商 / 
+12.4.1 运算符优先级
+12.4.1 运算符优先级
+运算符优先级如下表所示，从最高优先级到最低优先级。一起显示在一行上的运算符具有相同的优先级。
+INTERVAL
+BINARY, COLLATE
+!
+- (unary minus), ~ (unary bit inversion)
+^
+*, /, DIV, %, MOD
+-, +
+<<, >>
+&
+|
+= (comparison), <=>, >=, >, <=, <, <>, !=, IS, LIKE, REGEXP, IN, MEMBER OF
+BETWEEN, CASE, WHEN, THEN, ELSE
+NOT
+AND, &&
+XOR
+OR, ||
+= (assignment), :=
+的优先级 = 取决于它是用作比较运算符 ( = ) 还是用作赋值运算符 ( = )。当用作比较运算符时，它与 <=> , >= , > , <= , < , <> , != , IS , LIKE , REGEXP , 和
+具有相同的优先级 IN() 。当用作赋值运算符时，它的优先级与 := . 第 13.7.6.1 节，“SET Syntax for Variable Assignment” 和 第 9.4 节，“User-Defined Variables” ，解释了 MySQL 如何确定对 = 应该适用。
+对于在表达式中以相同优先级出现的运算符，求值从左到右进行，但赋值从右到左求值除外。
+某些运算符的优先级和含义取决于 SQL 模式：
+默认情况下， || 是逻辑 OR 运算符。 PIPES_AS_CONCAT 启用后， || 是字符串连接，优先级介于
+和 ^ 一元运算符之间。
+默认情况下， ! 优先级高于 NOT . 与 HIGH_NOT_PRECEDENCE enabled， ! 具有 NOT 相同的优先级。
+请参阅 第 5.1.11 节，“服务器 SQL 模式” 。
+运算符的优先级决定表达式中项的求值顺序。要显式覆盖此顺序和组术语，请使用括号。例如：
+mysql> SELECT 1+2*3;
+-> 7
+mysql> SELECT (1+2)*3;
+-> 9

@@ -1,0 +1,81 @@
+Redis MGET 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis MGET 命令
+返回所有（一个或多个）给定 key 的 value。
+* 语法
+MGET key [key ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 至少一个键名
+* 返回值
+条件 返回值
+key 存在且为 String 返回 value
+key 不存在 返回 nil
+key 存在但非 String 返回 nil（不报错）
+* 时间复杂度
+O(N)，N 为 key 的数量。对单个 key 是 O(1)。
+* 示例
+> SET k1 v1
+> SET k2 v2
+> SET k3 v3
+
+> MGET k1 k2 k3
+1) "v1"
+2) "v2"
+3) "v3"
+
+# 包含不存在的 key
+> MGET k1 nokey k2
+1) "v1"
+2) (nil)
+3) "v2"
+* 常见错误
+对非 String key 返回 nil ：不会报错，但返回 nil。若需类型检查，先用 TYPE 。
+* 最佳实践
+批量读取减少 RTT ：一次 MGET 100 个 key，网络往返从 100 次降为 1 次，延迟降低 99%。
+缓存穿透防护 ：MGET 返回的 nil 表示 key 不存在，业务层可填充默认值或回源数据库。
+Pipeline 替代 ：key 数量极大（>1000）时，用 Pipeline 分多个 MGET 批量请求，避免单次命令过大。
+* FAQ
+Q: MGET 和 Pipeline 多次 GET 有什么区别？ A: 两者都减少 RTT，但 MGET 是原子一次请求，服务端并行读取；Pipeline 是批量发送多个独立命令。性能接近，MGET 更简洁。
+Q: MGET 对不存在 key 为什么不报错？ A: 设计如此，方便批量读取时区分存在和不存在。返回值顺序与请求 key 顺序一致。
+Q: MGET 有数量限制吗？ A: 没有硬性限制，但一次请求过大可能阻塞 Redis 或触发客户端缓冲区限制。建议单次 100-1000 个 key。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

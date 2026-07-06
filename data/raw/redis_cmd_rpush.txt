@@ -1,0 +1,65 @@
+Redis RPUSH 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis RPUSH 命令
+在 List 尾部（右侧）插入一个或多个元素。
+* 语法
+RPUSH key element [element ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 List 的键名
+element String 是 插入的元素，可一次插入多个
+* 返回值
+条件 返回值
+插入成功 返回插入后 List 的长度
+key 非 List 类型 WRONGTYPE 错误
+* 时间复杂度
+O(1)（单个元素），O(N)（N 个元素）
+* 示例
+> RPUSH queue job1
+(integer) 1
+> RPUSH queue job2 job3
+(integer) 3
+
+> LRANGE queue 0 -1
+1) "job1"
+2) "job2"
+3) "job3"
+* 常见错误
+对非 List 使用 ：返回 WRONGTYPE。
+* 最佳实践
+FIFO 队列 ：RPUSH 生产， LPOP 消费，实现先进先出队列。
+批量插入 ：一次 RPUSH 多个元素，减少 RTT。
+控制长度 ：配合 LTRIM key -N -1 保留最近 N 个元素，防止无限增长。
+* FAQ
+Q: RPUSH 和 LPUSH 有什么区别？ A: RPUSH 在尾部（右侧）插入， LPUSH 在头部（左侧）插入。两者配合不同弹出命令实现 FIFO 或 LIFO。
+Q: RPUSH 到不存在的 key？ A: 自动创建空 List 再插入。
+Q: 如何实现固定长度队列？ A: RPUSH + LTRIM key -1000 -1 保留最近 1000 条。
+相关命令
+BLMOVE
+BLMPOP
+BLPOP
+BRPOP
+BRPOPLPUSH
+LINDEX
+LINSERT
+LLEN
+LMOVE
+LMPOP
+LPOP
+LPOS
+LPUSH
+LPUSHX
+LRANGE
+LREM
+LSET
+LTRIM
+RPOP
+RPOPLPUSH
+RPUSH
+RPUSHX

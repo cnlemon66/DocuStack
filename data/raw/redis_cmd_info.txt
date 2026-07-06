@@ -1,0 +1,164 @@
+Redis INFO 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis INFO 命令
+INFO 返回 Redis 服务器的各种信息和统计数值，包括服务器状态、客户端连接、内存使用、持久化、统计、复制、CPU、集群、模块等详细信息。
+* 语法
+INFO [section]
+* 参数说明
+参数 类型 必填 说明
+section String 否 指定返回的信息段，省略时返回所有段
+常见 section 名称：
+server ：服务器基本信息（版本、进程 ID、运行模式等）
+clients ：客户端连接信息
+memory ：内存使用详情
+persistence ：RDB / AOF 持久化状态
+stats ：通用统计数据（命令处理量、命中/未命中率等）
+replication ：主从复制信息
+cpu ：CPU 使用情况
+commandstats ：命令统计（调用次数、耗时）
+cluster ：集群状态
+keyspace ：数据库键空间统计（键数、过期键数、平均 TTL）
+all ：所有段（等同于省略参数）
+default ：默认段集合（不包括 commandstats 和 keyspace 等敏感段）
+* 返回值
+String ：Bulk string，每行格式为 # Section\r\nkey:value\r\n ，以 RESP 协议格式返回
+* 时间复杂度
+O(1)
+*
+* 示例
+* 获取全部信息
+> INFO
+# Server
+redis_version:7.2.0
+redis_git_sha1:00000000
+redis_git_dirty:0
+redis_build_id:abc123
+redis_mode:standalone
+os:Linux 5.15.0
+arch_bits:64
+...
+* 获取内存信息
+> INFO memory
+# Memory
+used_memory:1048576
+used_memory_human:1.00M
+used_memory_rss:2097152
+used_memory_rss_human:2.00M
+used_memory_peak:1572864
+used_memory_peak_human:1.50M
+used_memory_overhead:815760
+used_memory_startup:810168
+used_memory_dataset:232816
+used_memory_dataset_perc:97.92%
+maxmemory:0
+maxmemory_policy:noeviction
+mem_fragmentation_ratio:2.00
+mem_allocator:jemalloc-5.2.1
+* 获取键空间信息
+> INFO keyspace
+# Keyspace
+db0:keys=10000,expires=5000,avg_ttl=3600000
+db1:keys=500,expires=100,avg_ttl=7200000
+* 常见错误
+错误 原因 解决
+（本命令无常见报错，section 名称无效时返回空字符串或默认信息）
+* 最佳实践
+监控脚本建议只拉取需要的 section（如 INFO memory 、 INFO replication ），减少网络传输和解析开销
+INFO stats 中的 keyspace_hits / keyspace_misses 可计算缓存命中率： hit_rate = hits / (hits + misses)
+INFO memory 中的 mem_fragmentation_ratio > 1.5 时，建议重启或开启内存碎片整理（ activedefrag yes ）
+INFO commandstats 是排查性能瓶颈的利器，可查看各命令的累计调用次数和平均耗时
+* FAQ
+Q1: INFO 输出中 used memory 和 used memory_rss 有什么区别？ A: used_memory 是 Redis 自身统计的逻辑内存使用量； used_memory_rss 是操作系统视角的实际物理内存占用（包含内存碎片、共享库等）。两者的比值即为 mem_fragmentation_ratio 。
+Q2: INFO 命令会阻塞 Redis 吗？ A: 不会。INFO 是 O(1) 的快速命令，但返回的数据量较大时可能占用带宽。生产环境高频调用建议限制 section。
+Q3: 如何监控 Redis 的缓存命中率？ A: 通过 INFO stats 获取 keyspace_hits 和 keyspace_misses ，计算公式： 命中率 = hits / (hits + misses) 。建议命中率保持在 85% 以上，低于此值应检查 key 设计和缓存策略。
+相关命令
+ACL
+ACL CAT
+ACL DELUSER
+ACL DRYRUN
+ACL GENPASS
+ACL GETUSER
+ACL HELP
+ACL LIST
+ACL LOAD
+ACL LOG
+ACL SAVE
+ACL SETUSER
+ACL USERS
+ACL WHOAMI
+BGREWRITEAOF
+BGSAVE
+COMMAND
+COMMAND COUNT
+COMMAND DOCS
+COMMAND GETKEYS
+COMMAND GETKEYSANDFLAGS
+COMMAND HELP
+COMMAND INFO
+COMMAND LIST
+CONFIG
+CONFIG GET
+CONFIG HELP
+CONFIG RESETSTAT
+CONFIG REWRITE
+CONFIG SET
+DBSIZE
+DEBUG
+DEBUG OBJECT
+DEBUG SEGFAULT
+FAILOVER
+FLUSHALL
+FLUSHDB
+HOTKEYS
+HOTKEYS GET
+HOTKEYS HELP
+HOTKEYS RESET
+HOTKEYS START
+HOTKEYS STOP
+INFO
+LASTSAVE
+LATENCY
+LATENCY DOCTOR
+LATENCY GRAPH
+LATENCY HELP
+LATENCY HISTOGRAM
+LATENCY HISTORY
+LATENCY LATEST
+LATENCY RESET
+LOLWUT
+MEMORY
+MEMORY DOCTOR
+MEMORY HELP
+MEMORY MALLOC-STATS
+MEMORY PURGE
+MEMORY STATS
+MEMORY USAGE
+MODULE
+MODULE HELP
+MODULE LIST
+MODULE LOAD
+MODULE LOADEX
+MODULE UNLOAD
+MONITOR
+PSYNC
+REPLCONF
+REPLICAOF
+RESTORE-ASKING
+ROLE
+SAVE
+SHUTDOWN
+SLAVEOF
+SLOWLOG
+SLOWLOG GET
+SLOWLOG HELP
+SLOWLOG LEN
+SLOWLOG RESET
+SWAPDB
+SYNC
+TIME

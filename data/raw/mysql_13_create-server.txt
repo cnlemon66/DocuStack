@@ -1,0 +1,31 @@
+13.1.18 CREATE SERVER 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.18 CREATE SERVER 语句
+13.1.18 CREATE SERVER 语句
+CREATE SERVER server_name FOREIGN DATA WRAPPER wrapper_name OPTIONS ( option [, option ] ...) option : {
+HOST character-literal | DATABASE character-literal | USER character-literal | PASSWORD character-literal | SOCKET character-literal | OWNER character-literal | PORT numeric-literal }
+此语句创建用于 FEDERATED 存储引擎的服务器定义。该语句在
+数据库的表中 CREATE
+SERVER 创建一个新行
+。此语句需要
+权限。 servers mysql SUPER
+server_name 应该是对服务器的唯一引用
+。服务器定义在服务器范围内是全局的，不可能将服务器定义限定为特定数据库。 server_name 最大长度为 64 个字符（超过 64 个字符的名称将被自动截断），并且不区分大小写。您可以将名称指定为带引号的字符串。
+The wrapper_name 是一个标识符，可以用单引号引起来。
+对于每个 option ，您必须指定字符文字或数字文字。字符文字是 UTF-8，支持最大长度为 64 个字符，默认为空白（空）字符串。字符串文字被静默截断为 64 个字符。数字文字必须是 0 到 9999 之间的数字，默认值为 0。
+笔记
+该 OWNER 选项当前未应用，并且对创建的服务器连接的所有权或操作没有影响。
+该 CREATE SERVER 语句在表中创建一个条目， mysql.servers 稍后可以 CREATE TABLE 在创建 FEDERATED 表时与该语句一起使用。您指定的选项用于填充表中的列 mysql.servers 。表格
+列为 Server_name 、 Host 、 Db 、 Username 、 Password 和。 Port Socket
+例如：
+CREATE SERVER s
+FOREIGN DATA WRAPPER mysql
+OPTIONS (USER 'Remote', HOST '198.51.100.106', DATABASE 'test');
+请务必指定与服务器建立连接所需的所有选项。用户名、主机名和数据库名是必需的。可能还需要其他选项，例如密码。
+创建与表的连接时，可以使用存储在表中的数据 FEDERATED ：
+CREATE TABLE t (s1 INT) ENGINE=FEDERATED CONNECTION='s';
+有关详细信息，请参阅 第 16.8 节，“联邦存储引擎” 。
+CREATE SERVER 导致隐式提交。请参阅 第 13.3.3 节，“导致隐式提交的语句” 。
+CREATE SERVER 无论使用何种日志记录格式，都不会写入二进制日志。

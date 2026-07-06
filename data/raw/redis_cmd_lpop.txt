@@ -1,0 +1,76 @@
+Redis LPOP 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis LPOP 命令
+移除并返回 List 头部（左侧）的一个元素。
+* 语法
+LPOP key [count]
+* 参数说明
+参数 类型 必填 说明
+key String 是 List 的键名
+count Integer 否 弹出数量（Redis 6.2+）
+* 返回值
+条件 返回值
+List 非空 返回头部元素（String）
+count > 1 返回元素数组（Redis 6.2+）
+List 为空 nil
+key 不存在 nil
+* 时间复杂度
+O(1)（单个元素），O(N)（count 个元素）
+* 示例
+> RPUSH queue a b c
+(integer) 3
+
+> LPOP queue
+"a"
+
+> LPOP queue
+"b"
+
+# 批量弹出（Redis 6.2+）
+> RPUSH tasks t1 t2 t3
+> LPOP tasks 2
+1) "t1"
+2) "t2"
+
+# 空 List
+> LPOP empty
+(nil)
+* 常见错误
+空 List 返回 nil ：业务层需处理 nil，避免空指针。
+* 最佳实践
+FIFO 队列消费 ： RPUSH + LPOP 实现队列消费。
+阻塞消费 ：使用 BLPOP key timeout 阻塞等待，避免空轮询。
+批量消费 ：Redis 6.2+ 用 LPOP key count 一次获取多个任务，减少网络往返。
+* FAQ
+Q: LPOP 和 BLPOP 有什么区别？ A: LPOP 立即返回，空 List 返回 nil； BLPOP 阻塞等待直到有元素或超时，避免轮询 CPU 浪费。
+Q: LPOP 会删除 key 吗？ A: 当 List 最后一个元素被弹出后，key 自动删除。
+Q: LPOP count 不够怎么办？ A: 返回实际存在的元素数组，不会报错。
+相关命令
+BLMOVE
+BLMPOP
+BLPOP
+BRPOP
+BRPOPLPUSH
+LINDEX
+LINSERT
+LLEN
+LMOVE
+LMPOP
+LPOP
+LPOS
+LPUSH
+LPUSHX
+LRANGE
+LREM
+LSET
+LTRIM
+RPOP
+RPOPLPUSH
+RPUSH
+RPUSHX

@@ -1,0 +1,90 @@
+Redis EXPIRE 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis EXPIRE 命令
+为 key 设置过期时间（秒）。过期后 key 自动删除。
+* 语法
+EXPIRE key seconds [NX | XX | GT | LT]
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+seconds Integer 是 过期时间（秒），必须 >= 0
+NX 标志 否 仅在 key 没有 TTL 时设置（Redis 7.0+）
+XX 标志 否 仅在 key 已有 TTL 时设置（Redis 7.0+）
+GT 标志 否 仅在新 TTL 大于当前 TTL 时设置（Redis 7.0+）
+LT 标志 否 仅在新 TTL 小于当前 TTL 时设置（Redis 7.0+）
+* 返回值
+条件 返回值
+设置成功 1
+key 不存在或条件不满足 0
+* 时间复杂度
+O(1)
+*
+* 示例
+> SET session:abc "data"
+OK
+> EXPIRE session:abc 3600
+(integer) 1
+
+> TTL session:abc
+(integer) 3599
+
+# key 不存在
+> EXPIRE nokey 60
+(integer) 0
+
+# XX：仅在已有 TTL 时更新
+> EXPIRE session:abc 7200 XX
+(integer) 1
+* 常见错误
+seconds 为负数 ：Redis 7.0- 会直接删除 key；7.0+ 报错。
+对不存在 key 设置 ：返回 0，不报错。
+GT/LT 条件不满足 ：返回 0。
+* 最佳实践
+缓存必须设 TTL ：缓存场景写入时总是设置过期时间，防止脏数据和内存无限增长。
+滑动窗口 ：需要延长会话时重新 EXPIRE，而非先 DEL 再 SET 。
+精确控制 ：需要毫秒级精度时使用 PEXPIRE ，需要绝对时间使用 EXPIREAT 。
+* FAQ
+Q: EXPIRE 和 SET EX 有什么区别？ A: EXPIRE 是给已有 key 加 TTL ； SET EX 是原子地设置 key + TTL 。缓存写入推荐 SET + EX。
+Q: 过期时间到了 key 会立即消失吗？ A: 不一定。Redis 过期是惰性（访问时检查）+ 定期（后台扫描），极端情况下可能延迟删除。
+Q: 如何取消 key 的过期时间？ A: PERSIST key 可移除 TTL ，让 key 永不过期。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

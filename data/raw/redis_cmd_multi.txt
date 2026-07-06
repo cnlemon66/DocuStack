@@ -1,0 +1,46 @@
+Redis MULTI 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis MULTI 命令
+标记一个事务块的开始。后续命令会排队，直到 EXEC 时原子执行。
+* 语法
+MULTI
+* 返回值
+总是返回 OK 。
+* 时间复杂度
+O(1)
+*
+* 示例
+> MULTI
+OK
+> SET k1 v1
+QUEUED
+> INCR counter
+QUEUED
+> EXEC
+1) OK
+2) (integer) 1
+* 常见错误
+事务中命令语法错误 ：EXEC 前报错，所有命令都不执行。
+EXEC 时运行时错误 ：如 DECR 非数字 key，错误命令不执行，其他命令继续执行（无回滚）。
+* 最佳实践
+原子操作 ：需要多个命令原子执行时用 MULTI/ EXEC ，如库存扣减 + 记录订单。
+配合 WATCH 乐观锁 ： WATCH 监控 key，若 EXEC 前被其他客户端修改则事务失败。
+Lua 脚本替代 ：复杂事务用 Lua 脚本（ EVAL ），原子性更强且可回滚逻辑错误。
+* FAQ
+Q: MULTI/ EXEC 有回滚吗？ A: 没有。语法错误时全部不执行；运行时错误时继续执行剩余命令。需业务层补偿。
+Q: MULTI 期间其他客户端能看到排队命令吗？ A: 不能。排队的命令在 EXEC 前不执行，其他客户端看不到中间状态。
+Q: 事务中能用 WATCH 吗？ A: WATCH 必须在 MULTI 之前调用。 EXEC 时检查 WATCH 的 key 是否被修改。
+* Related topics
+Redis事务机制详解
+相关命令
+DISCARD
+EXEC
+MULTI
+UNWATCH
+WATCH

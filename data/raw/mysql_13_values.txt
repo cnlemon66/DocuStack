@@ -1,0 +1,106 @@
+13.2.14 VALUES 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 
+13.2.14 VALUES 语句
+13.2.14 VALUES 语句
+VALUES 是 MySQL 8.0.19 中引入的 DML 语句，它返回一组一行或多行作为表。换句话说，它是一个表值构造函数，也可以作为一个独立的 SQL 语句。
+VALUES row_constructor_list [ORDER BY column_designator ] [LIMIT number ] row_constructor_list :
+ROW( value_list )[, ROW( value_list )][, ...] value_list : value [, value ][, ...] column_designator :
+column_ index
+该 VALUES 语句由 VALUES 关键字组成，后跟一个或多个行构造函数的列表，以逗号分隔。行构造函数由 ROW() 行构造函数子句和括号中包含的一个或多个标量值的值列表组成。值可以是任何 MySQL 数据类型的文字或解析为标量值的表达式。
+ROW() 不能为空（但每个提供的标量值都可以是 NULL ）。 ROW() 同一
+语句中的每个 VALUES 值在其值列表中都必须具有相同数量的值。
+DEFAULT 关键字不受支持 VALUES 并导致语法错误，除非它用于在语句中提供
+
+值 INSERT 。
+的输出 VALUES 是一个表：
+mysql> VALUES ROW(1,-2,3), ROW(5,7,9), ROW(4,6,8);
++----------+----------+----------+
+| column_0 | column_1 | column_2 |
++----------+----------+----------+
+| 1 | -2 | 3 |
+| 5 | 7 | 9 |
+| 4 | 6 | 8 |
++----------+----------+----------+
+3 rows in set (0.00 sec)
+从中输出的表的列 VALUES 具有隐式命名的列 column_0 、 column_1 、 column_2 等，始终以 开头 0 。这个事实可用于使用可选 ORDER BY 子句按列对行进行排序，其方式与此子句用于 SELECT 语句的方式相同，如下所示：
+mysql> VALUES ROW(1,-2,3), ROW(5,7,9), ROW(4,6,8) ORDER BY column_1;
++----------+----------+----------+
+| column_0 | column_1 | column_2 |
++----------+----------+----------+
+| 1 | -2 | 3 |
+| 4 | 6 | 8 |
+| 5 | 7 | 9 |
++----------+----------+----------+
+3 rows in set (0.00 sec)
+在MySQL 8.0.21及之后的版本中，该 VALUES 语句还支持 LIMIT 限制输出行数的子句。（以前， LIMIT 允许但什么也没做。）
+该 VALUES 语句对于列值的数据类型是宽松的；您可以在同一列中混合类型，如下所示：
+mysql> VALUES ROW("q", 42, '2019-12-18'),
+-> ROW(23, "abc", 98.6),
+-> ROW(27.0002, "Mary Smith", '{"a": 10, "b": 25}');
++----------+------------+--------------------+
+| column_0 | column_1 | column_2 |
++----------+------------+--------------------+
+| q | 42 | 2019-12-18 |
+| 23 | abc | 98.6 |
+| 27.0002 | Mary Smith | {"a": 10, "b": 25} |
++----------+------------+--------------------+
+3 rows in set (0.00 sec)
+重要的
+VALUES 用一个或多个 ROW() acts 实例作为表值构造函数；尽管它可用于在 INSERT or REPLACE 语句中提供值，但不要将它与 VALUES 也用于此目的的关键字混淆。您也不应该将它与 VALUES() 引用 INSERT ...
+ON DUPLICATE KEY UPDATE .
+您还应该记住，这 ROW() 是一个行值构造函数（请参阅 第 13.2.11.5 节，“行子查询” ），而 VALUES ROW() 是一个表值构造函数；两者不能互换使用。
+VALUES 可用于您可以雇用的许多情况 SELECT ，包括此处列出的情况：
+使用 UNION ，如下所示：
+mysql> SELECT 1,2 UNION SELECT 10,15;
++----+----+
+| 1 | 2 |
++----+----+
+| 1 | 2 |
+| 10 | 15 |
++----+----+
+2 rows in set (0.00 sec)
+
+mysql> VALUES ROW(1,2) UNION VALUES ROW(10,15);
++----------+----------+
+| column_0 | column_1 |
++----------+----------+
+| 1 | 2 |
+| 10 | 15 |
++----------+----------+
+2 rows in set (0.00 sec)
+您可以将具有多行的构造表合并在一起，如下所示：
+mysql> VALUES ROW(1,2), ROW(3,4), ROW(5,6)
+> UNION VALUES ROW(10,15),ROW(20,25);
++----------+----------+
+| column_0 | column_1 |
++----------+----------+
+| 1 | 2 |
+| 3 | 4 |
+| 5 | 6 |
+| 10 | 15 |
+| 20 | 25 |
++----------+----------+
+5 rows in set (0.00 sec)
+在这种情况下，您也可以（通常最好是） UNION 完全省略并使用单个 VALUES 语句，如下所示：
+mysql> VALUES ROW(1,2), ROW(3,4), ROW(5,6), ROW(10,15), ROW(20,25);
++----------+----------+
+| column_0 | column_1 |
++----------+----------+
+| 1 | 2 |
+| 3 | 4 |
+| 5 | 6 |
+| 10 | 15 |
+| 20 | 25 |
++----------+----------+
+VALUES 也可以与 SELECT 语句、 TABLE 语句或两者结合使用。
+中构造的表 UNION 必须包含相同数量的列，就像您使用 SELECT . 有关更多示例，请参见 第 13.2.10.3 节，“UNION 子句” 。
+在加入。有关更多信息和示例，
+请参阅 第 13.2.10.2 节，“JOIN 子句” 。
+VALUES() 在 INSERT or
+语句中
+代替 REPLACE ，在这种情况下，其语义与此处描述的略有不同。有关详细信息，请参阅 第 13.2.6 节，“INSERT 语句” 。
+代替 和 中的源 CREATE
+TABLE ... SELECT 表 CREATE VIEW ...
+SELECT 。有关更多信息和示例，请参阅这些语句的描述。

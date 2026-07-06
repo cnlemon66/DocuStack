@@ -1,0 +1,35 @@
+7.4.1 使用 mysqldump 转储 SQL 格式的数据_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 7.4 使用 mysqldump 进行备份 / 
+7.4.1 使用 mysqldump 转储 SQL 格式的数据
+7.4.1 使用 mysqldump 转储 SQL 格式的数据
+本节介绍如何使用 mysqldump 创建 SQL 格式的转储文件。有关重新加载此类转储文件的信息，请参阅 第 7.4.2 节，“重新加载 SQL 格式的备份” 。
+默认情况下， mysqldump 将信息作为 SQL 语句写入标准输出。您可以将输出保存在文件中：
+$> mysqldump [ arguments ] > file_name
+要转储所有数据库，请使用以下选项
+调用 mysqldump ： --all-databases
+$> mysqldump --all-databases > dump.sql
+要仅转储特定数据库，请在命令行上命名它们并使用以下 --databases 选项：
+$> mysqldump --databases db1 db2 db3 > dump.sql
+该 --databases 选项导致命令行上的所有名称都被视为数据库名称。如果没有此选项， mysqldump 会将名字视为数据库名称，将后面的名称视为表名。
+使用 --all-databases or --databases ， mysqldump 在每个数据库的转储输出之前写入 CREATE
+DATABASE 和语句。 USE 这确保了当重新加载转储文件时，它会创建每个数据库（如果它不存在）并使其成为默认数据库，以便将数据库内容加载到它们来自的同一数据库中。如果要使转储文件在重新创建之前强制删除每个数据库，请同时使用该 --add-drop-database 选项。在这种情况下， mysqldump DROP DATABASE 在每个语句之前写一个 CREATE DATABASE 语句。
+要转储单个数据库，请在命令行上为其命名：
+$> mysqldump --databases test > dump.sql
+在单数据库的情况下，可以省略该 --databases 选项：
+$> mysqldump test > dump.sql
+前面两个命令之间的区别在于，如果没有 --databases ，转储输出不包含 CREATE
+DATABASE or USE 语句。这有几个含义：
+重新加载转储文件时，必须指定默认数据库名称，以便服务器知道要重新加载哪个数据库。
+对于重新加载，您可以指定一个与原始名称不同的数据库名称，这使您可以将数据重新加载到不同的数据库中。
+如果要重新加载的数据库不存在，则必须先创建它。
+因为输出不包含 CREATE
+DATABASE 语句，所以该 --add-drop-database 选项无效。如果你使用它，它不会产生任何 DROP DATABASE 声明。
+要仅转储数据库中的特定表，请在数据库名称后的命令行中命名它们：
+$> mysqldump test t1 t3 t7 > dump.sql
+默认情况下，如果在创建转储文件 ( gtid_mode=ON ) 的服务器上正在使用 GTID，
+则 mysqldump 在输出中包含一条 SET
+@@GLOBAL.gtid_purged 语句，用于将 GTID 从 gtid_executed 源服务器上的 gtid_purged 集合添加到目标服务器上的集合。如果您只转储特定的数据库或表，请务必注意 mysqldump 包含的
+值包括 gtid_executed 在源服务器上设置，甚至那些更改的数据库的抑制部分，或服务器上未包含在部分转储中的其他数据库。如果您只在目标服务器上重放一个部分转储文件，那么额外的 GTID 不会对该服务器的未来操作造成任何问题。但是，如果您在包含相同 GTID 的目标服务器上重播第二个转储文件（例如，来自同一源服务器的另一个部分转储）， SET @@GLOBAL.gtid_purged 则第二个转储文件中的任何语句都会失败。为避免此问题，请将 mysqldump 选项
+设置 --set-gtid-purged 为 OFF 或 COMMENTED 输出第二个没有活动转储文件的转储文件。 SET @@GLOBAL.gtid_purged 语句，或在重放转储文件之前手动删除该语句。

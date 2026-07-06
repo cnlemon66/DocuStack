@@ -1,0 +1,14 @@
+13.1.35 DROP VIEW 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.35 DROP VIEW 语句
+13.1.35 DROP VIEW 语句
+DROP VIEW [IF EXISTS] view_name [, view_name ] ...
+[RESTRICT | CASCADE]
+DROP VIEW 删除一个或多个视图。您必须拥有 DROP 每个视图的权限。
+如果在参数列表中命名的任何视图不存在，则该语句将失败并显示错误，按名称指示它无法删除哪些不存在的视图，并且不进行任何更改。
+笔记
+在 MySQL 5.7 及更早版本中， DROP VIEW 如果参数列表中命名的任何视图不存在，则返回错误，但也会删除列表中存在的所有视图。由于 MySQL 8.0 中行为的变化，在 DROP VIEW MySQL 8.0 副本上复制时，在 MySQL 5.7 复制源服务器上部分完成的操作失败。为避免这种失败情况，请 IF EXISTS 在语句中使用语法 DROP VIEW 来防止不存在的视图发生错误。有关详细信息，请参阅 第 13.1.1 节，“原子数据定义语句支持” 。
+该 IF EXISTS 子句可防止不存在的视图发生错误。给出此子句时， NOTE 将为每个不存在的视图生成一个。请参阅 第 13.7.7.42 节，“显示警告声明” 。
+RESTRICT 和 CASCADE ，如果给定，将被解析并忽略。

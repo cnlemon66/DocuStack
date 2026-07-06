@@ -1,0 +1,97 @@
+Redis安装入门指南
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis安装入门指南
+Redis
+是一个高性能的key-value数据库，属于NoSQL的一种。它提供了Python，Ruby，Erlang，PHP客户端，使用很方便。它跟memcached类似，不过数据可以持久化，而且支持的数据类型更丰富。有字符串，链表，集合和有序集合。支持在服务器端计算集合的并，交和补集(difference)等，还支持多种排序功能。
+* 1、安装
+[root@syndic02 ~]# wget http://download.redis.io/releases/redis-2.8.19.tar.gz
+[root@syndic02 ~]# tar xvfz redis-2.8.18.tar.gz
+[root@syndic02 ~]# cd redis-2.8.18
+[root@syndic02 redis-2.8.18]# make
+* 2、拷贝二进制文件
+编译完成后就会生成相关的二进制可执行文件，为了便于管理。创建3个目录分别用来存放可执行二进制文件、配置文件、数据持久化文件。将src目录下的二进制文件redis-benchmark、redis-check-aof、redis-check-dump、redis-cli、redis-sentinel（非必需）、redis-server拷贝到bin目录，配置文件redis.conf、sentinel.conf（非必需）拷贝到etc目录。
+[root@syndic02 redis-2.8.18]# mkdir -p /usr/local/redis/{bin,db,etc}
+[root@syndic02 redis-2.8.18]# cp src/redis-server /usr/local/redis/bin/
+[root@syndic02 redis-2.8.18]# cp src/redis-benchmark /usr/local/redis/bin/
+[root@syndic02 redis-2.8.18]# cp src/redis-check-aof /usr/local/redis/bin/
+[root@syndic02 redis-2.8.18]# cp src/redis-check-dump /usr/local/redis/bin/
+[root@syndic02 redis-2.8.18]# cp src/redis-cli /usr/local/redis/bin/
+[root@syndic02 redis-2.8.18]# cp src/redis-sentinel /usr/local/redis/bin/
+[root@syndic02 redis-2.8.18]# cp redis.conf /usr/local/redis/etc/
+[root@syndic02 redis-2.8.18]# cp sentinel.conf /usr/local/redis/etc/
+redis-server：Redis服务器的daemon启动程序，对应的默认配置文件redis.conf。
+redis-benchmark：Redis性能测试工具。
+redis-cli：Redis命令行操作工具，类似于mysql的控制台。
+redis-check-aof/redis-check-dump：修复损坏的数据文件file.aof/dump.rdb。
+redis-sentinel：用于管理多个Redis服务器（instance），为集群提供监控、提醒、自动故障迁移服务，对应的配置文件sentinel.conf。
+* 3、按需调整默认配置的相关参数并启动
+#以守护进程的模式运行实例
+daemonize yes
+#指定日志文件的位置。默认为空，以守护进程运行时日志默认会发送到/dev/null设备，不以守护进程运行时日志输出到标准输出设备。
+logfile "/var/log/redis.log"
+#指定存放数据库文件的文件夹
+dir "/usr/local/redis/db"
+启动redis，可以看到redis默认监听TCP的6379端口
+[root@syndic02 redis]# /usr/local/redis/bin/redis-server /usr/local/redis/etc/redis.conf
+[root@syndic02 redis]# netstat -tpln
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address Foreign Address State PID/Program name
+tcp 0 0 0.0.0.0:6379 0.0.0.0:* LISTEN 5430/redis-server *
+tcp 0 0 0.0.0.0:22 0.0.0.0:* LISTEN 1164/sshd
+tcp 0 0 0.0.0.0:4505 0.0.0.0:* LISTEN 1199/python
+tcp 0 0 0.0.0.0:4506 0.0.0.0:* LISTEN 1187/python
+[root@syndic02 redis]#
+查看redis的日志时发现在启动的时候抛出了两条警告：
+[5430] 20 Dec 15:09:15.859 # WARNING overcommit_memory is set to 0! Background save may fail under low memory condition. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+[5430] 20 Dec 15:09:15.859 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+根据警告提示我们需要将内核参数vm.overcommit_memory设置为1，net.core.somaxconn设置成更大的数值，默认是128。编辑文件/etc/sysctl.conf，追加2行
+#sysctl文件追加的参数
+vm.overcommit_memory = 1
+net.core.somaxconn = 1024
+#保存退出后，刷新系统内核参数
+[root@syndic02 redis]# sysctl -p
+关于这两个内核参数的解释：
+vm.overcommit_memory
+指定了内核针对内存分配的策略，其值可以是0、1、2。
+0，
+表示内核将检查是否有足够的可用内存供应用进程使用；如果有足够的可用内存，内存申请允许；否则，内存申请失败，并把错误返回给应用进程。
+1， 表示内核允许分配所有的物理内存，而不管当前的内存状态如何。
+2， 表示内核允许分配超过所有物理内存和交换空间总和的内存。
+net.core.somaxconn
+定义了系统中每一个端口最大的监听队列的长度,这是个全局的参数,默认值为128，在某些应用下可能会限制接收新TCP连接侦听队列的大小。
+* 4、用redis提供的命令行工具进行一些简单的操作
+[root@syndic02 redis]# /usr/local/redis/bin/redis-cli
+redis 127.0.0.1:6380>
+#查看redis的各种信息参数，内存、连接数、键值数等
+redis 127.0.0.1:6380> info
+# 查看所有的key值
+redis 127.0.0.1:6380> keys *
+#插入并查看一个key值
+redis 127.0.0.1:6380> set a 1
+OK
+redis 127.0.0.1:6380> get a
+"1"
+#list操作
+redis 127.0.0.1:6380> sadd listtest 1
+(integer) 1
+redis 127.0.0.1:6380> sadd listtest 2
+(integer) 1
+redis 127.0.0.1:6380> sadd listtest 3
+(integer) 1
+redis 127.0.0.1:6380> sadd listtest 4
+(integer) 1
+redis 127.0.0.1:6380> sadd listtest 5
+(integer) 1
+redis 127.0.0.1:6380> smembers listtest
+1) "1"
+2) "2"
+3) "3"
+4) "4"
+5) "5"
+redis 127.0.0.1:6380> quit

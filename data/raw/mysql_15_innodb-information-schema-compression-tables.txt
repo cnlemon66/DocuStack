@@ -1,0 +1,10 @@
+15.15.1 InnoDB INFORMATION_SCHEMA 表压缩_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.15 InnoDB INFORMATION_SCHEMA 表 / 
+15.15.1 InnoDB INFORMATION_SCHEMA 表压缩
+15.15.1 InnoDB INFORMATION_SCHEMA 表压缩
+15.15.1.1 INNODB_CMP 和 INNODB_CMP_RESET 15.15.1.2 INNODB_CMPMEM 和 INNODB_CMPMEM_RESET 15.15.1.3 使用压缩信息模式表
+有两对 InnoDB INFORMATION_SCHEMA 关于压缩的表格可以让您深入了解压缩的整体效果：
+INNODB_CMP 并 INNODB_CMP_RESET 提供有关压缩操作次数和执行压缩所用时间的信息。
+INNODB_CMPMEM 并 INNODB_CMPMEM_RESET 提供有关为压缩分配内存的方式的信息。

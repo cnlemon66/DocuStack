@@ -1,0 +1,11 @@
+12.17.7 几何属性函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.17空间分析函数 / 
+12.17.7 几何属性函数
+12.17.7 几何属性函数
+12.17.7.1 一般几何特性函数 12.17.7.2 点属性函数 12.17.7.3 LineString 和 MultiLineString 属性函数 12.17.7.4 多边形和多边形属性函数 12.17.7.5 GeometryCollection 属性函数
+属于该组的每个函数都将几何值作为其参数，并返回几何的某些定量或定性属性。一些函数限制了它们的参数类型。 NULL 如果参数的几何类型不正确，则此类函数会返回。例如，
+如果对象类型既不是
+也不是 ，则 ST_Area() 多边形函数返回
+。 NULL Polygon MultiPolygon

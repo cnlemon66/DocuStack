@@ -1,0 +1,160 @@
+5.3 mysql系统架构_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 
+5.3 mysql系统架构
+5.3 mysql系统架构
+mysql 架构是系统架构
+。它包含存储 MySQL 服务器运行时所需信息的表。一个广泛的分类是 mysql 模式包含存储数据库对象元数据的数据字典表，以及用于其他操作目的的系统表。以下讨论将系统表集进一步细分为更小的类别。
+数据字典表
+授予系统表
+对象信息系统表
+日志系统表
+服务器端帮助系统表
+时区系统表
+复制系统表
+优化器系统表
+杂项系统表
+本节的其余部分列举了每个类别中的表格，并带有交叉引用以获取更多信息。 InnoDB 除非另有说明，否则
+数据字典表和系统表均使用
+存储引擎。
+mysql 系统表和数据字典表驻留在MySQL 数据目录中 InnoDB 命名
+的单个表空间文件中。 mysql.ibd 以前，这些表是在 mysql 数据库目录中的各个表空间文件中创建的。
+可以为 mysql 系统架构表空间启用静态数据加密。有关更多信息，请参阅 第 15.13 节，“InnoDB 静态数据加密” 。
+数据字典表
+这些表构成数据字典，其中包含有关数据库对象的元数据。有关其他信息，请参阅 第 14 章， MySQL 数据字典 。
+重要的
+数据字典是 MySQL 8.0 中新增的。与以前的 MySQL 版本相比，支持数据字典的服务器需要一些一般的操作差异。有关详细信息，请参阅 第 14.7 节，“数据字典用法差异” 。此外，对于从 MySQL 5.7 升级到 MySQL 8.0，升级过程与以前的 MySQL 版本有些不同，需要您通过检查特定的先决条件来验证安装的升级准备情况。有关详细信息，请参阅 第 2.11 节，“升级 MySQL” ，特别是 第 2.11.5 节，“准备安装以进行升级” 。
+catalogs ：目录信息。
+character_sets ：有关可用字符集的信息。
+check_constraints ：有关 CHECK 表上定义的约束的信息。请参阅 第 13.1.20.6 节，“检查约束” 。
+collations ：有关每个字符集的排序规则的信息。
+column_statistics ：列值的直方图统计。请参阅 第 8.9.6 节，“优化器统计信息” 。
+column_type_elements ：有关列使用的类型的信息。
+columns ：有关表中列的信息。
+dd_properties ：标识数据字典属性（例如其版本）的表。服务器使用它来确定数据字典是否必须升级到更新的版本。
+events ：有关 Event Scheduler 事件的信息。请参阅 第 25.4 节，“使用事件调度程序” 。如果服务器以该 --skip-grant-tables 选项启动，事件调度程序将被禁用并且表中注册的事件不会运行。请参阅 第 25.4.2 节，“事件调度程序配置” 。
+foreign_keys , foreign_key_column_usage : 外键信息。
+index_column_usage ：有关索引使用的列的信息。
+index_partitions ：有关索引使用的分区的信息。
+index_stats : 用于存放 ANALYZE
+TABLE 执行时产生的动态索引统计信息。
+indexes : 有关表索引的信息。
+innodb_ddl_log ：存储崩溃安全 DDL 操作的 DDL 日志。
+parameter_type_elements ：有关存储过程和函数参数的信息，以及有关存储函数返回值的信息。
+parameters ：有关存储过程和函数的信息。请参阅 第 25.2 节，“使用存储例程” 。
+resource_groups ：有关资源组的信息。请参阅 第 5.1.16 节，“资源组” 。
+routines ：有关存储过程和函数的信息。请参阅 第 25.2 节，“使用存储例程” 。
+schemata : 关于模式的信息。在 MySQL 中，一个模式就是一个数据库，所以这个表提供了关于数据库的信息。
+st_spatial_reference_systems ：有关空间数据的可用空间参考系统的信息。
+table_partition_values ：有关表分区使用的值的信息。
+table_partitions ：有关表使用的分区的信息。
+table_stats ：执行时产生的动态表统计信息 ANALYZE
+TABLE 。
+tables ：有关数据库中表的信息。
+tablespace_files ：有关表空间使用的文件的信息。
+tablespaces ：有关活动表空间的信息。
+triggers ：有关触发器的信息。
+view_routine_usage ：有关视图和它们使用的存储函数之间的依赖关系的信息。
+view_table_usage ：用于跟踪视图及其基础表之间的依赖关系。
+数据字典表是不可见的。它们不能用 读取 SELECT ，不出现在 的输出中 SHOW TABLES ，不在 INFORMATION_SCHEMA.TABLES 表中列出，等等。但是，大多数情况下都有对应的 INFORMATION_SCHEMA 表可以查询。从概念上讲，它 INFORMATION_SCHEMA 提供了一个视图，MySQL 通过该视图公开数据字典元数据。例如，您不能 mysql.schemata 直接从表中选择：
+mysql> SELECT * FROM mysql.schemata;
+ERROR 3554 (HY000): Access to data dictionary table 'mysql.schemata' is rejected.
+相反，从相应的 INFORMATION_SCHEMA 表中选择该信息：
+mysql> SELECT * FROM INFORMATION_SCHEMA.SCHEMATA\G
+*************************** 1. row ***************************
+CATALOG_NAME: def
+SCHEMA_NAME: mysql
+DEFAULT_CHARACTER_SET_NAME: utf8mb4
+DEFAULT_COLLATION_NAME: utf8mb4_0900_ai_ci
+SQL_PATH: NULL
+DEFAULT_ENCRYPTION: NO
+*************************** 2. row ***************************
+CATALOG_NAME: def
+SCHEMA_NAME: information_schema
+DEFAULT_CHARACTER_SET_NAME: utf8mb3
+DEFAULT_COLLATION_NAME: utf8mb3_general_ci
+SQL_PATH: NULL
+DEFAULT_ENCRYPTION: NO
+*************************** 3. row ***************************
+CATALOG_NAME: def
+SCHEMA_NAME: performance_schema
+DEFAULT_CHARACTER_SET_NAME: utf8mb4
+DEFAULT_COLLATION_NAME: utf8mb4_0900_ai_ci
+SQL_PATH: NULL
+DEFAULT_ENCRYPTION: NO
+...
+没有 INFORMATION_SCHEMA 与 完全对应 mysql.indexes 但 INFORMATION_SCHEMA.STATISTICS 包含许多相同信息的表格。
+到目前为止，还没有与 , INFORMATION_SCHEMA 完全对应 mysql.foreign_keys 的
+表格 mysql.foreign_key_column_usage 。SQL获取外键信息的标准方式是使用 INFORMATION_SCHEMA REFERENTIAL_CONSTRAINTS and KEY_COLUMN_USAGE 表；这些表现在作为 、 和其他数据字典表的视图来 foreign_keys 实现 foreign_key_column_usage 。
+MySQL 8.0 之前的一些系统表已被数据字典表取代，不再存在于 mysql 系统模式中：
+events 数据字典表取代了MySQL 8.0 之前
+的 event 表。
+parameters 和 routines 数据字典表共同取代了MySQL 8.0 之前
+的 proc 表。
+授予系统表
+这些系统表包含有关用户帐户及其拥有的权限的授权信息。有关这些表的结构、内容和用途的其他信息，请参阅 第 6.2.3 节，“授权表” 。
+从 MySQL 8.0 开始，授权表是 InnoDB （事务性）表。以前，这些是 MyISAM （非事务性）表。授权表存储引擎的变化是 MySQL 8.0 中对帐户管理语句（如 CREATE USER 和
+）行为的伴随变化的基础 GRANT 。以前，命名多个用户的帐户管理语句可能对某些用户成功而对其他用户失败。这些语句现在是事务性的，要么对所有指定用户成功，要么回滚，如果发生任何错误则无效。
+笔记
+如果 MySQL 从旧版本升级，但授权表尚未从 升级 MyISAM 到 InnoDB ，则服务器认为它们是只读的，并且帐户管理语句会产生错误。有关升级说明，请参阅 第 2.11 节，“升级 MySQL” 。
+user ：用户帐户、全局权限和其他非权限列。
+global_grants ：为用户分配动态全局权限；请参阅 静态与动态特权 。
+db ：数据库级权限。
+tables_priv ：表级权限。
+columns_priv : 列级权限。
+procs_priv : 存储过程和函数权限。
+proxies_priv : 代理用户权限。
+default_roles ：此表列出了在用户连接并验证或执行后要激活的默认角色 SET ROLE
+DEFAULT 。
+role_edges ：此表列出了角色子图的边。
+给定的 user 表行可能引用用户帐户或角色。 role_edges 服务器可以通过查询表中有关身份验证 ID 之间关系的信息
+来区分一行是否代表用户帐户、角色或两者。
+password_history ：有关密码更改的信息。
+对象信息系统表
+这些系统表包含有关组件、可加载函数和服务器端插件的信息：
+component ：使用安装的服务器组件的注册表 INSTALL
+COMPONENT 。此表中列出的任何组件都是在服务器启动序列期间由加载程序服务安装的。请参阅 第 5.5.1 节，“安装和卸载组件” 。
+func : 使用安装的可加载功能的注册表 CREATE
+FUNCTION 。在正常的启动序列中，服务器加载在该表中注册的函数。如果服务器以该 --skip-grant-tables 选项启动，则表中注册的功能不会加载且不可用。请参阅 第 5.7.1 节，“安装和卸载可加载函数” 。
+笔记
+与 mysql.func 系统表一样，性能模式 user_defined_functions 表列出了使用安装的可加载函数 CREATE
+FUNCTION 。与该 mysql.func 表不同，该 user_defined_functions 表还列出了服务器组件或插件自动安装的功能。这种差异 user_defined_functions 比 mysql.func 检查安装了哪些功能更可取。请参阅 第 27.12.21.9 节，“user_defined_functions 表” 。
+plugin ：使用安装的服务器端插件的注册表 INSTALL
+PLUGIN 。在正常的启动序列中，服务器加载在该表中注册的插件。如果服务器以该 --skip-grant-tables 选项启动，则表中注册的插件不会加载并且不可用。请参阅 第 5.6.1 节，“安装和卸载插件” 。
+日志系统表
+服务器使用这些系统表进行日志记录：
+general_log ：一般查询日志表。
+slow_log ：慢查询日志表。
+日志表使用 CSV 存储引擎。
+有关详细信息，请参阅 第 5.4 节，“MySQL 服务器日志” 。
+服务器端帮助系统表
+这些系统表包含服务器端帮助信息：
+help_category ：有关帮助类别的信息。
+help_keyword ：与帮助主题关联的关键字。
+help_relation ：帮助关键字和主题之间的映射。
+help_topic ：帮助主题内容。
+有关详细信息，请参阅 第 5.1.17 节，“服务器端帮助支持” 。
+时区系统表
+这些系统表包含时区信息：
+time_zone ：时区 ID 以及它们是否使用闰秒。
+time_zone_leap_second ：发生闰秒时。
+time_zone_name : 时区 ID 和名称之间的映射。
+time_zone_transition , time_zone_transition_type : 时区说明。
+有关详细信息，请参阅 第 5.1.15 节，“MySQL 服务器时区支持” 。
+复制系统表
+服务器使用这些系统表来支持复制：
+gtid_executed ：用于存储 GTID 值的表。参见 mysql.gtid_executed 表 。
+ndb_binlog_index ：NDB Cluster 复制的二进制日志信息。只有在 NDBCLUSTER 支持构建服务器时才会创建此表。请参阅 第 23.7.4 节，“NDB Cluster 复制模式和表” 。
+slave_master_info , slave_relay_log_info , slave_worker_info : 用于存储副本服务器上的复制信息。请参阅 第 17.2.4 节，“中继日志和复制元数据存储库” 。
+刚刚列出的所有表都使用 InnoDB 存储引擎。
+优化器系统表
+这些系统表供优化器使用：
+innodb_index_stats , innodb_table_stats : 用于 InnoDB 持久优化器统计信息。请参阅 第 15.8.10.1 节，“配置持久优化器统计参数” 。
+server_cost , engine_cost ：优化器成本模型使用的表包含有关查询执行期间发生的操作的成本估算信息。 server_cost 包含一般服务器操作的优化器成本估算。 engine_cost 包含对特定存储引擎特定操作的估计。请参阅 第 8.9.5 节，“优化器成本模型” 。
+杂项系统表
+其他系统表不符合上述类别：
+audit_log_filter , audit_log_user : 如果安装了 MySQL Enterprise Audit，这些表提供审计日志过滤器定义和用户帐户的持久存储。请参阅 审计日志表 。
+firewall_group_allowlist , firewall_groups , firewall_memebership , firewall_users , firewall_whitelist ：如果安装了 MySQL Enterprise Firewall，这些表为防火墙使用的信息提供持久存储。请参阅 第 6.4.7 节，“MySQL 企业防火墙” 。
+servers ：由 FEDERATED 存储引擎使用。请参阅 第 16.8.2.2 节，“使用 CREATE SERVER 创建 FEDERATED 表” 。
+innodb_dynamic_metadata ：由 InnoDB 存储引擎用来存储快速变化的表元数据，例如自动递增计数器值和索引树损坏标志。替换驻留在 InnoDB 系统表空间中的数据字典缓冲表。

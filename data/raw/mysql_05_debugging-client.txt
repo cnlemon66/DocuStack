@@ -1,0 +1,15 @@
+5.9.2 调试 MySQL 客户端_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.9 调试 MySQL / 
+5.9.2 调试 MySQL 客户端
+5.9.2 调试 MySQL 客户端
+为了能够使用集成调试包调试 MySQL 客户端，您应该使用 -DWITH_DEBUG=1 . 请参阅 第 2.9.7 节，“MySQL 源配置选项” 。
+在运行客户端之前，您应该设置 MYSQL_DEBUG 环境变量：
+$> MYSQL_DEBUG=d:t:O,/tmp/client.trace
+$> export MYSQL_DEBUG
+这会导致客户端以 /tmp/client.trace .
+如果您自己的客户端代码有问题，您应该尝试连接到服务器并使用已知可以工作的客户端运行您的查询。通过在调试模式下运行 mysql 来执行此操作（假设您已在调试模式下编译 MySQL）：
+$> mysql --debug=d:t:O,/tmp/client.trace
+如果您邮寄错误报告，这会提供有用的信息。请参阅 第 1.6 节，“如何报告错误或问题” 。
+如果您的客户端在某些看起来“合法”的代码处崩溃，您应该检查您的 mysql.h 包含文件是否与您的 MySQL 库文件相匹配。一个非常常见的错误是将 mysql.h 来自旧 MySQL 安装的旧文件与新 MySQL 库一起使用。

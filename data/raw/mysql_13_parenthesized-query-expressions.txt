@@ -1,0 +1,115 @@
+13.2.10.6 带括号的查询表达式_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 13.2.10 SELECT 语句 / 
+13.2.10.6 带括号的查询表达式
+13.2.10.6 带括号的查询表达式
+parenthesized_query_expression :
+( query_expression [ order_by_clause ] [ limit_clause ] )
+[ order_by_clause ]
+[ limit_clause ]
+[ into_clause ] query_expression : query_block [ set_op query_block [ set_op query_block ...]]
+[ order_by_clause ]
+[ limit_clause ]
+[ into_clause ] query_block :
+SELECT ... | TABLE | VALUES order_by_clause :
+ORDER BY as for SELECT limit_clause :
+LIMIT as for SELECT into_clause :
+INTO as for SELECT set_op :
+UNION | INTERSECT | EXCEPT
+MySQL 8.0.22 及更高版本支持根据上述语法的带括号的查询表达式。 SELECT 在最简单的情况下，带括号的查询表达式包含返回结果集
+的单个
+或其他语句，并且没有以下可选子句：
+(SELECT 1);
+(SELECT * FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'mysql');
+
+TABLE t;
+
+VALUES ROW(2, 3, 4), ROW(1, -2, 3);
+（从 MySQL 8.0.19 开始
+
+支持 TABLE and
+语句。） VALUES
+带括号的查询表达式还可以包含由一个或多个集合操作链接的查询，例如 UNION , 并以任何或所有可选子句结尾：
+mysql> (SELECT 1 AS result UNION SELECT 2);
++--------+
+| result |
++--------+
+| 1 |
+| 2 |
++--------+
+mysql> (SELECT 1 AS result UNION SELECT 2) LIMIT 1;
++--------+
+| result |
++--------+
+| 1 |
++--------+
+mysql> (SELECT 1 AS result UNION SELECT 2) LIMIT 1 OFFSET 1;
++--------+
+| result |
++--------+
+| 2 |
++--------+
+mysql> (SELECT 1 AS result UNION SELECT 2)
+ORDER BY result DESC LIMIT 1;
++--------+
+| result |
++--------+
+| 2 |
++--------+
+mysql> (SELECT 1 AS result UNION SELECT 2)
+ORDER BY result DESC LIMIT 1 OFFSET 1;
++--------+
+| result |
++--------+
+| 1 |
++--------+
+mysql> (SELECT 1 AS result UNION SELECT 3 UNION SELECT 2)
+ORDER BY result LIMIT 1 OFFSET 1 INTO @var;
+mysql> SELECT @var;
++------+
+| @var |
++------+
+| 2 |
++------+
+除了 UNION ， INTERSECT 和 EXCEPT set 运算符从 MySQL 8.0.31 开始可用。
+在和 INTERSECT 之前
+执行，因此以下两个语句是等价的： UNION EXCEPT
+SELECT a FROM t1 EXCEPT SELECT b FROM t2 INTERSECT SELECT c FROM t3;
+
+SELECT a FROM t1 EXCEPT (SELECT b FROM t2 INTERSECT SELECT c FROM t3);
+括号查询表达式也用作查询表达式，因此通常由查询块组成的查询表达式也可能由括号查询表达式组成：
+(TABLE t1 ORDER BY a) UNION (TABLE t2 ORDER BY b) ORDER BY z;
+查询块可能有尾随 ORDER BY 和 LIMIT 子句，它们在外部集合操作、 ORDER BY 和
+之前应用 LIMIT 。
+您不能有一个带有尾随 ORDER
+BY 或 LIMIT 不包含在括号中的查询块，但括号可以以多种方式用于强制执行：
+LIMIT 对每个查询块
+
+执行：
+(SELECT 1 LIMIT 1) UNION (VALUES ROW(2) LIMIT 1);
+
+(VALUES ROW(1), ROW(2) LIMIT 2) EXCEPT (SELECT 2 LIMIT 1);
+强制执行 LIMIT 查询块和整个查询表达式：
+(SELECT 1 LIMIT 1) UNION (SELECT 2 LIMIT 1) LIMIT 1;
+强制执行 LIMIT 整个查询表达式（不带括号）：
+VALUES ROW(1), ROW(2) INTERSECT VALUES ROW(2), ROW(1) LIMIT 1;
+混合执行： LIMIT 在第一个查询块和整个查询表达式上：
+(SELECT 1 LIMIT 1) UNION SELECT 2 LIMIT 1;
+本节中描述的语法受到某些限制：
+如果括号内 INTO 有另一个子句，则不允许查询表达式
+
+的尾随子句。 INTO
+在 MySQL 8.0.31 之前，当 ORDER BY 或 LIMIT 出现在带括号的查询表达式中并且也应用于外部查询时，结果是未定义的。这在 MySQL 8.0.31 及更高版本中不是问题，这是根据 SQL 标准处理的。
+在 MySQL 8.0.31 之前，带括号的查询表达式不允许多级 ORDER BY 或 LIMIT 操作，包含这些的语句会被拒绝 ER_NOT_SUPPORTED_YET 。在 MySQL 8.0.31 及之后的版本中，取消了此限制，允许嵌套的括号查询表达式。支持的最大嵌套层数为63；这是在解析器执行任何简化或合并之后。
+此处显示了此类声明的示例：
+mysql> (SELECT 'a' UNION SELECT 'b' LIMIT 2) LIMIT 3;
++---+
+| a |
++---+
+| a |
+| b |
++---+
+2 rows in set (0.00 sec)
+您应该知道，在 MySQL 8.0.31 及更高版本中，当折叠括号内的表达式主体时，MySQL 遵循 SQL 标准语义，因此较高的外部限制不能覆盖内部较低的限制。例如， (SELECT
+... LIMIT 5) LIMIT 10 可以返回不超过五行。

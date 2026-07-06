@@ -1,0 +1,7 @@
+8.12.3 优化内存使用_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.12 优化MySQL服务器 / 
+8.12.3 优化内存使用
+8.12.3 优化内存使用
+8.12.3.1 MySQL如何使用内存 8.12.3.2 启用大页面支持

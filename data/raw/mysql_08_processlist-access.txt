@@ -1,0 +1,57 @@
+8.14.1 访问进程列表_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.14 查看服务器线程（进程）信息 / 
+8.14.1 访问进程列表
+8.14.1 访问进程列表
+下面的讨论列举了进程信息的来源、查看进程信息所需的权限，并描述了进程列表条目的内容。
+过程信息来源
+访问进程列表所需的权限
+进程列表条目的内容
+过程信息来源
+过程信息可从以下来源获得：
+SHOW PROCESSLIST 声明：
+第 13.7.7.29 节，“SHOW PROCESSLIST 声明”
+mysqladmin processlist 命令：
+
+第 4.5.2 节，“mysqladmin — 一个 MySQL 服务器管理程序”
+表 INFORMATION_SCHEMA PROCESSLIST ： 第 26.3.23 节，“INFORMATION_SCHEMA PROCESSLIST 表”
+性能模式 processlist 表： 第 27.12.21.6 节，“进程表”
+名称前缀为Performance Schema threads 表列 PROCESSLIST_ ： 第 27.12.21.7 节，“线程表”
+sys 架构 processlist 和 session 视图：
+
+第 28.4.3.22 节，“进程列表和 x$processlist 视图” ，以及 第 28.4.3.33 节，“会话和 x$session 视图”
+该 threads 表与 SHOW PROCESSLIST 、 INFORMATION_SCHEMA PROCESSLIST 和 mysqladmin processlist 的比较如下：
+访问该 threads 表不需要互斥锁，并且对服务器性能的影响最小。其他来源对性能有负面影响，因为它们需要互斥量。
+笔记
+SHOW PROCESSLIST 从 MySQL 8.0.22 开始，基于 Performance Schema processlist 表
+的替代实现
+是可用的，它与 threads 表一样不需要互斥锁，并且具有更好的性能特征。有关详细信息，请参阅 第 27.12.21.6 节，“进程列表” 。
+该 threads 表显示了后台线程，而其他来源则没有。它还为每个线程提供其他来源不提供的附加信息，例如线程是前台线程还是后台线程，以及与线程关联的服务器内的位置。这意味着该 threads 表可用于监视其他来源无法监视的线程活动。
+您可以启用或禁用 Performance Schema 线程监视，如 第 27.12.21.7 节，“线程表” 中所述。
+由于这些原因，使用其他线程信息源之一执行服务器监视的 DBA 可能希望改为使用该 threads 表进行监视。
+sys 架构
+视图以更易于访问的格式 processlist 显示来自性能架构表的信息
+
+。模式
+视图显示有关用户会话的信息，如 threads 模式视图
+，但过滤掉了后台进程。 sys session sys processlist
+访问进程列表所需的权限
+对于大多数进程信息源，如果您有 PROCESS 权限，您可以看到所有线程，甚至是属于其他用户的线程。否则（没有 PROCESS 特权），非匿名用户可以访问关于他们自己的线程的信息，但不能访问其他用户的线程，而匿名用户则不能访问线程信息。
+Performance Schema threads 表也提供线程信息，但表访问使用不同的权限模型。请参阅 第 27.12.21.7 节，“线程表” 。
+进程列表条目的内容
+每个进程列表条目包含几条信息。以下列表使用 SHOW PROCESSLIST 输出中的标签描述了它们。其他过程信息源使用类似的标签。
+Id 是与线程关联的客户端的连接标识符。
+User 并 Host 指明与线程关联的帐户。
+db 是线程的默认数据库，或者 NULL 如果未选择任何数据库。
+Command 并 State 指出线程正在做什么。
+大多数状态对应于非常快速的操作。如果线程在给定状态下停留数秒，则可能存在需要调查的问题。
+以下部分列出了可能的 Command 值，以及 State 按类别分组的值。其中一些值的含义是不言而喻的。对于其他人，提供了额外的描述。
+笔记
+检查进程列表信息的应用程序应该知道命令和状态可能会发生变化。
+Time 指示线程处于其当前状态的时间。在某些情况下，线程的当前时间概念可能会改变：线程可以使用 更改时间
+。对于副本 SQL 线程，该值是最后一个复制事件的时间戳与副本主机的实际时间之间的秒数。请参阅 第 17.2.3 节，“复制线程” 。 SET
+TIMESTAMP = value
+Info 指示线程正在执行的语句，或者 NULL 它是否正在执行任何语句。对于 SHOW
+PROCESSLIST ，此值仅包含语句的前 100 个字符。要查看完整的语句，请使用 SHOW
+FULL PROCESSLIST （或查询不同的流程信息源）。

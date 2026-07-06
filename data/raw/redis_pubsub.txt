@@ -1,0 +1,119 @@
+Redis发布订阅
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+Related commands
+PSUBSCRIBE
+PUBLISH
+PUBSUB
+PUBSUB CHANNELS
+PUBSUB HELP
+PUBSUB NUMPAT
+PUBSUB NUMSUB
+PUBSUB SHARDCHANNELS
+PUBSUB SHARDNUMSUB
+PUNSUBSCRIBE
+SPUBLISH
+SSUBSCRIBE
+SUBSCRIBE
+SUNSUBSCRIBE
+UNSUBSCRIBE
+* Redis发布订阅
+* 相关命令
+PSUBSCRIBE
+PUBLISH
+PUBSUB
+PUNSUBSCRIBE
+SUBSCRIBE
+UNSUBSCRIBE
+* Pub/Sub
+SUBSCRIBE , UNSUBSCRIBE 和 PUBLISH 实现了 发布/订阅消息范例 ，发送者
+(publishers) 不直接向特定的接收者发送消息
+(subscribers)，而是发布消息到频道(channel)，不关心有没有订阅者。订阅者订阅关注一个或多个频道(channel)，并且只接收他关注的消息，不管发布者是不是存在。发布者和订阅者的解耦提供了更大的伸缩性、更动态的网络拓扑。
+例如，为了订阅通道 foo 和 bar ，客户端可以使用通道名字作为参数来调用 SUBSCRIBE 命令:
+SUBSCRIBE foo bar
+当有客户端发送消息到这些频道时，Redis将会推送传入的消息给所有订阅这些频道的客户端。
+正在订阅频道的客户端不应该发送除了订阅或取消订阅以外的命令。订阅和退订操作的执行结果以消息的形式返回，客户端可以读取收到消息的第一个元素来区分收到的是消息类型，还是订阅和退订操作执行结果。订阅客户端能使用的命令是 SUBSCRIBE , PSUBSCRIBE , UNSUBSCRIBE , PUNSUBSCRIBE , PING 和 QUIT .
+* 推送消息的格式
+消息是带有三个元素的 Array repl 。
+第一个元素是消息的类型：
+subscribe :
+表示成功订阅到以第二个返回元素命名的频道。第三个元素表示客户端当前订阅频道总数。
+unsubscribe :
+表示成功退订以第二个返回元素命名的频道。第三个元素表示客户端当前订阅频道总数。当第三个参数为零的时候，表示客户端已退出Pub/Sub状态，不再订阅任何频道，可以发送订阅和退订以外的Redis
+命令。
+message :
+表示收到其它某一个客户端用 PUBLISH 发布的消息，第二个元素是来源频道的名字，第三个参数是消息实际内容。
+* 数据库&作用域
+Pub/Sub
+和键空间没有关系，在任何层面上都没有交互，跟数据库number也没有关系。
+向db10发布消息也能再db1订阅到消息。
+如果您要某种范围，请在通道前加上环境名称（测试，生产......）
+* 协议实例
+第一个客户端执行订阅：
+SUBSCRIBE first second
+*3
+$9
+subscribe
+$5
+first
+:1
+*3
+$9
+subscribe
+$6
+second
+:2
+另一个客户端在 second 频道上执行 PUBLISH 操作 ：
+> PUBLISH second Hello
+第一个客户端会收到：
+*3
+$7
+message
+$6
+second
+$5
+Hello
+第一个客户端使用不带参数的 UNSUBSCRIBE 命令退订所有频道：
+UNSUBSCRIBE
+*3
+$11
+unsubscribe
+$6
+second
+:1
+*3
+$11
+unsubscribe
+$5
+first
+:0
+* 订阅模式匹配
+Redis Pub/Sub
+的实现支持模式匹配。客户端可以通过订阅glob风格的模式来接收所有频道名字与模式匹配的消息。
+例如:
+PSUBSCRIBE news.*
+将会收到所有news.开头的频道消息，像 news.art.figurative , news.music.jazz , 等。redis支持所有glob风格的模式，也支持多个通配符。
+PUNSUBSCRIBE news.*
+unsubscribe 退订模式。不会影响其它的订阅者。
+通过模式匹配接收的消息使用不同的格式发送：
+消息的格式是 pmessage :
+它是由另一个客户端使用 PUBLISH 命令发送的消息，并且匹配当前客户端订阅的一个模式匹配。第二个元素是匹配的原始模式，第三个元素是匹配的频道的名字，最后一个元素是实际的消息内容。
+SUBSCRIBE 和 UNSUBSCRIBE 与 PSUBSCRIBE 和 PUNSUBSCRIBE 命令类似，系统可以通过第一个元素来识别是那种消息。
+* 同时匹配模式和频道订阅的消息
+如果客户端订阅的多个模式匹配发布的消息， 或者订阅的模式和频道都匹配消息，这个消息会被客户端收到多次。例如：
+SUBSCRIBE foo
+PSUBSCRIBE f*
+如果有消息被发送到频道 foo ,
+客户端会收到两个消息：一个是 message 类型，另一个是 pmessage 类型。
+* 带有模式匹配的订阅计数的含义
+在 subscribe , unsubscribe , psubscribe 和 punsubscribe 的消息类型中，最后一个参数是仍在活动的订阅者数量。它表示客户端当前订阅的频道和模式的总数。当客户端退订所有模式和频道，订阅总数变为0之后这个客户端会退出
+Pub/Sub 状态。
+* 编程实例
+Pieter Noordhuis 提供了一个使用  EventMachine 和 Redis 编写的 高性能多用户网页聊天 程序。
+* 客户端lib实现提示
+因为所有的消息都包含订阅信息，所以客户端lib可以利用hash把原始订阅信息和回调绑定，当收到一个消息时只花费[ O(1) 查找已注册的回调来投递消息。]{.math}

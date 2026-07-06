@@ -1,0 +1,13 @@
+5.7.2 获取有关可加载函数的信息_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.7 MySQL 服务器可加载函数 / 
+5.7.2 获取有关可加载函数的信息
+5.7.2 获取有关可加载函数的信息
+Performance Schema user_defined_functions 表包含有关当前安装的可加载功能的信息：
+SELECT * FROM performance_schema.user_defined_functions;
+mysql.func 系统表还列出了已安装的可加载函数，但仅列出
+
+使用 CREATE
+FUNCTION . 该 user_defined_functions 表列出了使用安装 CREATE
+FUNCTION 的可加载函数以及组件或插件自动安装的可加载函数。这种差异 user_defined_functions 比 mysql.func 检查安装了哪些可加载功能更可取。请参阅 第 27.12.21.9 节，“user_defined_functions 表” 。

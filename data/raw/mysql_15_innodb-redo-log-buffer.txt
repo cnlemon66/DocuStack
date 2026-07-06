@@ -1,0 +1,9 @@
+15.5.4 日志缓冲区_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.5 InnoDB 内存结构 / 
+15.5.4 日志缓冲区
+15.5.4 日志缓冲区
+日志缓冲区是存储要写入磁盘上日志文件的数据的内存区域。日志缓冲区大小由 innodb_log_buffer_size 变量定义。默认大小为 16MB。日志缓冲区的内容会定期刷新到磁盘。大型日志缓冲区使大型事务无需在事务提交之前将重做日志数据写入磁盘即可运行。因此，如果您有更新、插入或删除许多行的事务，增加日志缓冲区的大小可以节省磁盘 I/O。
+该 innodb_flush_log_at_trx_commit 变量控制日志缓冲区的内容如何写入和刷新到磁盘。该 innodb_flush_log_at_timeout 变量控制日志刷新频率。
+有关相关信息，请参阅 内存配置 和 第 8.5.4 节，“优化 InnoDB 重做日志记录” 。

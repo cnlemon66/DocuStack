@@ -1,0 +1,55 @@
+Redis SINTER 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SINTER 命令
+返回多个 Set 的交集。
+* 语法
+SINTER key [key ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 一个或多个 Set 键名
+* 返回值
+条件 返回值
+key 存在 交集的成员数组
+无交集/key 不存在 空数组 []
+* 时间复杂度
+O(N*M)，N 为最小 Set 大小，M 为 Set 数量。
+* 示例
+> SADD set1 a b c
+(integer) 3
+> SADD set2 b c d
+(integer) 3
+
+> SINTER set1 set2
+1) "b"
+2) "c"
+* 常见错误
+大 Set 交集阻塞 ：大数据量 SINTER 计算成本高，可能阻塞 Redis。
+* 最佳实践
+共同好友/兴趣 ：两个用户的标签 Set 取交集，找出共同兴趣。
+权限交集 ：用户权限 Set 和资源要求 Set 取交集，判断是否满足。
+* FAQ
+Q: SINTER 和 SINTERSTORE 怎么选择？ A: SINTER 返回结果； SINTERSTORE 存入新 Set。大数据量用 SINTERSTORE 避免网络传输大数组。
+相关命令
+SADD
+SCARD
+SDIFF
+SDIFFSTORE
+SINTER
+SINTERCARD
+SINTERSTORE
+SISMEMBER
+SMEMBERS
+SMISMEMBER
+SMOVE
+SPOP
+SRANDMEMBER
+SREM
+SSCAN
+SUNION
+SUNIONSTORE

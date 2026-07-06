@@ -1,0 +1,11 @@
+13.1.29 DROP PROCEDURE 和 DROP FUNCTION 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.29 DROP PROCEDURE 和 DROP FUNCTION 语句
+13.1.29 DROP PROCEDURE 和 DROP FUNCTION 语句
+DROP {PROCEDURE | FUNCTION} [IF EXISTS] sp_name
+这些语句用于删除存储例程（存储过程或函数）。也就是说，指定的例程从服务器中删除。（ DROP FUNCTION 也用于删除可加载函数；请参阅 第 13.7.4.2 节，“可加载函数的 DROP FUNCTION 语句” 。）
+要删除存储的例程，您必须拥有 ALTER ROUTINE 它的权限。（如果 automatic_sp_privileges 启用了系统变量，则该特权 EXECUTE 在创建例程时自动授予例程创建者，并在删除例程时从创建者那里删除。请参阅 第 25.2.2 节，“存储的例程和 MySQL 特权” 。）
+该 IF EXISTS 子句是 MySQL 的扩展。如果过程或函数不存在，它可以防止发生错误。生成一个警告，可以用 来查看 SHOW WARNINGS 。
+DROP FUNCTION 也用于删除可加载函数（请参阅 第 13.7.4.2 节，“可加载函数的 DROP FUNCTION 语句” ）。

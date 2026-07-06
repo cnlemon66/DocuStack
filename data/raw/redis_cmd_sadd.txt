@@ -1,0 +1,65 @@
+Redis SADD 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SADD 命令
+向 Set 中添加一个或多个成员。已存在的成员会被忽略。
+* 语法
+SADD key member [member ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 Set 的键名
+member String 是 要添加的成员，可一次添加多个
+* 返回值
+条件 返回值
+成功添加的新成员数量 整数
+成员已存在 不计入返回值
+* 时间复杂度
+O(1)（单个 member），O(N)（N 个 member）
+* 示例
+> SADD tags redis
+(integer) 1
+
+> SADD tags database cache
+(integer) 2
+
+# 重复添加
+> SADD tags redis
+(integer) 0
+
+> SMEMBERS tags
+1) "cache"
+2) "database"
+3) "redis"
+* 常见错误
+对非 Set 类型使用 ：返回 WRONGTYPE。
+* 最佳实践
+去重集合 ：利用 Set 天然去重，如用户标签、IP 黑名单、投票用户。
+批量添加 ：一次 SADD 多个 member，减少网络往返。
+集合运算 ：使用 SINTER 、 SUNION 、 SDIFF 实现多集合交并差运算。
+* FAQ
+Q: SADD 和 LPUSH 有什么区别？ A: SADD 是 Set，去重且无序； LPUSH 是 List，允许重复且有序。
+Q: Set 最大能存多少成员？ A: 理论上 2 32 - 1（约 40 亿），但生产环境建议控制在百万以内，避免 SMEMBERS 阻塞。
+Q: 如何判断成员是否在 Set 中？ A: 使用 SISMEMBER key member ， O(1) 复杂度。
+相关命令
+SADD
+SCARD
+SDIFF
+SDIFFSTORE
+SINTER
+SINTERCARD
+SINTERSTORE
+SISMEMBER
+SMEMBERS
+SMISMEMBER
+SMOVE
+SPOP
+SRANDMEMBER
+SREM
+SSCAN
+SUNION
+SUNIONSTORE

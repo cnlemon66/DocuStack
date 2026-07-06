@@ -1,0 +1,10 @@
+13.3 事务和锁定语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 
+13.3 事务和锁定语句
+13.3 事务和锁定语句
+13.3.1 START TRANSACTION、COMMIT 和 ROLLBACK 语句 13.3.2 不能回滚的语句 13.3.3 导致隐式提交的语句 13.3.4 SAVEPOINT、ROLLBACK TO SAVEPOINT 和 RELEASE SAVEPOINT 语句 13.3.5 LOCK INSTANCE FOR BACKUP 和 UNLOCK INSTANCE 语句 13.3.6 LOCK TABLES 和 UNLOCK TABLES 语句 13.3.7 SET TRANSACTION语句 13.3.8 XA 事务
+SET autocommit MySQL 通过、 START TRANSACTION 、 COMMIT 和
+
+等语句支持本地事务（在给定的客户端会话中） ROLLBACK 。请参阅 第 13.3.1 节，“START TRANSACTION、COMMIT 和 ROLLBACK 语句” 。XA 事务支持使 MySQL 也可以参与分布式事务。请参阅 第 13.3.8 节，“XA 事务” 。

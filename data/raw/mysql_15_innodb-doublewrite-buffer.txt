@@ -1,0 +1,40 @@
+15.6.4 双写缓冲区_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.6 InnoDB 磁盘结构 / 
+15.6.4 双写缓冲区
+15.6.4 双写缓冲区
+双写缓冲区是一个存储区域，在 InnoDB 将页面写入 InnoDB 数据文件中的适当位置之前，写入从缓冲池中刷新的页面。如果在页面写入过程中出现操作系统、存储子系统或意外的 mysqld 进程退出， InnoDB 则可以在崩溃恢复期间从双写缓冲区中找到一份完好的页面副本。
+虽然数据被写入两次，但双写缓冲区不需要两倍的 I/O 开销或两倍的 I/O 操作。数据以大的顺序块写入双写缓冲区，只需 fsync() 调用一次操作系统（ innodb_flush_method 设置为
+的情况除外 O_DIRECT_NO_FSYNC ）。
+在MySQL 8.0.20之前，doublewrite buffer存储区位于 InnoDB 系统表空间中。从 MySQL 8.0.20 开始，doublewrite 缓冲区存储区域位于 doublewrite 文件中。
+为双写缓冲区配置提供了以下变量：
+innodb_doublewrite
+该 innodb_doublewrite 变量控制是否启用双写缓冲区。在大多数情况下，默认情况下它是启用的。要禁用双写缓冲区，请设置 innodb_doublewrite 为 OFF 。如果您更关心性能而不是数据完整性，请考虑禁用双写缓冲区，例如，在执行基准测试时可能就是这种情况。
+从 MySQL 8.0.30 开始， innodb_doublewrite 支持 DETECT_AND_RECOVER 和 DETECT_ONLY 设置。
+设置与设置 DETECT_AND_RECOVER 相同 ON 。使用此设置，双写缓冲区完全启用，数据库页面内容写入双写缓冲区，在恢复期间访问它以修复不完整的页面写入。
+通过 DETECT_ONLY 设置，只有元数据被写入双写缓冲区。数据库页面内容不写入双写缓冲区，恢复不使用双写缓冲区来修复不完整的页面写入。此轻量级设置仅用于检测不完整的页面写入。
+MySQL 8.0.30 及更高版本支持动态更改 innodb_doublewrite 启用双写缓冲区的设置，介于 ON 、 DETECT_AND_RECOVER 和之间 DETECT_ONLY 。MySQL 不支持启用双写缓冲区的设置之间的动态更改， OFF 反之亦然。
+如果双写缓冲区位于支持原子写入的 Fusion-io 设备上，则双写缓冲区会自动禁用，并使用 Fusion-io 原子写入执行数据文件写入。但是，请注意该 innodb_doublewrite 设置是全局的。当禁用双写缓冲区时，所有数据文件（包括那些不驻留在 Fusion-io 硬件上的数据文件）都会被禁用。此功能仅在 Fusion-io 硬件上受支持，并且仅在 Linux 上为 Fusion-io NVMFS 启用。要充分利用此功能，
+建议 innodb_flush_method 设置 O_DIRECT 为 。
+innodb_doublewrite_dir
+该 innodb_doublewrite_dir 变量（在 MySQL 8.0.20 中引入）定义了 InnoDB 创建双写文件的目录。如果未指定目录，则在该 innodb_data_home_dir 目录中创建双写文件，如果未指定，则默认为数据目录。
+散列符号“#”会自动添加到指定目录名称的前缀，以避免与模式名称发生冲突。但是，如果是 '.'，'#'。或在目录名称中明确指定了“/”前缀，但哈希符号“#”未作为目录名称的前缀。
+理想情况下，doublewrite 目录应该放在最快的可用存储介质上。
+innodb_doublewrite_files
+该 innodb_doublewrite_files 变量定义双写文件的数量。默认情况下，为每个缓冲池实例创建两个双写文件：刷新列表双写文件和 LRU 列表双写文件。
+刷新列表双写文件用于从缓冲池刷新列表中刷新的页面。刷新列表双写文件的默认大小是 InnoDB 页面大小 * 双写页面字节数。
+LRU 列表双写文件用于从缓冲池 LRU 列表中刷新的页面。它还包含用于单页刷新的插槽。LRU 列表双写文件的默认大小是 InnoDB 页面大小 *（双写页面 +（512 / 缓冲池实例数）），其中 512 是为单页刷新保留的插槽总数。
+至少有两个双写文件。双写文件的最大数量是缓冲池实例数量的两倍。（缓冲池实例的数量由 innodb_buffer_pool_instances 变量控制。）
+双写文件名具有以下格式：（
+
+或带有
+设置）。例如，以下双写文件是为页面大小为 16KB 和单个缓冲池的 MySQL 实例创建的： #ib_ page_size _ file_number .dblwr .bdblwr DETECT_ONLY InnoDB
+#ib_16384_0.dblwr
+#ib_16384_1.dblwr
+该 innodb_doublewrite_files 变量用于高级性能调整。默认设置应该适合大多数用户。
+innodb_doublewrite_pages
+该 innodb_doublewrite_pages 变量（在 MySQL 8.0.20 中引入）控制每个线程的最大双写页数。如果未指定值， innodb_doublewrite_pages 则设置为该 innodb_write_io_threads 值。此变量用于高级性能调整。默认值应该适合大多数用户。
+innodb_doublewrite_batch_size
+该 innodb_doublewrite_batch_size 变量（在 MySQL 8.0.20 中引入）控制批量写入的双写页数。此变量用于高级性能调整。默认值应该适合大多数用户。
+从 MySQL 8.0.23 开始， InnoDB 自动加密属于加密表空间的双写文件页面（请参阅 第 15.13 节，“InnoDB 静态数据加密” ）。同样，属于页压缩表空间的双写文件页也会被压缩。因此，双写文件可以包含不同的页面类型，包括未加密和未压缩的页面、加密的页面、压缩的页面以及既加密又压缩的页面。

@@ -1,0 +1,14 @@
+13.6.5 流量控制语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.6 复合语句语法 / 
+13.6.5 流量控制语句
+13.6.5 流量控制语句
+13.6.5.1 CASE 语句 13.6.5.2 IF 语句 13.6.5.3 ITERATE 语句 13.6.5.4 LEAVE 语句 13.6.5.5 循环语句 13.6.5.6 重复语句 13.6.5.7 返回语句 13.6.5.8 WHILE 语句
+MySQL 支持 IF , CASE , ITERATE ,
+,
+和
+存储程序中流控制的结构。它还支持
+内部存储函数。 LEAVE LOOP WHILE REPEAT RETURN
+许多这些构造包含其他语句，如以下部分中的语法规范所示。这样的构造可以嵌套。例如，一个 IF 语句可能包含一个 WHILE 循环，循环本身又包含一个 CASE 语句。
+MySQL 不支持 FOR 循环。

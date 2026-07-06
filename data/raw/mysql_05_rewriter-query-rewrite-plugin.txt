@@ -1,0 +1,21 @@
+5.6.4 重写器查询重写插件_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.6 MySQL 服务器插件 / 
+5.6.4 重写器查询重写插件
+5.6.4 重写器查询重写插件
+5.6.4.1 安装或卸载 Rewriter 查询重写插件 5.6.4.2 使用重写器查询重写插件 5.6.4.3 Rewriter Query Rewrite 插件参考
+MySQL 支持查询重写插件，可以在服务器执行之前检查并可能修改服务器接收到的 SQL 语句。请参阅 查询重写插件 。
+MySQL 发行版包括一个名为 postparse 查询重写的插件 Rewriter 和用于安装该插件及其相关元素的脚本。这些元素协同工作以提供语句重写功能：
+一个名为 examines statements 的服务器端插件 Rewriter 可以根据其内存中的重写规则缓存来重写它们。
+这些陈述可能会被重写：
+从 MySQL 8.0.12 开始： SELECT 、 INSERT 、 REPLACE 、 UPDATE 和 DELETE 。
+MySQL 8.0.12 之前： SELECT 仅。
+独立语句和准备好的语句可能会被重写。视图定义或存储程序中出现的语句不会被重写。
+该 Rewriter 插件使用一个名为 的数据库 query_rewrite ，其中包含一个名为 的表 rewrite_rules 。该表为插件用来决定是否重写语句的规则提供持久存储。用户通过修改存储在该表中的规则集与插件进行通信。该插件通过设置 message 表格行的列与用户进行通信。
+query_rewrite 数据库包含一个名为的存储过程
+
+， flush_rewrite_rules() 它将规则表的内容加载到插件中。
+名为的可加载函数 load_rewrite_rules() 由 flush_rewrite_rules() 存储过程使用。
+该 Rewriter 插件公开了启用插件配置的系统变量和提供运行时操作信息的状态变量。在 MySQL 8.0.31 及更高版本中，此插件还支持 SKIP_QUERY_REWRITE 保护给定用户的查询不被重写的权限 ( )。
+以下部分介绍如何安装和使用 Rewriter 插件，并提供其相关元素的参考信息。

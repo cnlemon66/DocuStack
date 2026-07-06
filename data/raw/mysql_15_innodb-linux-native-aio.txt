@@ -1,0 +1,13 @@
+15.8.6 在 Linux 上使用异步 I/O_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.6 在 Linux 上使用异步 I/O
+15.8.6 在 Linux 上使用异步 I/O
+InnoDB 使用 Linux 上的异​​步 I/O 子系统（本机 AIO）来执行数据文件页面的预读和写入请求。此行为由 innodb_use_native_aio 配置选项控制，该选项仅适用于 Linux 系统并且默认启用。在其他类 Unix 系统上， InnoDB 仅使用同步 I/O。历史上， InnoDB 仅在 Windows 系统上使用异步 I/O。在 Linux 上使用异步 I/O 子系统需要 libaio 库。
+对于同步 I/O，查询线程将 I/O 请求排队， InnoDB 后台线程一次检索一个排队的请求，为每个请求发出一个同步 I/O 调用。当 I/O 请求完成并且 I/O 调用返回时， InnoDB 处理该请求的后台线程调用 I/O 完成例程并返回以处理下一个请求。可并行处理的请求数为 n ，其中 n 为 InnoDB 后台线程数。后台线程的数量 InnoDB 由 innodb_read_io_threads 和
+控制 innodb_write_io_threads 。请参阅 第 15.8.5 节，“配置后台 InnoDB I/O 线程的数量” 。
+使用本机 AIO，查询线程将 I/O 请求直接分派给操作系统，从而消除了后台线程数量的限制。 InnoDB 后台线程等待 I/O 事件发出已完成请求的信号。当请求完成时，后台线程调用 I/O 完成例程并继续等待 I/O 事件。
+本机 AIO 的优势是可扩展性，适用于严重 I/O 绑定的系统，这些系统通常在 SHOW ENGINE INNODB STATUS\G 输出中显示许多挂起的读/写。使用本机 AIO 时并行处理的增加意味着 I/O 调度程序的类型或磁盘阵列控制器的属性对 I/O 性能有更大的影响。
+对于严重 I/O 绑定的系统，本机 AIO 的一个潜在缺点是无法控制一次分派到操作系统的 I/O 写入请求的数量。在某些情况下，分配给操作系统进行并行处理的过多 I/O 写入请求可能会导致 I/O 读取饥饿，具体取决于 I/O 活动量和系统功能。
+如果操作系统中的异步 I/O 子系统出现问题而无法 InnoDB 启动，您可以使用 启动服务器 innodb_use_native_aio=0 。 InnoDB 如果检测到潜在问题（例如 tmpdir 位置、 tmpfs 文件系统和不支持异步 I/O 的 Linux 内核的组合），此选项也可能在启动期间自动禁用 tmpfs 。

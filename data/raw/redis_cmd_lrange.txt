@@ -1,0 +1,83 @@
+Redis LRANGE 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis LRANGE 命令
+返回 List 中指定区间内的元素。
+* 语法
+LRANGE key start stop
+* 参数说明
+参数 类型 必填 说明
+key String 是 List 的键名
+start Integer 是 起始索引（0 开始，支持负数：-1 表示最后一个）
+stop Integer 是 结束索引（支持负数，-1 表示到最后一个）
+* 返回值
+条件 返回值
+key 存在 返回指定区间内的元素数组
+key 不存在 空数组 []
+start > stop 或超出范围 空数组 []
+* 时间复杂度
+O(S+N)，S 为 start 偏移量，N 为返回元素数量。
+⚠️ 生产环境警告 ： LRANGE key 0 -1 读取全表在大 List 时会阻塞 Redis。元素超过 5000 时禁用全量读取，改用分页 LRANGE key 0 99 。
+* 示例
+> RPUSH mylist a b c d e
+(integer) 5
+
+> LRANGE mylist 0 2
+1) "a"
+2) "b"
+3) "c"
+
+# 负数索引
+> LRANGE mylist -2 -1
+1) "d"
+2) "e"
+
+# 读取全部（生产慎用）
+> LRANGE mylist 0 -1
+1) "a"
+2) "b"
+3) "c"
+4) "d"
+5) "e"
+
+# 分页读取
+> LRANGE mylist 0 99
+* 常见错误
+阻塞服务 ： LRANGE key 0 -1 在 50000 元素的 List 上可能耗时 8ms+。
+索引越界不报错 ：返回空数组，不会报错。
+* 最佳实践
+分页读取 ：用 LRANGE key offset offset+limit-1 分页，每页 100 条。
+禁止全量读取 ：List 元素 > 5000 时，严禁 0 -1 。
+配合 LTRIM ：定期清理旧数据，保持 List 长度可控。
+* FAQ
+Q: LRANGE 是 O(N) 吗？ A: 是 O(S+N)。start 离头部越远，遍历开销越大。尽量从头部开始分页。
+Q: 如何实现分页？ A: 第一页 LRANGE key 0 99 ，第二页 LRANGE key 100 199 ，依此类推。
+Q: LRANGE 会修改 List 吗？ A: 不会，是只读命令。
+相关命令
+BLMOVE
+BLMPOP
+BLPOP
+BRPOP
+BRPOPLPUSH
+LINDEX
+LINSERT
+LLEN
+LMOVE
+LMPOP
+LPOP
+LPOS
+LPUSH
+LPUSHX
+LRANGE
+LREM
+LSET
+LTRIM
+RPOP
+RPOPLPUSH
+RPUSH
+RPUSHX

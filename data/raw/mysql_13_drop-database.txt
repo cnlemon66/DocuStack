@@ -1,0 +1,32 @@
+13.1.24 DROP DATABASE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.24 DROP DATABASE 语句
+13.1.24 DROP DATABASE 语句
+DROP {DATABASE | SCHEMA} [IF EXISTS] db_name
+DROP DATABASE 删除数据库中的所有表并删除数据库。请务必
+谨慎对待此声明 ！ 要使用 DROP DATABASE ，您需要 DROP 数据库的权限。 DROP
+SCHEMA 是的同义词 DROP
+DATABASE 。
+重要的
+删除数据库时，不会 自动删除
+专门为该数据库授予的权限。它们必须手动删除。请参阅 第 13.7.1.6 节，“GRANT 语句” 。
+IF EXISTS 用于防止数据库不存在时发生错误。
+如果删除默认数据库，则取消设置默认数据库（ DATABASE() 函数返回 NULL ）。
+如果 DROP DATABASE 在符号链接的数据库上使用，链接和原始数据库都会被删除。
+DROP DATABASE 返回已删除的表数。
+该 DROP DATABASE 语句从给定的数据库目录中删除 MySQL 本身在正常操作期间可能创建的那些文件和目录。这包括具有以下列表中显示的扩展名的所有文件：
+.BAK
+.DAT
+.HSH
+.MRG
+.MYD
+.MYI
+.cfg
+.db
+.ibd
+.ndb
+如果MySQL删除刚刚列出的文件或目录后，数据库目录中还有其他文件或目录，则无法删除数据库目录。在这种情况下，您必须手动删除任何剩余的文件或目录并 DROP DATABASE 再次发出该语句。
+删除数据库不会删除 TEMPORARY 在该数据库中创建的任何表。 TEMPORARY 当创建它们的会话结束时，表会自动删除。请参阅 第 13.1.20.2 节，“CREATE TEMPORARY TABLE 语句” 。
+您还可以使用 mysqladmin 删除数据库。请参阅 第 4.5.2 节，“mysqladmin — 一个 MySQL 服务器管理程序” 。

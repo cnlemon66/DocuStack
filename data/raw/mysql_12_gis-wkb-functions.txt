@@ -1,0 +1,70 @@
+12.17.4 从 WKB 值创建几何值的函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.17空间分析函数 / 
+12.17.4 从 WKB 值创建几何值的函数
+12.17.4 从 WKB 值创建几何值的函数
+这些函数将 BLOB 包含众所周知的二进制 (WKB) 表示形式和可选的空间参考系统标识符 (SRID) 作为参数。他们返回相应的几何图形。有关 WKB 格式的说明，请参阅 Well-Known Binary (WKB) Format 。
+本节中的函数检测笛卡尔或地理空间参考系统 (SRS) 中的参数，并返回适合 SRS 的结果。
+ST_GeomFromWKB() 接受任何几何类型的 WKB 值作为其第一个参数。其他函数提供特定于类型的构造函数，用于构造每种几何类型的几何值。
+在 MySQL 8.0 之前，这些函数还接受由 第 12.17.5 节“创建几何值的 MySQL 特定函数” 中的函数返回的几何对象。不再允许几何参数并产生错误。要将调用从使用几何参数迁移到使用 WKB 参数，请遵循以下准则：
+重写
+
+诸如 ST_GeomFromWKB(Point(0,
+0)) . Point(0, 0)
+重写诸如or之类 ST_GeomFromWKB(Point(0,
+0), 4326) 的结构。 ST_SRID(Point(0, 0),
+4326) ST_GeomFromWKB(ST_AsWKB(Point(0,
+0)), 4326)
+除非另有说明，本节中的函数按如下方式处理它们的几何参数：
+如果 WKB 或 SRID 参数是 NULL ，则返回值为 NULL 。
+默认情况下，地理坐标（纬度、经度）按照几何参数的空间参考系统指定的顺序进行解释。可以提供一个可选 options 参数来覆盖默认的轴顺序。 options 由逗号分隔的列表组成
+。唯一允许的值为
+, 允许值为
+,和
+（默认值）。 key = value key axis-order lat-long long-lat srid-defined
+如果 options 参数是 NULL ，则返回值为 NULL 。如果 options 参数无效，则会出现错误以说明原因。
+如果 SRID 参数引用未定义的空间参考系统 (SRS)， ER_SRS_NOT_FOUND 则会发生错误。
+对于地理 SRS 几何参数，如果任何参数的经度或纬度超出范围，则会发生错误：
+如果经度值不在 (−180, 180] 范围内， ER_LONGITUDE_OUT_OF_RANGE 则会发生错误。
+如果纬度值不在 [−90, 90] 范围内， ER_LATITUDE_OUT_OF_RANGE 则会发生错误。
+显示的范围以度为单位。如果 SRS 使用另一个单位，则范围使用其单位中的相应值。由于浮点运算，确切的范围限制略有偏差。
+这些函数可用于从 WKB 值创建几何：
+ST_GeomCollFromWKB( wkb [, srid [, options ]]) , ST_GeometryCollectionFromWKB( wkb [, srid [, options ]])
+GeometryCollection 使用其 WKB 表示和 SRID
+
+构造一个值。
+这些函数按照本节介绍中的描述处理它们的参数。
+ST_GeomFromWKB( wkb [, srid [, options ]]) , ST_GeometryFromWKB( wkb [, srid [, options ]])
+使用其 WKB 表示和 SRID 构造任何类型的几何值。
+这些函数按照本节介绍中的描述处理它们的参数。
+ST_LineFromWKB( wkb [, srid [, options ]]) , ST_LineStringFromWKB( wkb [, srid [, options ]])
+LineString 使用其 WKB 表示和 SRID
+
+构造一个值。
+这些函数按照本节介绍中的描述处理它们的参数。
+ST_MLineFromWKB( wkb [, srid [, options ]]) , ST_MultiLineStringFromWKB( wkb [, srid [, options ]])
+MultiLineString 使用其 WKB 表示和 SRID
+
+构造一个值。
+这些函数按照本节介绍中的描述处理它们的参数。
+ST_MPointFromWKB( wkb [, srid [, options ]]) , ST_MultiPointFromWKB( wkb [, srid [, options ]])
+MultiPoint 使用其 WKB 表示和 SRID
+
+构造一个值。
+这些函数按照本节介绍中的描述处理它们的参数。
+ST_MPolyFromWKB( wkb [, srid [, options ]]) , ST_MultiPolygonFromWKB( wkb [, srid [, options ]])
+MultiPolygon 使用其 WKB 表示和 SRID
+
+构造一个值。
+这些函数按照本节介绍中的描述处理它们的参数。
+ST_PointFromWKB( wkb [, srid [, options ]])
+Point 使用其 WKB 表示和 SRID
+
+构造一个值。
+ST_PointFromWKB() 如本节介绍中所述处理其参数。
+ST_PolyFromWKB( wkb [, srid [, options ]]) , ST_PolygonFromWKB( wkb [, srid [, options ]])
+Polygon 使用其 WKB 表示和 SRID
+
+构造一个值。
+这些函数按照本节介绍中的描述处理它们的参数。

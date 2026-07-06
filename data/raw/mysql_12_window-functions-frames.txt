@@ -1,0 +1,142 @@
+12.21.3 窗口函数框架规范_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.21 窗口函数 / 
+12.21.3 窗口函数框架规范
+12.21.3 窗口函数框架规范
+与窗口函数一起使用的窗口的定义可以包括 frame 子句。框架是当前分区的子集，框架子句指定如何定义子集。
+框架是相对于当前行确定的，这使得框架能够根据当前行在其分区内的位置在分区内移动。例子：
+通过将帧定义为从分区开始到当前行的所有行，您可以计算每行的运行总计。
+通过将帧定义为 N 当前行任一侧的扩展行，您可以计算滚动平均值。
+以下查询演示了如何使用移动帧来计算每组按时间排序的 level 值的运行总计，以及根据当前行和紧接其前后的行计算的滚动平均值：
+mysql> SELECT
+time, subject, val,
+SUM(val) OVER (PARTITION BY subject ORDER BY time
+ROWS UNBOUNDED PRECEDING)
+AS running_total,
+AVG(val) OVER (PARTITION BY subject ORDER BY time
+ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)
+AS running_average
+FROM observations;
++----------+---------+------+---------------+-----------------+
+| time | subject | val | running_total | running_average |
++----------+---------+------+---------------+-----------------+
+| 07:00:00 | st113 | 10 | 10 | 9.5000 |
+| 07:15:00 | st113 | 9 | 19 | 14.6667 |
+| 07:30:00 | st113 | 25 | 44 | 18.0000 |
+| 07:45:00 | st113 | 20 | 64 | 22.5000 |
+| 07:00:00 | xh458 | 0 | 0 | 5.0000 |
+| 07:15:00 | xh458 | 10 | 10 | 5.0000 |
+| 07:30:00 | xh458 | 5 | 15 | 15.0000 |
+| 07:45:00 | xh458 | 30 | 45 | 20.0000 |
+| 08:00:00 | xh458 | 25 | 70 | 27.5000 |
++----------+---------+------+---------------+-----------------+
+对于 running_average 列，在第一个之前或最后一个之后没有框架行。在这些情况下， AVG() 计算可用行的平均值。
+用作窗口函数的聚合函数对当前行框架中的行进行操作，这些非聚合窗口函数也是如此：
+FIRST_VALUE()
+LAST_VALUE()
+NTH_VALUE()
+标准 SQL 规定，对整个分区进行操作的窗口函数不应有 frame 子句。MySQL 允许为此类函数使用 frame 子句，但会忽略它。即使指定了帧，这些函数也会使用整个分区：
+CUME_DIST()
+DENSE_RANK()
+LAG()
+LEAD()
+NTILE()
+PERCENT_RANK()
+RANK()
+ROW_NUMBER()
+frame 子句（如果给定）具有以下语法：
+frame_clause : frame_units frame_extent frame_units :
+{ROWS | RANGE}
+在没有框架子句的情况下，默认框架取决于 ORDER BY 子句是否存在，如本节后面所述。
+该 frame_units 值表示当前行和框架行之间的关系类型：
+ROWS ：框架由开始和结束行位置定义。偏移量是行号与当前行号的差异。
+RANGE ：框架由值范围内的行定义。偏移量是行值与当前行值的差异。
+该 frame_extent 值表示帧的起点和终点。您可以仅指定帧的开始（在这种情况下，当前行隐含地结束）或用于 BETWEEN 指定两个帧端点：
+frame_extent :
+{ frame_start | frame_between } frame_between :
+BETWEEN frame_start AND frame_end frame_start , frame_end : {
+CURRENT ROW
+| UNBOUNDED PRECEDING
+| UNBOUNDED FOLLOWING
+| expr PRECEDING
+| expr FOLLOWING
+}
+使用 BETWEEN 语法， frame_start 不得晚于 frame_end .
+允许的 frame_start 和 frame_end 值具有以下含义：
+CURRENT ROW ：对于 ROWS ，边界是当前行。对于 RANGE ，界限是当前行的对等点。
+UNBOUNDED PRECEDING ：边界是第一个分区行。
+UNBOUNDED FOLLOWING ：边界是最后一个分区行。
+expr PRECEDING ：对于 ROWS ，边界是 expr 当前行之前的行。对于 RANGE ，边界是值等于当前行值减去 的行 expr ；如果当前行值为 NULL ，则边界是该行的对等项。
+对于 expr PRECEDING (and expr FOLLOWING )， expr 可以是 ? 参数标记（用于准备语句）、非负数字文字或形式的时间间隔。对于
+表达式，
+指定非负区间值，并且是一个关键字，指示应解释值的单位。（有关允许
+的说明符的详细信息，请参阅 第 12.7 节“日期和时间函数” 中的
+函数说明。） INTERVAL val unit INTERVAL val unit units DATE_ADD()
+RANGE 在数字或时间
+上分别 expr 需要 ORDER
+BY 数字或时间表达式。
+expr PRECEDING valid和 expr FOLLOWING indicators
+
+的例子：
+10 PRECEDING
+INTERVAL 5 DAY PRECEDING
+5 FOLLOWING
+INTERVAL '2:30' MINUTE_SECOND FOLLOWING
+expr FOLLOWING ：对于 ROWS ，边界是 expr 当前行之后的行。对于 RANGE ，边界是值等于当前行值加上 的行 expr ；如果当前行值为 NULL ，则边界是该行的对等项。
+有关 的允许值 expr ，请参阅 的说明 expr PRECEDING 。
+以下查询演示 FIRST_VALUE() 、 LAST_VALUE() 和 的两个实例 NTH_VALUE() ：
+mysql> SELECT
+time, subject, val,
+FIRST_VALUE(val) OVER w AS 'first',
+LAST_VALUE(val) OVER w AS 'last',
+NTH_VALUE(val, 2) OVER w AS 'second',
+NTH_VALUE(val, 4) OVER w AS 'fourth'
+FROM observations
+WINDOW w AS (PARTITION BY subject ORDER BY time
+ROWS UNBOUNDED PRECEDING);
++----------+---------+------+-------+------+--------+--------+
+| time | subject | val | first | last | second | fourth |
++----------+---------+------+-------+------+--------+--------+
+| 07:00:00 | st113 | 10 | 10 | 10 | NULL | NULL |
+| 07:15:00 | st113 | 9 | 10 | 9 | 9 | NULL |
+| 07:30:00 | st113 | 25 | 10 | 25 | 9 | NULL |
+| 07:45:00 | st113 | 20 | 10 | 20 | 9 | 20 |
+| 07:00:00 | xh458 | 0 | 0 | 0 | NULL | NULL |
+| 07:15:00 | xh458 | 10 | 0 | 10 | 10 | NULL |
+| 07:30:00 | xh458 | 5 | 0 | 5 | 10 | NULL |
+| 07:45:00 | xh458 | 30 | 0 | 30 | 10 | 30 |
+| 08:00:00 | xh458 | 25 | 0 | 25 | 10 | 30 |
++----------+---------+------+-------+------+--------+--------+
+每个函数都使用当前帧中的行，根据显示的窗口定义，这些行从第一个分区行扩展到当前行。对于 NTH_VALUE() 调用，当前帧并不总是包含请求的行；在这种情况下，返回值为 NULL 。
+在没有框架子句的情况下，默认框架取决于是否存在 ORDER BY 子句：
+With ：默认帧包括从分区开始到当前行的行，包括当前行的所有对等点（根据
+子句 ORDER BY 等于当前行的行）。 ORDER BY 默认值等同于此框架规范：
+RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+没有 ORDER BY ：默认框架包括所有分区行（因为没有 ORDER
+BY ，所有分区行都是对等的）。默认值等同于此框架规范：
+RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+由于默认框架因 的存在与否而异 ORDER BY ，添加 ORDER
+BY 到查询以获得确定性结果可能会改变结果。（例如，由 生成的值 SUM() 可能会改变。）要获得相同的结果但按 排序 ORDER BY ，请提供要使用的显式框架规范，无论是否 ORDER BY 存在。
+当当前行值为 时，框架规范的含义可能不明显 NULL 。假设是这种情况，这些示例说明了各种框架规范如何应用：
+ORDER BY X ASC RANGE BETWEEN 10 FOLLOWING AND 15
+FOLLOWING
+该框架开始于 NULL 并停止于 NULL ，因此仅包含值为 的行 NULL 。
+ORDER BY X ASC RANGE BETWEEN 10 FOLLOWING AND
+UNBOUNDED FOLLOWING
+帧开始于 NULL 分区的末尾并停止于分区的末尾。因为 ASC 排序将 NULL 值放在第一位，所以框架就是整个分区。
+ORDER BY X DESC RANGE BETWEEN 10 FOLLOWING AND
+UNBOUNDED FOLLOWING
+帧开始于 NULL 分区的末尾并停止于分区的末尾。因为 DESC 排序将 NULL 值放在最后，所以框架只是 NULL 值。
+ORDER BY X ASC RANGE BETWEEN 10 PRECEDING AND
+UNBOUNDED FOLLOWING
+帧开始于 NULL 分区的末尾并停止于分区的末尾。因为 ASC 排序将 NULL 值放在第一位，所以框架就是整个分区。
+ORDER BY X ASC RANGE BETWEEN 10 PRECEDING AND 10
+FOLLOWING
+该框架开始于 NULL 并停止于 NULL ，因此仅包含值为 的行 NULL 。
+ORDER BY X ASC RANGE BETWEEN 10 PRECEDING AND 1
+PRECEDING
+该框架开始于 NULL 并停止于 NULL ，因此仅包含值为 的行 NULL 。
+ORDER BY X ASC RANGE BETWEEN UNBOUNDED PRECEDING
+AND 10 FOLLOWING
+该帧从分区的开头开始，并在值为 的行处停止 NULL 。因为 ASC 排序将 NULL 值放在首位，所以框架只是 NULL 值。

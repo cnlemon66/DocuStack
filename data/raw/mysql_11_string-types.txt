@@ -1,0 +1,10 @@
+11.3 字符串数据类型_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 
+11.3 字符串数据类型
+11.3 字符串数据类型
+11.3.1 字符串数据类型语法 11.3.2 CHAR 和 VARCHAR 类型 11.3.3 BINARY 和 VARBINARY 类型 11.3.4 BLOB 和 TEXT 类型 11.3.5 枚举类型 11.3.6 SET 类型
+字符串数据类型为 CHAR , VARCHAR , BINARY , VARBINARY , BLOB , TEXT , ENUM 和 SET 。
+有关字符串数据类型的存储要求的信息，请参阅 第 11.7 节，“数据类型存储要求” 。
+有关对字符串值进行操作的函数的描述，请参阅 第 12.8 节，“字符串函数和运算符” 。

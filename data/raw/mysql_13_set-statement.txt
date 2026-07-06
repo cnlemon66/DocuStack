@@ -1,0 +1,16 @@
+13.7.6 SET 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.7 数据库管理语句 / 
+13.7.6 SET 语句
+13.7.6 SET 语句
+13.7.6.1 变量赋值的 SET 语法 13.7.6.2 SET CHARACTER SET 语句 13.7.6.3 SET NAMES 语句
+该 SET 声明有多种形式。与特定服务器功能无关的那些表单的说明出现在本节的小节中：
+SET var_name = value 使您能够为影响服务器或客户端操作的变量赋值。请参阅 第 13.7.6.1 节，“变量赋值的 SET 语法” 。
+SET CHARACTER SET 并 SET NAMES 为与服务器的当前连接关联的字符集和排序规则变量赋值。请参阅 第 13.7.6.2 节，“SET CHARACTER SET 语句” 和 第 13.7.6.3 节，“SET NAMES 语句” 。
+其他形式的描述出现在其他地方，与其他与其帮助实现的功能相关的陈述分组：
+SET DEFAULT ROLE 并 SET ROLE 为用户帐户设置默认角色和当前角色。请参阅 第 13.7.1.9 节，“SET DEFAULT ROLE 语句” 和 第 13.7.1.11 节，“SET ROLE 语句” 。
+SET PASSWORD 分配帐户密码。请参阅 第 13.7.1.10 节，“SET PASSWORD 语句” 。
+SET RESOURCE GROUP 将线程分配给资源组。请参阅 第 13.7.2.4 节，“SET RESOURCE GROUP 语句” 。
+SET
+TRANSACTION ISOLATION LEVEL 设置事务处理的隔离级别。请参阅 第 13.3.7 节，“SET TRANSACTION 语句” 。

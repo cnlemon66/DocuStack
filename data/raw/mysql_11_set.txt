@@ -1,0 +1,100 @@
+11.3.6 SET 类型_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.3 字符串数据类型 / 
+11.3.6 SET 类型
+11.3.6 SET 类型
+A SET 是一个字符串对象，可以有零个或多个值，每个值都必须从创建表时指定的允许值列表中选择。 SET 由多个集合成员组成的列值用逗号 ( , ) 分隔的成员指定。这样做的结果是 SET 成员值本身不应包含逗号。
+例如，指定为的列 SET('one', 'two')
+NOT NULL 可以具有以下任何值：
+''
+'one'
+'two'
+'one,two'
+一个 SET 列最多可以有 64 个不同的成员。
+如果启用了严格的 SQL 模式，则定义中的重复值会导致警告或错误。
+SET 创建表时，
+
+会自动从表定义中的成员值中删除尾随空格
+。
+有关该类型的存储要求，
+请参阅 字符串类型存储要求 SET 。
+有关
+类型语法和长度限制
+，
+请参阅 第 11.3.1 节，“字符串数据类型语法” 。 SET
+检索时，存储在 SET 列中的值使用列定义中使用的字母大小写显示。请注意， SET 可以为列分配字符集和排序规则。对于二进制或区分大小写的归类，在为列赋值时会考虑字母大小写。
+MySQL 以数字方式存储 SET 值，存储值的低位对应于第一个集合成员。如果您 SET 在数字上下文中检索值，则检索到的值会设置与构成列值的集合成员相对应的位。 SET 例如，您可以像这样从列
+中检索数值：
+mysql> SELECT set_col +0 FROM tbl_name ;
+如果将数字存储到 SET 列中，则在数字的二进制表示中设置的位确定列值中的集合成员。对于指定为 的列 SET('a','b','c','d') ，成员具有以下十进制和二进制值。
+SET 成员 十进制值 二进制值
+'a' 1 0001
+'b' 2 0010
+'c' 4 0100
+'d' 8 1000
+如果您 9 为此列分配一个 1001 二进制值，则第一个和第四个 SET 值成员 'a' 和 'd' 被选中，结果值为 'a,d' 。
+对于包含多个 SET 元素的值，插入值时元素的排列顺序无关紧要。给定元素在值中列出多少次也无关紧要。稍后检索值时，值中的每个元素都出现一次，并根据在创建表时指定的顺序列出元素。假设列指定为 SET('a','b','c','d') ：
+mysql> CREATE TABLE myset (col SET('a', 'b', 'c', 'd'));
+如果您插入值 'a,d' 、 'd,a' 、 'a,d,d' 、 'a,d,a' 和 'd,a,d' ：
+mysql> INSERT INTO myset (col) VALUES
+-> ('a,d'), ('d,a'), ('a,d,a'), ('a,d,d'), ('d,a,d');
+Query OK, 5 rows affected (0.01 sec)
+Records: 5 Duplicates: 0 Warnings: 0
+然后所有这些值 'a,d' 在检索时显示为：
+mysql> SELECT col FROM myset;
++------+
+| col |
++------+
+| a,d |
+| a,d |
+| a,d |
+| a,d |
+| a,d |
++------+
+5 rows in set (0.04 sec)
+如果将 SET 列设置为不受支持的值，该值将被忽略并发出警告：
+mysql> INSERT INTO myset (col) VALUES ('a,d,d,s');
+Query OK, 1 row affected, 1 warning (0.03 sec)
+
+mysql> SHOW WARNINGS;
++---------+------+------------------------------------------+
+| Level | Code | Message |
++---------+------+------------------------------------------+
+| Warning | 1265 | Data truncated for column 'col' at row 1 |
++---------+------+------------------------------------------+
+1 row in set (0.04 sec)
+
+mysql> SELECT col FROM myset;
++------+
+| col |
++------+
+| a,d |
+| a,d |
+| a,d |
+| a,d |
+| a,d |
+| a,d |
++------+
+6 rows in set (0.01 sec)
+如果启用了严格的 SQL 模式，则尝试插入无效 SET 值会导致错误。
+SET 值按数字排序。 NULL 值排在非 NULL SET 值之前。
+如有必要 SUM() ， AVG() 期望数字参数的函数将参数转换为数字。对于 SET 值，强制转换操作会导致使用数值。
+SET 通常，您使用 FIND_IN_SET() 函数或
+运算符
+搜索值 LIKE ：
+mysql> SELECT * FROM tbl_name WHERE FIND_IN_SET(' value ', set_col )>0;
+mysql> SELECT * FROM tbl_name WHERE set_col LIKE '% value %';
+第一个语句查找 set_col 包含 value 集合成员的行。第二个类似，但不相同：它查找 set_col 包含 value 任何地方的行，即使是另一个集合成员的子字符串。
+还允许以下语句：
+mysql> SELECT * FROM tbl_name WHERE set_col & 1;
+mysql> SELECT * FROM tbl_name WHERE set_col = ' val1 , val2 ';
+这些语句中的第一个查找包含第一个集合成员的值。第二个寻找完全匹配。小心第二种类型的比较。将设置值与
+
+进行比较返回的结果与将值与 进行比较所返回的结果不同
+。您应该按照它们在列定义中列出的相同顺序指定值。 ' val1 , val2 ' ' val2 , val1 '
+要确定 SET 列的所有可能值，请使用并解析
+
+输出列中的
+定义。 SHOW COLUMNS FROM tbl_name LIKE set_col SET Type
+在 C API 中， SET 值以字符串形式返回。有关使用结果集元数据将它们与其他字符串区分开来的信息，请参阅 C API 基本数据结构 。

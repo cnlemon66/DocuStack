@@ -1,0 +1,82 @@
+Redis INCR 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis INCR 命令
+将 key 中存储的数字值增加 1。
+* 语法
+INCR key
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名，value 必须是整数或不存在
+* 返回值
+条件 返回值
+递增成功 返回递增后的新值（Integer）
+key 不存在 先设为 0 再递增，返回 1
+value 非整数 返回错误
+* 时间复杂度
+O(1)
+*
+* 示例
+> SET counter 10
+OK
+> INCR counter
+(integer) 11
+
+# key 不存在
+> INCR newcounter
+(integer) 1
+
+# 非数字
+> SET mykey "hello"
+> INCR mykey
+(error) ERR value is not an integer or out of range
+* 常见错误
+value 非整数或超出 64 位范围 ：返回 ERR value is not an integer or out of range 。
+浮点数不能用 INCR ：浮点数用 INCRBYFLOAT 。
+* 最佳实践
+原子计数器 ：INCR 是单线程原子操作，天然适合分布式计数器（如浏览量、点赞数、库存扣减）。
+配合 EXPIRE 限流 ： INCR rate:ip:192.168.1.1 + EXPIRE rate:ip:192.168.1.1 60 实现滑动窗口限流。
+** decrement**：用 DECR 减 1，或用 INCRBY key -1 。
+* FAQ
+Q: INCR 是原子操作吗？ A: 是。Redis 单线程执行，INCR 天然原子，无需加锁。
+Q: 可以一次性增加 N 吗？ A: 用 INCRBY key increment 。INCR 是 INCRBY 的特例（increment=1）。
+Q: 计数器溢出怎么办？ A: Redis 整数是 64 位有符号（-2 63 到 2 63-1）。超过范围报错。需业务层处理或改用 String 存储大整数。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

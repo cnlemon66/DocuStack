@@ -1,0 +1,46 @@
+15.8.2 为只读操作配置 InnoDB_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.2 为只读操作配置 InnoDB
+15.8.2 为只读操作配置 InnoDB
+您可以通过在服务器启动时 InnoDB 启用配置选项来查询 MySQL 数据目录位于只读介质上的表
+。 --innodb-read-only
+如何启用
+要为只读操作准备实例，请确保在将所有必要信息
+存储到只读介质之前将其 刷新到数据文件中。 在禁用更改缓冲 ( innodb_change_buffering=0 ) 的情况下运行服务器并 缓慢关闭 。
+要为整个 MySQL 实例启用只读模式，请在服务器启动时指定以下配置选项：
+--innodb-read-only=1
+如果实例位于 DVD 或 CD 等只读介质上，或者 /var 目录不是所有人都可写的：
+
+和 --pid-file= path_on_writeable_media --event-scheduler=disabled
+--innodb-temp-data-file-path . 该选项指定 InnoDB 临时表空间数据文件的路径、文件名和文件大小。默认设置为 ibtmp1:12M:autoextend ，即在数据目录中创建 ibtmp1 临时表空间数据文件。要为只读操作准备实例，请设置 innodb_temp_data_file_path 为数据目录之外的位置。该路径必须相对于数据目录。例如：
+--innodb-temp-data-file-path=../../../tmp/ibtmp1:12M:autoextend
+从 MySQL 8.0 开始，启用 innodb_read_only 会阻止所有存储引擎的表创建和删除操作。这些操作修改 mysql 系统数据库中的数据字典表，但这些表使用
+存储引擎并且在启用 InnoDB 时不能修改。 innodb_read_only 同样的限制适用于任何修改数据字典表的操作，例如 ANALYZE
+TABLE and
+。 ALTER TABLE tbl_name ENGINE= engine_name
+另外， mysql 系统数据库中的其他表使用了 InnoDB MySQL 8.0中的存储引擎。将这些表设置为只读会导致对修改它们的操作的限制。例如， CREATE USER 、 GRANT 、 REVOKE 和 INSTALL PLUGIN 操作在只读模式下是不允许的。
+使用场景
+这种操作模式适用于以下情况：
+在只读存储介质（如 DVD 或 CD）上分发 MySQL 应用程序或一组 MySQL 数据。
+多个 MySQL 实例同时查询同一数据目录，通常在数据仓库配置中。您可以使用此技术来避免
+重载 MySQL 实例可能出现的 瓶颈，或者您可以对各种实例使用不同的配置选项来针对特定类型的查询调整每个实例。
+查询出于安全或数据完整性原因而处于只读状态的数据，例如存档的备份数据。
+笔记
+此功能主要用于分发和部署的灵活性，而不是基于只读方面的原始性能。有关调整只读查询性能的方法，请参阅 第 8.5.3 节，“优化 InnoDB 只读事务” ，这不需要将整个服务器设置为只读。
+这个怎么运作
+当服务器通过该选项以只读模式运行时 --innodb-read-only ，某些 InnoDB 功能和组件会减少或完全关闭：
+没有 更改缓冲 ，特别是没有来自更改缓冲区的合并。为只读操作准备实例时，要确保更改缓冲区为空，请禁用更改缓冲 ( innodb_change_buffering=0 ) 并先进行 缓慢关闭 。
+启动时没有 崩溃恢复 阶段。在进入只读状态之前，
+实例必须执行 缓慢关闭。
+因为 重做日志 不用于只读操作，所以您可以 innodb_log_file_size 在将实例设置为只读之前将其设置为尽可能小的大小 (1 MB)。
+大多数后台线程已关闭。保留 I/O 读取线程，以及 I/O 写入线程和用于写入临时文件的页面刷新协调器线程，这在只读模式下是允许的。缓冲池大小调整线程也保持活动状态以启用缓冲池的在线大小调整。
+有关死锁、监视器输出等的信息不会写入临时文件。因此， SHOW ENGINE
+INNODB STATUS 不会产生任何输出。
+当服务器处于只读模式时，通常会更改写操作行为的配置选项设置更改无效。
+强制执行隔离级别 的 MVCC 处理已关闭。所有查询都读取最新版本的记录，因为更新和删除是不可能的。
+未使用
+撤消 日志。 innodb_undo_tablespaces 禁用和 innodb_undo_directory 配置选项
+的任何设置
+。

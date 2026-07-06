@@ -1,0 +1,398 @@
+12.6.2 数学函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.6 数值函数和运算符 / 
+12.6.2 数学函数
+12.6.2 数学函数
+表 12.10 数学函数
+姓名 描述
+ABS() 返回绝对值
+ACOS() 返回反余弦
+ASIN() 返回反正弦
+ATAN() 返回反正切
+ATAN2() , ATAN() 返回两个参数的反正切值
+CEIL() 返回不小于参数的最小整数值
+CEILING() 返回不小于参数的最小整数值
+CONV() 在不同数基之间转换数字
+COS() 返回余弦
+COT() 返回余切
+CRC32() 计算循环冗余校验值
+DEGREES() 将弧度转换为度数
+EXP() 提升到的力量
+FLOOR() 返回不大于参数的最大整数值
+LN() 返回参数的自然对数
+LOG() 返回第一个参数的自然对数
+LOG10() 返回参数的以 10 为底的对数
+LOG2() 返回参数的以 2 为底的对数
+MOD() 退还余数
+PI() 返回 pi 的值
+POW() 返回参数的指定幂
+POWER() 返回参数的指定幂
+RADIANS() 返回参数转换为弧度
+RAND() 返回一个随机浮点值
+ROUND() 绕过论点
+SIGN() 返回参数的符号
+SIN() 返回参数的正弦
+SQRT() 返回参数的平方根
+TAN() 返回参数的正切
+TRUNCATE() 截断到指定的小数位数
+出现错误时，所有数学函数都会返回 NULL 。
+ABS( X )
+返回 的绝对值 X ，或者 NULL 如果 X 是 NULL 。
+结果类型派生自参数类型。这意味着 ABS(-9223372036854775808) 会产生错误，因为结果不能存储在带符号的 BIGINT 值中。
+mysql> SELECT ABS(2);
+-> 2
+mysql> SELECT ABS(-32);
+-> 32
+此函数可以安全地与 BIGINT 值一起使用。
+ACOS( X )
+返回 的反余弦 X ，即余弦为 的值 X 。 NULL 如果 X 不在范围内 则 -1 返回， 1 或者如果 X 是 则返回 NULL 。
+mysql> SELECT ACOS(1);
+-> 0
+mysql> SELECT ACOS(1.0001);
+-> NULL
+mysql> SELECT ACOS(0);
+-> 1.5707963267949
+ASIN( X )
+返回 的反正弦 X ，即正弦为 的值 X 。 NULL 如果 X 不在范围内 则 -1 返回， 1 或者如果 X 是 则返回 NULL 。
+mysql> SELECT ASIN(0.2);
+-> 0.20135792079033
+mysql> SELECT ASIN('foo');
+
++-------------+
+| ASIN('foo') |
++-------------+
+| 0 |
++-------------+
+1 row in set, 1 warning (0.00 sec)
+
+mysql> SHOW WARNINGS;
++---------+------+-----------------------------------------+
+| Level | Code | Message |
++---------+------+-----------------------------------------+
+| Warning | 1292 | Truncated incorrect DOUBLE value: 'foo' |
++---------+------+-----------------------------------------+
+ATAN( X )
+返回 的反正切 X ，即正切为 的值 X 。返回 NULL 如果 X 是 NULL
+mysql> SELECT ATAN(2);
+-> 1.1071487177941
+mysql> SELECT ATAN(-2);
+-> -1.1071487177941
+ATAN( Y , X ) , ATAN2( Y , X )
+X 返回两个变量和
+
+的反正切值 Y 。它类似于计算 的反正切，只是两个参数的符号用于确定结果的象限。返回if
+或
+is 。 Y / X NULL X Y NULL
+mysql> SELECT ATAN(-2,2);
+-> -0.78539816339745
+mysql> SELECT ATAN2(PI(),0);
+-> 1.5707963267949
+CEIL( X )
+CEIL() 是的同义词 CEILING() 。
+CEILING( X )
+返回不小于 的最小整数值 X 。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT CEILING(1.23);
+-> 2
+mysql> SELECT CEILING(-1.23);
+-> -1
+对于精确值数值参数，返回值具有精确值数值类型。对于字符串或浮点参数，返回值具有浮点类型。
+CONV( N , from_base , to_base )
+在不同的数基之间转换数字。返回数字的字符串表示形式 N ，从基数转换 from_base 为基数 to_base 。 NULL 如果任何参数是
+，则返回 NULL 。参数 N 被解释为整数，但可以指定为整数或字符串。最小基数是 2 ，最大基数是 36 。如果 from_base 是负数， N 则视为有符号数。否则， N 被视为无符号。 CONV() 以 64 位精度工作。
+CONV() NULL 如果它的任何参数是 ，则返回 NULL 。
+mysql> SELECT CONV('a',16,2);
+-> '1010'
+mysql> SELECT CONV('6E',18,8);
+-> '172'
+mysql> SELECT CONV(-17,10,-18);
+-> '-H'
+mysql> SELECT CONV(10+'10'+'10'+X'0a',10,10);
+-> '40'
+COS( X )
+返回 的余弦值 X ，其中 X 以弧度表示。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT COS(PI());
+-> -1
+COT( X )
+返回 的余切值 X 。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT COT(12);
+-> -1.5726734063977
+mysql> SELECT COT(0);
+-> out-of-range error
+CRC32( expr )
+计算循环冗余校验值并返回 32 位无符号值。结果是 NULL 如果参数是 NULL 。该参数应该是一个字符串，如果不是，则（如果可能）被视为一个字符串。
+mysql> SELECT CRC32('MySQL');
+-> 3259397556
+mysql> SELECT CRC32('mysql');
+-> 2501908538
+DEGREES( X )
+返回参数 X ，从弧度转换为度数。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT DEGREES(PI());
+-> 180
+mysql> SELECT DEGREES(PI() / 2);
+-> 90
+EXP( X )
+返回 e 的值（自然对数的底数）的 次方 X 。此函数的反函数是 LOG() （仅使用单个参数）或 LN() .
+如果 X 是 NULL ，则此函数返回 NULL 。
+mysql> SELECT EXP(2);
+-> 7.3890560989307
+mysql> SELECT EXP(-2);
+-> 0.13533528323661
+mysql> SELECT EXP(0);
+-> 1
+FLOOR( X )
+返回不大于 的最大整数值 X 。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT FLOOR(1.23), FLOOR(-1.23);
+-> 1, -2
+对于精确值数值参数，返回值具有精确值数值类型。对于字符串或浮点参数，返回值具有浮点类型。
+FORMAT( X , D )
+将数字 X 格式化为类似于 的格式 '#,###,###.##' ，四舍五入到 D 小数位，并将结果作为字符串返回。有关详细信息，请参阅 第 12.8 节，“字符串函数和运算符” 。
+HEX(N_or_S)
+该函数可用于获取十进制数或字符串的十六进制表示；它这样做的方式因参数的类型而异。 有关详细信息，请参阅第 12.8 节“字符串函数和运算符” 中此函数的描述
+。
+LN( X )
+返回 的自然对数 X ；即，以 e 为底的对数 X 。如果 X 小于或等于 0.0E0，则函数返回 NULL 并报告警告 “ 对数参数无效 ” 。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT LN(2);
+-> 0.69314718055995
+mysql> SELECT LN(-2);
+-> NULL
+此功能与 同义
+。这个函数的反函数就是
+函数。 LOG( X ) EXP()
+LOG( X ) , LOG( B , X )
+如果使用一个参数调用，此函数返回 的自然对数 X 。如果 X 小于或等于 0.0E0，则函数返回 NULL 并报告警告 “ 对数参数无效 ” 。返回 NULL if X 或 B is NULL 。
+此函数的反函数（当使用单个参数调用时）是 EXP() 函数。
+mysql> SELECT LOG(2);
+-> 0.69314718055995
+mysql> SELECT LOG(-2);
+-> NULL
+X 如果使用两个参数调用，此函数返回以 base 为底
+
+的对数 B 。如果 X 小于或等于 0，或者如果 B 小于或等于 1，则 NULL 返回。
+mysql> SELECT LOG(2,65536);
+-> 16
+mysql> SELECT LOG(10,100);
+-> 2
+mysql> SELECT LOG(1,100);
+-> NULL
+LOG( B , X ) 相当于
+. LOG( X ) /
+LOG( B )
+LOG2( X )
+返回 的以 2 为底的对数 X 。如果 X 小于或等于 0.0E0，则函数返回 NULL 并报告警告 “ 对数参数无效 ” 。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT LOG2(65536);
+-> 16
+mysql> SELECT LOG2(-100);
+-> NULL
+LOG2() 对于找出一个数字需要多少位来存储是很有用的。此函数等效于表达式
+。 LOG( X ) /
+LOG(2)
+LOG10( X )
+返回 的以 10 为底的对数 X 。如果 X 小于或等于 0.0E0，则函数返回 NULL 并报告警告 “ 对数参数无效 ” 。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT LOG10(2);
+-> 0.30102999566398
+mysql> SELECT LOG10(100);
+-> 2
+mysql> SELECT LOG10(-100);
+-> NULL
+LOG10( X ) 相当于
+. LOG(10, X )
+MOD( N , M ) ,
+, N % M N MOD M
+模运算。返回 N 除以
+的余数 M 。返回 NULL if M 或 N is NULL 。
+mysql> SELECT MOD(234, 10);
+-> 4
+mysql> SELECT 253 % 7;
+-> 1
+mysql> SELECT MOD(29,9);
+-> 2
+mysql> SELECT 29 MOD 9;
+-> 2
+此函数可以安全地与 BIGINT 值一起使用。
+MOD() 也适用于具有小数部分的值并返回除法后的确切余数：
+mysql> SELECT MOD(34.5,3);
+-> 1.5
+MOD( N ,0) 回报 NULL 。
+PI()
+返回 π (pi) 的值。默认显示的小数位数是七位，但 MySQL 在内部使用完整的双精度值。
+mysql> SELECT PI();
+-> 3.141593
+mysql> SELECT PI()+0.000000000000000000;
+-> 3.141592653589793116
+POW( X , Y )
+返回 的 X 次方值 Y 。返回 NULL if X 或 Y is NULL 。
+mysql> SELECT POW(2,2);
+-> 4
+mysql> SELECT POW(2,-2);
+-> 0.25
+POWER( X , Y )
+这是 的同义词 POW() 。
+RADIANS( X )
+返回参数 X ，从度数转换为弧度。（注意 π 弧度等于 180 度。） NULL 如果 X 是 则返回 NULL 。
+mysql> SELECT RADIANS(90);
+-> 1.5707963267949
+RAND([ N ])
+返回<= < v 范围内
+
+的随机浮点值
+。要获得
+<=
+<
+范围内
+的随机整数，请使用表达式
+
+− 。例如，要获取<=
+<范围内的随机整数，请使用以下语句： 0 v 1.0 R i R j FLOOR( i + RAND() * ( j i )) 7 R 12
+SELECT FLOOR(7 + (RAND() * 5));
+如果指定了整数参数 N ，则将其用作种子值：
+使用常量初始值设定项参数，种子在准备好语句时初始化一次，然后再执行。
+使用非常量初始值设定项参数（例如列名），种子将使用每次调用的值进行初始化 RAND() 。
+此行为的一个含义是，对于相等的参数值，
+
+每次都返回相同的值，从而产生可重复的列值序列。在下面的例子中，由产生的值序列在
+它出现的两个地方是相同的。 RAND( N ) RAND(3)
+mysql> CREATE TABLE t (i INT);
+Query OK, 0 rows affected (0.42 sec)
+
+mysql> INSERT INTO t VALUES(1),(2),(3);
+Query OK, 3 rows affected (0.00 sec)
+Records: 3 Duplicates: 0 Warnings: 0
+
+mysql> SELECT i, RAND() FROM t;
++------+------------------+
+| i | RAND() |
++------+------------------+
+| 1 | 0.61914388706828 |
+| 2 | 0.93845168309142 |
+| 3 | 0.83482678498591 |
++------+------------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT i, RAND(3) FROM t;
++------+------------------+
+| i | RAND(3) |
++------+------------------+
+| 1 | 0.90576975597606 |
+| 2 | 0.37307905813035 |
+| 3 | 0.14808605345719 |
++------+------------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT i, RAND() FROM t;
++------+------------------+
+| i | RAND() |
++------+------------------+
+| 1 | 0.35877890638893 |
+| 2 | 0.28941420772058 |
+| 3 | 0.37073435016976 |
++------+------------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT i, RAND(3) FROM t;
++------+------------------+
+| i | RAND(3) |
++------+------------------+
+| 1 | 0.90576975597606 |
+| 2 | 0.37307905813035 |
+| 3 | 0.14808605345719 |
++------+------------------+
+3 rows in set (0.01 sec)
+RAND() 在 WHERE 子句中对每一行（从一个表中选择时）或行组合（从多表连接中选择时）进行评估。因此，出于优化器的目的， RAND() 它不是一个常量值，不能用于索引优化。有关详细信息，请参阅 第 8.2.1.20 节，“函数调用优化” 。
+在or子句中
+使用具有 RAND() 值的列可能会产生意外结果，因为对于任一子句，
+表达式可以针对同一行计算多次，每次返回不同的结果。如果目标是以随机顺序检索行，您可以使用如下语句： ORDER BY GROUP
+BY RAND()
+SELECT * FROM tbl_name ORDER BY RAND();
+要从一组行中选择随机样本，请结合 ORDER BY RAND() 使用 LIMIT ：
+SELECT * FROM table1, table2 WHERE a=b AND c<d ORDER BY RAND() LIMIT 1000;
+RAND() 并不意味着是一个完美的随机生成器。这是一种按需生成随机数的快速方法，可在同一 MySQL 版本的平台之间移植。
+此函数对于基于语句的复制是不安全的。如果您在 binlog_format 设置为
+时使用此功能，则会记录一条警告 STATEMENT 。
+ROUND( X ) , ROUND( X , D )
+将参数四舍五入 X 到 D 小数位。舍入算法取决于 的数据类型 X 。 D 如果未指定，则默认为 0。 D 可以是负值，使 D 值的小数点左边的数字 X 变为零。的最大绝对值为 D 30；任何超过 30（或 -30）的数字都会被截断。如果 X 或 D 是 NULL ，函数返回 NULL 。
+mysql> SELECT ROUND(-1.23);
+-> -1
+mysql> SELECT ROUND(-1.58);
+-> -2
+mysql> SELECT ROUND(1.58);
+-> 2
+mysql> SELECT ROUND(1.298, 1);
+-> 1.3
+mysql> SELECT ROUND(1.298, 0);
+-> 1
+mysql> SELECT ROUND(23.298, -1);
+-> 20
+mysql> SELECT ROUND(.12345678901234567890123456789012345, 35);
+-> 0.123456789012345678901234567890
+返回值与第一个参数具有相同的类型（假设它是整数、双精度或小数）。这意味着对于整数参数，结果是一个整数（没有小数位）：
+mysql> SELECT ROUND(150.000,2), ROUND(150,2);
++------------------+--------------+
+| ROUND(150.000,2) | ROUND(150,2) |
++------------------+--------------+
+| 150.00 | 150 |
++------------------+--------------+
+ROUND() 根据第一个参数的类型使用以下规则：
+对于精确值数字， ROUND() 使用 “ 从零开始舍入一半 ” 或 “ 向最近 舍入” 规则：小数部分为 .5 或更大的值如果为正数则向上舍入到下一个整数，如果为正数则向下舍入到下一个整数消极的。（换句话说，它从零四舍五入。）小数部分小于 .5 的值如果为正则向下舍入到下一个整数，如果为负则向上舍入到下一个整数。
+对于近似值数字，结果取决于 C 库。在许多系统上，这意味着 ROUND() 使用 “ 舍入到最接近的偶数 ” 规则：小数部分恰好在两个整数之间的值被舍入到最接近的偶数。
+以下示例显示了精确值和近似值的舍入方式有何不同：
+mysql> SELECT ROUND(2.5), ROUND(25E-1);
++------------+--------------+
+| ROUND(2.5) | ROUND(25E-1) |
++------------+--------------+
+| 3 | 2 |
++------------+--------------+
+有关详细信息，请参阅 第 12.25 节，“精度数学” 。
+在 MySQL 8.0.21 及更高版本中， ROUND() (and TRUNCATE() ) 返回的数据类型根据此处列出的规则确定：
+当第一个参数是任何整数类型时，返回类型总是 BIGINT .
+当第一个参数是任何浮点类型或任何非数字类型时，返回类型总是 DOUBLE .
+当第一个参数是一个 DECIMAL 值时，返回类型也是 DECIMAL .
+返回值的类型属性也从第一个参数复制，但在 的情况下 DECIMAL ，当第二个参数是常量值时。
+当所需的小数位数小于参数的小数位数时，将相应调整结果的小数位数和精度。
+此外，对于 ROUND() （但不是 TRUNCATE() 函数），精度扩展一位以适应增加有效数字位数的舍入。如果第二个参数为负数，则返回类型将调整为小数位数为 0，并具​​有相应的精度。例如， ROUND(99.999, 2) returns—— 100.00 第一个参数是 DECIMAL(5, 3) ，返回类型是 DECIMAL(5, 2) 。
+如果第二个参数为负数，则返回类型的标度为 0 并具有相应的精度； ROUND(99.999, -1) 返回 100 ，即 DECIMAL(3,
+0) 。
+SIGN( X )
+将参数的符号返回为 -1 、 0 或 1 ，具体取决于 X 是负数、零还是正数。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT SIGN(-32);
+-> -1
+mysql> SELECT SIGN(0);
+-> 0
+mysql> SELECT SIGN(234);
+-> 1
+SIN( X )
+返回 的正弦值 X ，其中 X 以弧度表示。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT SIN(PI());
+-> 1.2246063538224e-16
+mysql> SELECT ROUND(SIN(PI()));
+-> 0
+SQRT( X )
+返回非负数的平方根 X 。如果 X 是 NULL ，函数返回 NULL 。
+mysql> SELECT SQRT(4);
+-> 2
+mysql> SELECT SQRT(20);
+-> 4.4721359549996
+mysql> SELECT SQRT(-16);
+-> NULL
+TAN( X )
+返回 的正切值 X ，其中 X 以弧度表示。返回 NULL 如果 X 是 NULL 。
+mysql> SELECT TAN(PI());
+-> -1.2246063538224e-16
+mysql> SELECT TAN(PI()+1);
+-> 1.5574077246549
+TRUNCATE( X , D )
+返回 X 截断到 D 小数位的数字。如果 D 是 0 ，则结果没有小数点或小数部分。 D 可以是负值，使 D 值的小数点左边的数字 X 变为零。如果 X 或 D 是 NULL ，函数返回 NULL 。
+mysql> SELECT TRUNCATE(1.223,1);
+-> 1.2
+mysql> SELECT TRUNCATE(1.999,1);
+-> 1.9
+mysql> SELECT TRUNCATE(1.999,0);
+-> 1
+mysql> SELECT TRUNCATE(-1.999,1);
+-> -1.9
+mysql> SELECT TRUNCATE(122,-2);
+-> 100
+mysql> SELECT TRUNCATE(10.28*100,0);
+-> 1028
+所有数字都向零四舍五入。
+在 MySQL 8.0.21 及更高版本中，返回的数据类型 TRUNCATE() 遵循确定 ROUND() 函数返回类型的相同规则；有关详细信息，请参阅说明 ROUND() 。

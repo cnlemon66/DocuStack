@@ -1,0 +1,18 @@
+5.5.2 获取组件信息_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.5 MySQL组件 / 
+5.5.2 获取组件信息
+5.5.2 获取组件信息
+mysql.component 系统表包含有关当前加载的组件的信息，并显示哪些组件已使用
+注册 INSTALL
+COMPONENT 。从表中选择显示安装了哪些组件。例如：
+mysql> SELECT * FROM mysql.component;
++--------------+--------------------+------------------------------------+
+| component_id | component_group_id | component_urn |
++--------------+--------------------+------------------------------------+
+| 1 | 1 | file://component_validate_password |
+| 2 | 2 | file://component_log_sink_json |
++--------------+--------------------+------------------------------------+
+和值供 component_id 内部 component_group_id 使用。 component_urn 是在 INSTALL COMPONENT 和 UNINSTALL COMPONENT 语句中用于加载和卸载组件
+的URN。

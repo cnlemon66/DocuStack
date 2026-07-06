@@ -1,0 +1,25 @@
+7.4.4 重新加载定界文本格式备份_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 7.4 使用 mysqldump 进行备份 / 
+7.4.4 重新加载定界文本格式备份
+7.4.4 重新加载定界文本格式备份
+对于使用 mysqldump --tab 生成的备份，每个表在输出目录中由一个 .sql 包含 CREATE TABLE 表语句的 .txt 文件和一个包含表数据的文件表示。要重新加载表，首先将位置更改为输出目录。然后 .sql 用 mysql 处理文件创建一个空表，处理 .txt 文件加载数据到表中：
+$> mysql db1 < t1.sql
+$> mysqlimport db1 t1.txt
+使用 mysqlimport 加载数据文件的替代方法是使用 mysql LOAD
+DATA 客户端中的语句
+：
+mysql> USE db1;
+mysql> LOAD DATA INFILE 't1.txt' INTO TABLE t1;
+如果您
+在最初转储表时
+对 mysqldump使用了任何数据格式化选项，则必须对 mysqlimport 使用相同的选项或 LOAD
+DATA 确保正确解释数据文件内容：
+$> mysqlimport --fields-terminated-by=,
+--fields-enclosed-by='"' --lines-terminated-by=0x0d0a db1 t1.txt
+或者：
+mysql> USE db1;
+mysql> LOAD DATA INFILE 't1.txt' INTO TABLE t1
+FIELDS TERMINATED BY ',' FIELDS ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n';

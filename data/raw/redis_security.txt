@@ -1,0 +1,111 @@
+Redis安全
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis安全
+本节提供了Redis安全主题概述，包括控制访问、代码安全以及诸于恶意注入攻击拦截等。
+对于安全相关的交流可以在github上建一个issue；如果担心沟通的安全，可以使用文末的GPG密钥。
+Redis一般安全模型
+Reids被设计用于在信任的环境中访问的被授权客户端使用，这意味着将Redis直接暴露到internet上，或者直接被环境中的非授权的客户端通过TCP端口访问都不是一个好的主意。
+例如，一个web应用使用Redis作为数据库、缓存或者消息系统，前端生成页面、执行请求操作或者web应用用户触发操作均将访问Redis。在这种情况下，web应用应对不受信任的客户端的进行访问控制。
+这是一个具体的例子，但是，一般情况下，非授信访问Redis必须被实现了ACLs层进行访问控制：校验用户输入以决定哪些操作可以被Redis实例执行。
+总的来说，Redis并不为了提高安全优化，而是在高性能和易用性方面进行优化。
+网络安全
+除了网络中信任的客户端能够访问Redis端口，其他请求应拒绝访问。因此运行Redis的服务器只能被使用Redis实现应用程序的计算机访问。
+对于一台电脑直接暴露在互联网的情况，如虚拟机(Linode...)，应该使用防火墙阻止外部访问Redis端口。客户端应该通过环回接口访问Reids.
+注意可以在 redis.conf 文件添加一行如下配置绑定Redis到单个接口上：
+bind 127.0.0.1
+由于Redis设计的初衷，如果不能成功阻止外部访问Redis端口，会有很大的安全影响。外部攻击者使用一个 FLUSHALL 命令就可以删除整个数据集。
+身份验证功能
+虽然Redis没有实现访问控制，但它提供了一个简单的身份验证功能，该功能是一个可选功能，可以通过编辑 redis.conf 文件打开。
+身份验证功能生效，Redis将拒绝所有未经身份认证的查询请求。客户端可以通过发送(AUTH
+密码)命令进行身份认证。
+密码被管理员明文配置在 redis.conf 文件中。它需要足够长，防止被暴力破解。原因有两点：
+Redis的查询服务非常快，外部客户端每秒可以进行多次密码测试。
+Redis密码存储在redis.conf文件中和客户端的配置中，系统管理员无需记住密码，因此它可以很长。
+身份验证层是一个可选的冗余层，如果防火墙或其他保护Redis安全的系统被攻破，对于不知道授权密码的情况下，攻击者仍不能访问Redis.
+像其他Redis命令一样， AUTH 命令是明文传输的，所以仍然不能阻止那些获得网络访问权限的攻击者的嗅探。
+数据加密支持
+Redis不支持加密，为了实现信任的伙伴通过互联网或不信任的网络的访问设置，实现了一个附加的保护层，比如SSL代理。我们推荐 spiped .
+禁用特定命令集
+Redis可以禁用命令或者重命名命令，对于正常的客户端限制使用特定的命令集。
+例如，一台虚拟化服务器提供了管理redis实例的服务。在这个环境中，正常用户不能调用CONFIG命令修改实例的配置信息，但是管理员可以。
+在这种情况下，不仅可以重命名命令，而且可以完全隐藏掉命令。这个特性可以通过在 redis.conf 文件中配置来实现。如：
+rename-command CONFIG b840fc02d524045429941cc15f59e41cb7be6c52
+在上面的例子中， CONFIG 命令被重名为无法猜测的名字。当然也可以通过重名为空字符来完全禁用它(或别的命令)，如下面的示例所示：
+rename-command CONFIG ""
+外部特定输入触发攻击
+还有一类攻击，攻击者无需拥有访问权限就能从外部触发。其中一个例子就是利用了插入数据到Redis的能力来触发，因为
+Redis内部组件的数据结构的实现算法太复杂。
+例如，攻击者可以通过WEB表单提交一串已知字符集，通过散列成相同的桶到散列表中将O(1)期望时间(平均时间)变成了O(N)的最坏情况，消耗了更多的CPU计算，最终导致拒绝访问。
+为了阻止这种攻击，Redis对于散列函数使用了一个预执行的伪随机数种子。
+Redis使用了qsort
+算法实现了 SORT 命令。当前，这个算法不是随机的，因此存在因特定输入触发产品最坏情况的可能。
+字符串转义和NoSQL注入
+Redis协议没有字符串转义的概念，所以在正常环境中使用正常的客户端库是无法注入的。协议使用前缀长度的字符串，且是完全二进制安全的。
+使用 EVAL 和 EVALSHA 命令执行Lua脚本时也遵循相同的规则，因而这些命令也是安全的
+然后，需要避免使用不被信任的来源的字符串组合Lus脚本这种奇怪的用例。
+代码安全
+Redis的默认设置允许客户端访问所有的命令集，但是访问实例不能导致控制运行Redis的系统的能力。
+在内部，Redis使用众所周知的实践来写安全的代码，以阻止缓冲区溢出，格式化漏洞和内存损坏漏洞。
+然而，使用 CONFIG 命令控制服务配置的能力使得客户端能改变程序的工作目录和dump文件的名字，这会允许客户端在随机路径写RDB
+Redis文件,这是一个安全问题，容易导致用户损害系统或运行不安全的代码。
+Redis不要求使用Root特权运行。鉴于此，推荐使用一个非特权用户来运行Redis。目前，Redis作者正在调查添加一个新的配置参数来限制 CONFIG
+SET/GET
+dir 和其他类似运行时配置指令的可能性。这将阻止客户端在任意位置强制写Redis
+dump文件。
+GPG密钥
+-----BEGIN PGP PUBLIC KEY BLOCK----- Version: GnuPG v1.4.13 (Darwin)
+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
+vI1sAEeV6ZM/uc4CDI3E2TxEbQ==
+密钥指纹
+pub 4096R/0E5C88D6 2013-11-07 [expires: 2063-10-26] Key fingerprint = E5F3 DA80 35F0 2EC1 47F9 020F 3181 3728 0E5C 88D6 uid Salvatore Sanfilippo sub 4096R/3B34D15F 2013-11-07 [expires: 2063-10-26]

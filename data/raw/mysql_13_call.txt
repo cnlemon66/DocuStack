@@ -1,0 +1,54 @@
+13.2.1 CALL 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 
+13.2.1 CALL 语句
+13.2.1 CALL 语句
+CALL sp_name ([ parameter [,...]])
+CALL sp_name [()]
+该 CALL 语句调用之前使用 定义的存储过程 CREATE PROCEDURE 。
+可以在没有括号的情况下调用不带参数的存储过程。也就是说， CALL p() 和 CALL p 是等价的。
+CALL OUT 可以使用声明为或参数的参数将值传回其调用者 INOUT 。当过程返回时，客户端程序还可以获得在例程中执行的最终语句受影响的行数： 在 SQL 级别，调用 ROW_COUNT() 函数；从 C API 调用 mysql_affected_rows() 函数。
+有关未处理条件对过程参数的影响的信息，请参阅 第 13.6.7.8 节，“条件处理和 OUT 或 INOUT 参数” 。
+OUT 要使用or参数
+从过程中取回值 INOUT ，请通过用户变量传递参数，然后在过程返回后检查变量的值。（如果从另一个存储过程或函数中调用该过程，您还可以将例程参数或局部例程变量作为 IN or INOUT 参数传递。）对于 INOUT 参数，在将其传递给过程之前初始化其值。以下过程具有 OUT 该过程设置为当前服务器版本的参数，以及 INOUT 该过程从其当前值递增 1 的值：
+CREATE PROCEDURE p (OUT ver_param VARCHAR(25), INOUT incr_param INT)
+BEGIN
+# Set value of OUT parameter
+SELECT VERSION() INTO ver_param;
+# Increment value of INOUT parameter
+SET incr_param = incr_param + 1;
+END;
+在调用过程之前，初始化要作为 INOUT 参数传递的变量。调用该过程后，您可以看到两个变量的值被设置或修改：
+mysql> SET @increment = 10;
+mysql> CALL p(@version, @increment);
+mysql> SELECT @version, @increment;
++--------------------+------------+
+| @version | @increment |
++--------------------+------------+
+| 8.0.3-rc-debug-log | 11 |
++--------------------+------------+
+在与和
+一起使用的准备好的 CALL 语句中，占位符可用于参数、 和
+参数。这些类型的参数可以按如下方式使用： PREPARE EXECUTE IN OUT INOUT
+mysql> SET @increment = 10;
+mysql> PREPARE s FROM 'CALL p(?, ?)';
+mysql> EXECUTE s USING @version, @increment;
+mysql> SELECT @version, @increment;
++--------------------+------------+
+| @version | @increment |
++--------------------+------------+
+| 8.0.3-rc-debug-log | 11 |
++--------------------+------------+
+要编写使用 CALL SQL 语句执行生成结果集的存储过程
+的 C 程序， CLIENT_MULTI_RESULTS 必须启用该标志。这是因为 CALL 除了过程中执行的语句可能返回的任何结果集之外，每个函数都返回一个结果来指示调用状态。如果用于执行包含准备好的语句的任何存储过程， CLIENT_MULTI_RESULTS 则也必须启用。 CALL 无法确定何时加载这样的过程，这些语句是否会产生结果集，因此有必要假设它们会产生结果集。
+CLIENT_MULTI_RESULTS 可以在调用时启用 mysql_real_connect() ，可以显式地传递 CLIENT_MULTI_RESULTS 标志本身，也可以隐式地传递 CLIENT_MULTI_STATEMENTS （这也启用 CLIENT_MULTI_RESULTS ）。 CLIENT_MULTI_RESULTS 默认情况下启用。
+要处理使用or CALL 执行的语句
+的结果，请使用调用以确定是否有更多结果的循环。有关示例，请参阅 多语句执行支持 。 mysql_query() mysql_real_query() mysql_next_result()
+C 程序可以使用准备语句接口来执行
+语句和 CALL 访问
+参数。这是通过
+使用调用以确定是否有更多结果的循环来处理语句的结果来完成的。有关示例，请参阅 准备好的 CALL 语句支持 。提供 MySQL 接口的语言可以使用准备好的
+语句来直接检索和
+处理参数。 OUT INOUT CALL mysql_stmt_next_result() CALL OUT INOUT
+检测到存储程序引用的对象的元数据更改，并在下一次执行程序时自动重新分析受影响的语句。有关详细信息，请参阅 第 8.10.3 节，“准备好的语句和存储程序的缓存” 。

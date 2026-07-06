@@ -1,0 +1,22 @@
+15.12.6 使用在线 DDL 简化 DDL 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.12 InnoDB和在线DDL / 
+15.12.6 使用在线 DDL 简化 DDL 语句
+15.12.6 使用在线 DDL 简化 DDL 语句
+在引入 在线 DDL 之前，通常的做法是将许多 DDL 操作组合到一条 ALTER TABLE 语句中。因为每个 ALTER TABLE 语句都涉及复制和重建表，所以一次对同一个表进行多项更改会更有效，因为这些更改都可以通过对表进行一次重建操作来完成。缺点是涉及 DDL 操作的 SQL 代码更难维护和在不同的脚本中重用。如果每次的具体变化都不同，您可能必须 ALTER
+TABLE 为每个略有不同的场景构建一个新的复合体。
+对于可以在线完成的 DDL 操作，您可以将它们分成单独 ALTER TABLE 的语句，以便于编写脚本和维护，而不会牺牲效率。例如，您可能会采用如下复杂的语句：
+ALTER TABLE t1 ADD INDEX i1(c1), ADD UNIQUE INDEX i2(c2),
+CHANGE c4_old_name c4_new_name INTEGER UNSIGNED;
+并将其分解为可以独立测试和执行的更简单的部分，例如：
+ALTER TABLE t1 ADD INDEX i1(c1);
+ALTER TABLE t1 ADD UNIQUE INDEX i2(c2);
+ALTER TABLE t1 CHANGE c4_old_name c4_new_name INTEGER UNSIGNED NOT NULL;
+您可能仍将多部分 ALTER
+TABLE 语句用于：
+必须按特定顺序执行的操作，例如创建索引后跟使用该索引的外键约束。
+操作都使用相同的特定 LOCK 子句，您希望作为一个组成功或失败。
+不能在线进行的操作，即仍然使用table-copy方式的操作。
+您指定 ALGORITHM=COPY 或
+的操作 old_alter_table=1 ，以在需要时强制执行表复制行为，以便在特殊情况下实现精确的向后兼容性。

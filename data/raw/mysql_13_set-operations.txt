@@ -1,0 +1,36 @@
+13.2.12 集合操作_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 
+13.2.12 集合操作
+13.2.12 集合操作
+13.2.12.1 UNION 子句 13.2.12.2 INTERSECT 子句 13.2.12.3 EXCEPT 子句
+SQL 集操作将多个查询块的结果合并为一个结果。 查询块 ，有时也称为 简单表 ，是返回结果集的任何 SQL 语句，例如 SELECT 。MySQL 8.0（8.0.19 及更高版本）也支持 TABLE and VALUES 语句。有关更多信息，请参阅本章其他地方对这些语句的单独描述。
+SQL 标准定义了以下三个集合操作：
+UNION ：将来自两个查询块的所有结果组合成一个结果，省略任何重复项。
+INTERSECT ：仅合并两个查询块的结果共有的那些行，省略任何重复项。
+EXCEPT ：对于两个查询块 A and B ，返回所有 A 不存在于中的结果 B ，省略任何重复项。
+（某些数据库系统，例如 Oracle，使用 MINUS 此操作符的名称。MySQL 不支持此操作。）
+MySQL 早就支持了 UNION ；MySQL 8.0 添加了对 INTERSECT and
+的支持 EXCEPT （MySQL 8.0.31 及更高版本）。
+这些集合运算符中的每一个都支持一个 ALL 修饰符。当 ALL 关键字跟在集合运算符之后时，这会导致结果中包含重复项。有关详细信息和示例，请参阅以下涵盖各个运算符的部分。
+所有三个集合运算符还支持一个 DISTINCT 关键字，它可以抑制结果中的重复项。由于这是集合运算符的默认行为，因此通常没有必要 DISTINCT 明确指定。
+通常，查询块和集合操作可以以任意数量和顺序组合。此处显示了一个大大简化的表示：
+query_block [ set_op query_block ] [ set_op query_block ] ... query_block :
+SELECT | TABLE | VALUES set_op :
+UNION | INTERSECT | EXCEPT
+这可以更准确、更详细地表示，如下所示：
+query_expression :
+[ with_clause ] /* WITH clause */ query_expression_body [ order_by_clause ] [ limit_clause ] [ into_clause ] query_expression_body : query_term | query_expression_body UNION [ALL | DISTINCT] query_term | query_expression_body EXCEPT [ALL | DISTINCT] query_term query_term : query_primary | query_term INTERSECT [ALL | DISTINCT] query_block query_primary : query_block | '(' query_expression_body [ order_by_clause ] [ limit_clause ] [ into_clause ] ')' query_block : /* also known as a simple table */ query_specification /* SELECT statement */
+| table_value_constructor /* VALUES statement */
+| explicit_table /* TABLE statement */
+您应该知道 INTERSECT 是 在 UNION 或之前计算的 EXCEPT 。这意味着，例如， TABLE x UNION TABLE y INTERSECT
+TABLE z 始终被评估为 TABLE x UNION
+(TABLE y INTERSECT TABLE z) . 有关详细信息，请参阅 第 13.2.12.2 节，“INTERSECT 子句” 。
+此外，您应该记住，虽然 UNION 和 INTERSECT 集合运算符是可交换的（顺序不重要）， EXCEPT 但不是（操作数的顺序影响结果）。换句话说，以下所有陈述都是正确的：
+TABLE x UNION TABLE y 并 TABLE y
+UNION TABLE x 产生相同的结果，尽管行的顺序可能不同。 ORDER BY 您可以使用;强制它们相同 请参阅 Unions 中的 ORDER BY 和 LIMIT 。
+TABLE x INTERSECT TABLE y 并 TABLE y INTERSECT TABLE x 返回相同的结果。
+TABLE x EXCEPT TABLE y 并且 TABLE y
+EXCEPT TABLE x 不会 产生 相同的结果。
+更多信息和示例可以在以下部分中找到。

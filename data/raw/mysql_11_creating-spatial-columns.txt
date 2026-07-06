@@ -1,0 +1,16 @@
+11.4.6 创建空间柱_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.4 空间数据类型 / 
+11.4.6 创建空间柱
+11.4.6 创建空间柱
+MySQL 提供了一种为几何类型创建空间列的标准方法，例如，使用 CREATE
+TABLE 或 ALTER TABLE 。 MyISAM 、 InnoDB 、 NDB 和
+表支持空间列 ARCHIVE 。 另请参阅第 11.4.10 节，“创建空间索引” 下有关空间索引的注释
+。
+具有空间数据类型的列可以具有 SRID 属性，以明确指示列中存储的值的空间参考系统 (SRS)。有关 SRID 限制列的含义，请参阅 第 11.4.1 节，“空间数据类型” 。
+使用 CREATE TABLE 语句创建一个带有空间列的表：
+CREATE TABLE geom (g GEOMETRY);
+使用该 ALTER TABLE 语句向现有表添加空间列或从现有表删除空间列：
+ALTER TABLE geom ADD pt POINT;
+ALTER TABLE geom DROP pt;

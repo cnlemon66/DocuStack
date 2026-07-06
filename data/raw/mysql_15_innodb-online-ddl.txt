@@ -1,0 +1,28 @@
+15.12 InnoDB和在线DDL_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 
+15.12 InnoDB和在线DDL
+15.12 InnoDB和在线DDL
+15.12.1 在线DDL操作 15.12.2 在线 DDL 性能和并发 15.12.3 在线 DDL 空间要求 15.12.4 在线DDL内存管理 15.12.5 为在线 DDL 操作配置并行线程 15.12.6 使用在线 DDL 简化 DDL 语句 15.12.7 在线 DDL 失败条件 15.12.8 在线 DDL 限制
+在线 DDL 功能支持即时和就地表更改以及并发 DML。此功能的好处包括：
+在繁忙的生产环境中提高了响应能力和可用性，在这种情况下，让表格在几分钟或几小时内不可用是不切实际的。
+对于就地操作，能够使用 LOCK 子句在 DDL 操作期间调整性能和并发性之间的平衡。请参阅 LOCK 子句 。
+比表复制方法更少的磁盘空间使用和 I/O 开销。
+笔记
+ALGORITHM=INSTANT ADD COLUMN MySQL 8.0.12 中
+的支持和其他操作可用
+。
+通常，您无需执行任何特殊操作即可启用在线 DDL。默认情况下，MySQL 在允许的情况下立即或就地执行操作，并尽可能少地锁定。
+ALGORITHM 您可以使用语句的and LOCK 子句
+控制 DDL 操作的各个方面 ALTER TABLE 。这些子句放在语句的末尾，用逗号与表和列规范分开。例如：
+ALTER TABLE tbl_name ADD PRIMARY KEY ( column ), ALGORITHM=INPLACE, LOCK=NONE;
+该 LOCK 子句可用于就地执行的操作，可用于微调操作期间对表的并发访问程度。仅 LOCK=DEFAULT 支持立即执行的操作。该 ALGORITHM 子句主要用于性能比较，并在您遇到任何问题时作为对旧表复制行为的回退。例如：
+为避免在就地 ALTER
+TABLE 操作期间意外使表不可用于读取、写入或两者，请在语句中指定一个子句， ALTER TABLE 例如 LOCK=NONE （允许读取和写入）或 LOCK=SHARED （允许读取）。如果请求的并发级别不可用，操作将立即停止。
+要比较算法之间的性能，请运行包含 ALGORITHM=INSTANT 、 ALGORITHM=INPLACE 和
+的语句 ALGORITHM=COPY 。您还可以在 old_alter_table 启用配置选项的情况下运行语句以强制使用 ALGORITHM=COPY .
+ALTER
+TABLE 为避免复制表
+
+的操作占用服务器，请包含 ALGORITHM=INSTANT 或 ALGORITHM=INPLACE 。如果语句不能使用指定的算法，它会立即停止。

@@ -1,0 +1,63 @@
+8.3.13 降序索引_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.3 优化和索引 / 
+8.3.13 降序索引
+8.3.13 降序索引
+MySQL 支持降序索引： DESC 在索引定义中不再被忽略，而是导致按降序存储键值。以前，可以按相反顺序扫描索引，但会降低性能。降序索引可以正向扫描，效率更高。当最有效的扫描顺序混合了某些列的升序和其他列的降序时，降序索引还使优化器可以使用多列索引。
+考虑以下表定义，其中包含两列和四个两列索引定义，用于列上升序和降序索引的各种组合：
+CREATE TABLE t (
+c1 INT, c2 INT,
+INDEX idx1 (c1 ASC, c2 ASC),
+INDEX idx2 (c1 ASC, c2 DESC),
+INDEX idx3 (c1 DESC, c2 ASC),
+INDEX idx4 (c1 DESC, c2 DESC)
+);
+表定义产生四个不同的索引。优化器可以对每个子句执行正向索引扫描， ORDER BY 不需要使用以下 filesort 操作：
+ORDER BY c1 ASC, c2 ASC -- optimizer can use idx1
+ORDER BY c1 DESC, c2 DESC -- optimizer can use idx4
+ORDER BY c1 ASC, c2 DESC -- optimizer can use idx2
+ORDER BY c1 DESC, c2 ASC -- optimizer can use idx3
+降序索引的使用受以下条件限制：
+仅 InnoDB 存储引擎支持降序索引，具有以下限制：
+如果索引包含降序索引键列或主键包含降序索引列，则二级索引不支持更改缓冲。
+InnoDB SQL 解析器不使用降序索引
+。对于 InnoDB 全文搜索，这意味着 FTS_DOC_ID 索引表的列上所需的索引不能定义为降序索引。有关更多信息，请参阅 第 15.6.2.4 节，“InnoDB 全文索引” 。
+升序索引可用的所有数据类型都支持降序索引。
+VIRTUAL 普通（非生成的）和生成的列（和
+）
+都支持降序索引 STORED 。
+DISTINCT 可以使用任何包含匹配列的索引，包括降序键部分。
+具有降序键部分的索引不用于 MIN() / MAX() 优化调用聚合函数但没有 GROUP BY 子句的查询。
+支持降序索引 BTREE 但不支持 HASH 索引。 FULLTEXT 或索引不支持降序 SPATIAL 索引。
+为
+、和
+索引
+明确指定 ASC 和
+指示符会导致错误。 DESC HASH FULLTEXT SPATIAL
+您可以在 Extra 的输出列中看到 EXPLAIN 优化器能够使用降序索引，如下所示：
+mysql> CREATE TABLE t1 (
+-> a INT,
+-> b INT,
+-> INDEX a_desc_b_asc (a DESC, b ASC)
+-> );
+
+mysql> EXPLAIN SELECT * FROM t1 ORDER BY a ASC\G
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+table: t1
+partitions: NULL
+type: index
+possible_keys: NULL
+key: a_desc_b_asc
+key_len: 10
+ref: NULL
+rows: 1
+filtered: 100.00
+Extra: Backward index scan; Using index
+在 EXPLAIN FORMAT=TREE 输出中，使用降序索引通过在 (reverse) 索引名称后面添加来表示，如下所示：
+mysql> EXPLAIN FORMAT=TREE SELECT * FROM t1 ORDER BY a ASC\G
+*************************** 1. row ***************************
+EXPLAIN: -> Index scan on t1 using a_desc_b_asc (reverse) (cost=0.35 rows=1)
+另请参阅 EXPLAIN 额外信息 。

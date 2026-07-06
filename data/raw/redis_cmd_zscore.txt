@@ -1,0 +1,68 @@
+Redis ZSCORE 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis ZSCORE 命令
+返回 Sorted Set 中指定 member 的 score。
+* 语法
+ZSCORE key member
+* 参数说明
+参数 类型 必填 说明
+key String 是 Sorted Set 的键名
+member String 是 成员名
+* 返回值
+条件 返回值
+member 存在 score（String，浮点数）
+member 不存在 nil
+* 时间复杂度
+O(1)
+*
+* 示例
+> ZADD leaderboard 100 "player1"
+(integer) 1
+
+> ZSCORE leaderboard "player1"
+"100"
+
+> ZSCORE leaderboard "player2"
+(nil)
+* 常见错误
+对非 Sorted Set 使用 ：返回 WRONGTYPE。
+* 最佳实践
+查询个人分数/排名 ：ZSCORE 查分数， ZRANK / ZREVRANK 查排名。
+配合 ZINCRBY ：更新后 ZSCORE 验证新分数。
+* FAQ
+Q: ZSCORE 返回的是 String 还是数字？ A: 返回 String（如 "100"），因为 Redis 协议统一返回字符串。客户端自动解析为浮点数。
+相关命令
+BZPOPMAX
+BZPOPMIN
+ZADD
+ZCARD
+ZCOUNT
+ZINCRBY
+ZINTER
+ZINTERSTORE
+ZLEXCOUNT
+ZMSCORE
+ZPOPMAX
+ZPOPMIN
+ZRANGE
+ZRANGEBYLEX
+ZRANGEBYSCORE
+ZRANK
+ZREM
+ZREMRANGEBYLEX
+ZREMRANGEBYRANK
+ZREMRANGEBYSCORE
+ZREVRANGE
+ZREVRANGEBYLEX
+ZREVRANGEBYSCORE
+ZREVRANK
+ZSCAN
+ZSCORE
+ZUNION
+ZUNIONSTORE

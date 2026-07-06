@@ -1,0 +1,164 @@
+Redis 7.0 新特性
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis 7.0 新特性
+* 概述
+Redis 7.0 是 Redis 的一个重要版本，带来了许多令人兴奋的新特性和改进。本文档介绍 Redis 7.0 的主要新特性，帮助开发者了解和使用这些功能。
+* 主要新特性
+* 1. Redis Functions
+Redis 7.0 引入了 Redis Functions，这是一种新的服务器端脚本机制，类似于存储过程。
+特点 ：
+持久化存储：Functions 会随数据一起持久化
+复制支持：Functions 会自动复制到从节点
+更好的性能：预编译和缓存
+使用示例 ：
+# 创建 Function
+FUNCTION LOAD "#!lua name=mylib\n redis.register_function('myfunc', function(keys, args)\n return redis.call('GET', keys[1])\n end)"
+
+# 调用 Function
+FCALL mylib.myfunc 1 mykey
+* 2. ACL 改进
+Redis 7.0 对 ACL（访问控制列表）进行了重大改进。
+新特性 ：
+选择性权限：可以限制对特定键的访问
+命令类别：更细粒度的命令权限控制
+Pub/Sub 权限：控制频道访问
+使用示例 ：
+# 创建具有选择性权限的用户
+ACL SETUSER app_user on >password ~app:* +@read +@write -@dangerous
+
+# 限制 Pub/Sub 权限
+ACL SETUSER pubsub_user on >password ~* +@pubsub resetchannels &chat:*
+* 3. Sharded Pub/Sub
+Redis 7.0 在集群模式下支持分片的发布/订阅。
+特点 ：
+频道绑定到槽位
+减少集群节点间消息传递
+更好的可扩展性
+使用示例 ：
+# 订阅分片频道
+SSUBSCRIBE user:1001:notifications
+
+# 发布到分片频道
+SPUBLISH user:1001:notifications "new message"
+* 4. 多部分 AOF
+Redis 7.0 引入了多部分 AOF 文件格式。
+特点 ：
+基础文件（Base file）：RDB 格式的数据快照
+增量文件（Incremental file）：AOF 格式的增量命令
+清单文件（Manifest file）：管理所有文件
+优势 ：
+更快的重写和恢复
+更好的文件管理
+支持历史文件保留
+* 5. 命令改进
+* ZMPOP 和 BZMPOP
+# 从多个有序集合中弹出元素
+ZMPOP 2 zset1 zset2 MIN COUNT 10
+
+# 阻塞版本
+BZMPOP 0 2 zset1 zset2 MAX COUNT 1
+* LMPOP 和 BLMPOP
+# 从多个列表中弹出元素
+LMPOP 2 list1 list2 LEFT COUNT 5
+
+# 阻塞版本
+BLMPOP 0 2 list1 list2 RIGHT COUNT 1
+* SINTERCARD
+# 获取交集的基数，而不返回元素
+SINTERCARD 2 set1 set2
+* EXPIRETIME 和 PEXPIRETIME
+# 获取键的过期时间（Unix 时间戳）
+EXPIRETIME mykey
+PEXPIRETIME mykey
+* 6. 性能改进
+* 内存效率
+改进了 ziplist 编码
+优化了内存分配策略
+减少了内存碎片
+* 写入性能
+改进了 AOF 写入性能
+优化了 fsync 策略
+减少了写入延迟
+* 7. 客户端改进
+* HELLO 命令改进
+# 协商协议版本和设置客户端名称
+HELLO 3 AUTH username password SETNAME my-client
+* CLIENT NO-EVICT
+# 防止客户端连接被驱逐
+CLIENT NO-EVICT on
+* 8. 集群改进
+* 集群总线改进
+改进了集群总线协议
+更好的节点发现和故障检测
+减少网络开销
+* 集群稳定性
+改进了故障转移机制
+更好的网络分区处理
+减少脑裂情况
+* 升级建议
+* 1. 兼容性检查
+检查客户端库是否支持 Redis 7.0
+测试现有代码兼容性
+检查使用的命令是否有变化
+* 2. 数据备份
+# 创建 RDB 备份
+redis-cli SAVE
+
+# 复制 dump.rdb 到安全位置
+cp /var/lib/redis/dump.rdb /backup/dump.rdb.$(date +%Y%m%d)
+* 3. 逐步升级
+先在测试环境验证
+升级从节点
+执行故障转移
+升级原主节点
+* 4. 配置更新
+# 启用多部分 AOF
+aof-use-rdb-preamble yes
+
+# 配置 Functions
+function-enabled yes
+
+# 更新 ACL 配置
+aclfile /etc/redis/users.acl
+* 新特性使用场景
+* 场景 1：使用 Functions 实现原子操作
+#!lua name=inventory
+redis.register_function('decrease_stock', function(keys, args)
+local product_id = keys[1]
+local quantity = tonumber(args[1])
+local current = tonumber(redis.call('GET', 'stock:' .. product_id))
+
+if current >= quantity then
+redis.call('DECRBY', 'stock:' .. product_id, quantity)
+return current - quantity
+else
+return -1 -- 库存不足
+end
+end)
+* 场景 2：使用 Sharded Pub/Sub 实现用户通知
+# 用户订阅自己的通知频道
+SSUBSCRIBE user:1001:notifications
+
+# 服务端发送通知
+SPUBLISH user:1001:notifications '{"type":"order","id":"5001"}'
+* 场景 3：使用改进的 ACL 实现细粒度权限
+# 为不同微服务创建不同权限的用户
+ACL SETUSER order-service on >order_pass ~order:* +@write +@read -@dangerous
+ACL SETUSER user-service on >user_pass ~user:* +@write +@read -@dangerous
+ACL SETUSER analytics-service on >analytics_pass ~* +@read -@write -@dangerous
+* 总结
+Redis 7.0 带来了许多重要的新特性和改进，包括：
+Redis Functions ：持久化的服务器端脚本
+改进的 ACL ：更细粒度的访问控制
+Sharded Pub/Sub ：集群模式下更好的发布/订阅
+多部分 AOF ：更高效的持久化
+新命令 ：ZMPOP、LMPOP、SINTERCARD 等
+性能改进 ：更好的内存效率和写入性能
+建议逐步采用这些新特性，充分利用 Redis 7.0 的优势。
+Redis版本号 Redis最佳实践

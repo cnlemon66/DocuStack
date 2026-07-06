@@ -1,0 +1,35 @@
+11.4.1 空间数据类型_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.4 空间数据类型 / 
+11.4.1 空间数据类型
+11.4.1 空间数据类型
+MySQL 具有对应于 OpenGIS 类的空间数据类型。这些类型的基础在 第 11.4.2 节“OpenGIS 几何模型” 中进行了描述。
+一些空间数据类型包含单个几何值：
+GEOMETRY
+POINT
+LINESTRING
+POLYGON
+GEOMETRY 可以存储任何类型的几何值。其他单值类型（ POINT 、 LINESTRING 和 POLYGON ）将它们的值限制为特定的几何类型。
+其他空间数据类型包含值的集合：
+MULTIPOINT
+MULTILINESTRING
+MULTIPOLYGON
+GEOMETRYCOLLECTION
+GEOMETRYCOLLECTION 可以存储任何类型的对象的集合。其他集合类型（ MULTIPOINT 、 MULTILINESTRING 和 MULTIPOLYGON ）将集合成员限制为具有特定几何类型的成员。
+示例：要创建一个名为 的表，该表 geom 具有一个名为 g 可以存储任何几何类型的值的列，请使用以下语句：
+CREATE TABLE geom (g GEOMETRY);
+具有空间数据类型的列可以具有 SRID 属性，以明确指示列中存储的值的空间参考系统 (SRS)。例如：
+CREATE TABLE geom (
+p POINT SRID 0,
+g GEOMETRY NOT NULL SRID 4326
+);
+SPATIAL 索引可以在空间列上创建，如果它们是 NOT NULL 并且具有特定的 SRID，因此如果您计划索引该列，请使用 NOT NULL 和 SRID 属性声明它：
+CREATE TABLE geom (g GEOMETRY NOT NULL SRID 4326);
+InnoDB 表允许 SRID 笛卡尔和地理 SRS 的值。 MyISAM 表允许 SRID 笛卡尔 SRS 的值。
+该 SRID 属性使空间列受 SRID 限制，这具有以下含义：
+该列只能包含具有给定 SRID 的值。尝试插入具有不同 SRID 的值会产生错误。
+优化器可以 SPATIAL 在列上使用索引。请参阅 第 8.3.3 节，“空间索引优化” 。
+SRID 没有属性的
+空间列不受 SRID 限制，并且接受具有任何 SRID 的值。但是，优化器不能 SPATIAL 在它们上使用索引，直到列定义被修改为包含一个 SRID 属性，这可能需要首先修改列内容，以便所有值都具有相同的 SRID。
+有关显示如何在 MySQL 中使用空间数据类型的其他示例，请参阅 第 11.4.6 节，“创建空间列” 。有关空间参考系统的信息，请参阅 第 11.4.5 节，“空间参考系统支持” 。

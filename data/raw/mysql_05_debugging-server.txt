@@ -1,0 +1,16 @@
+5.9.1 调试 MySQL 服务器_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.9 调试 MySQL / 
+5.9.1 调试 MySQL 服务器
+5.9.1 调试 MySQL 服务器
+5.9.1.1 编译MySQL调试 5.9.1.2 创建跟踪文件 5.9.1.3 将 WER 与 PDB 结合使用来创建 Windows 崩溃转储 5.9.1.4 在gdb下调试mysqld 5.9.1.5 使用堆栈跟踪 5.9.1.6 使用服务器日志查找mysqld错误原因 5.9.1.7 遇到表损坏时创建测试用例
+如果您正在使用 MySQL 中一些非常新的功能，您可以尝试使用该
+选项运行 mysqld --skip-new （它会禁用所有新的、可能不安全的功能）。请参阅 第 B.3.3.3 节，“如果 MySQL 持续崩溃怎么办” 。
+如果 mysqld 不想启动，请确认没有 my.cnf 干扰设置的文件！ 您可以使用mysqld --print-defaults 检查您的 my.cnf 参数，并从 mysqld --no-defaults ... 开始避免使用它们。
+如果 mysqld 开始耗尽 CPU 或内存，或者如果它 “ 挂起 ” ，您可以使用 mysqladmin processlist status 来查明是否有人正在执行需要很长时间的查询。如果您遇到性能问题或新客户端无法连接的问题，那么在某个窗口
+中运行 mysqladmin -i10 processlist status 可能是个好主意
+。
+命令 mysqladmin debug 将一些有关正在使用的锁、已用内存和查询使用情况的信息转储到 MySQL 日志文件中。这可能有助于解决一些问题。这个命令也提供了一些有用的信息，即使你还没有编译 MySQL 进行调试！
+如果问题是某些表变得越来越慢，您应该尝试使用 OPTIMIZE TABLE 或 myisamchk 优化表。请参阅 第 5 章， MySQL 服务器管理 。您还应该使用检查慢速查询 EXPLAIN 。
+您还应该阅读本手册中特定于操作系统的部分，了解您的环境可能独有的问题。请参见 第 2.1 节，“一般安装指南” 。

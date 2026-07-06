@@ -1,0 +1,96 @@
+8.4.4 MySQL内部临时表的使用_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.4 优化数据库结构 / 
+8.4.4 MySQL内部临时表的使用
+8.4.4 MySQL内部临时表的使用
+在某些情况下，服务器在处理语句时创建内部临时表。用户无法直接控制何时发生这种情况。
+服务器在以下条件下创建临时表：
+UNION 语句的
+
+评估，有一些例外情况将在后面描述。
+评估某些视图，例如使用 TEMPTABLE 算法 UNION 、 或聚合的视图。
+派生表的评估（请参阅 第 13.2.11.8 节，“派生表” ）。
+公用表表达式的评估（请参阅 第 13.2.15 节，“WITH（公用表表达式）” ）。
+为子查询或半连接具体化创建的表（请参阅 第 8.2.2 节，“优化子查询、派生表、视图引用和公用表表达式” ）。
+评估包含 ORDER
+BY 子句和不同 GROUP
+BY 子句的语句， ORDER
+BY 或 GROUP BY 包含连接队列中第一个表以外的表的列的语句。
+DISTINCT 结合
+
+评估 ORDER BY 可能需要一个临时表。
+对于使用 SQL_SMALL_RESULT 修饰符的查询，MySQL 使用内存中的临时表，除非查询还包含需要磁盘存储的元素（稍后描述）。
+为了评估 INSERT ...
+SELECT 从同一个表中选择并插入到同一个表中的语句，MySQL 创建一个内部临时表来保存来自 的行 SELECT ，然后将这些行插入到目标表中。请参阅 第 13.2.6.1 节，“INSERT ... SELECT 语句” 。
+多表 UPDATE 语句的评估。
+GROUP_CONCAT() 或 COUNT(DISTINCT) 表达式
+
+的评估。
+窗口函数的评估（请参阅 第 12.21 节，“窗口函数” ）根据需要使用临时表。
+要确定语句是否需要临时表，请使用 EXPLAIN 并检查该 Extra 列以查看它是否表示 Using temporary （请参阅 第 8.8.1 节，“使用 EXPLAIN 优化查询” ）。 EXPLAIN 不一定说 Using temporary 派生或具体化的临时表。对于使用窗口函数的语句， EXPLAIN with FORMAT=JSON 始终提供有关窗口化步骤的信息。如果窗口函数使用临时表，则会为每个步骤指明。
+某些查询条件会阻止使用内存中的临时表，在这种情况下，服务器会改用磁盘上的表：
+表中存在一个 BLOB 或 TEXT 列。但是， TempTable 存储引擎是 MySQL 8.0 中内存内部临时表的默认存储引擎，从 MySQL 8.0.13 开始支持二进制大对象类型。请参阅 内部临时表存储引擎 。
+如果使用或 SELECT ，则列表中
+存在最大长度大于 512（二进制字符串为字节，非二进制字符串为字符）的任何字符串列
+。 UNION UNION ALL
+SHOW COLUMNS and DESCRIBE 语句
+用作某些列
+的 BLOB 类型，因此用于结果的临时表是磁盘表。
+服务器不会为 UNION 满足特定条件的语句使用临时表。相反，它从临时表创建中仅保留执行结果列类型转换所需的数据结构。该表未完全实例化，也没有向其中写入或读取任何行；行直接发送给客户端。结果是减少了内存和磁盘需求，并且第一行发送到客户端之前的延迟更小，因为服务器不需要等到最后一个查询块被执行。 EXPLAIN 优化器跟踪输出反映了这种执行策略： UNION RESULT 查询块不存在，因为该块对应于从临时表读取的部分。
+这些条件有资格在 UNION 没有临时表的情况下进行评估：
+工会是 UNION ALL ，不是 UNION 或 UNION
+DISTINCT 。
+没有全局 ORDER BY 条款。
+联合不是语句的顶级查询块 {INSERT | REPLACE} ... SELECT ... 。
+内部临时表存储引擎
+内部临时表可以保存在内存中并由存储引擎 TempTable 或 MEMORY 存储引擎处理，或者由存储引擎存储在磁盘上 InnoDB 。
+内存内部临时表的存储引擎
+该 internal_tmp_mem_storage_engine 变量定义用于内存内部临时表的存储引擎。允许的值为 TempTable （默认值）和 MEMORY .
+笔记
+从 MySQL 8.0.27 开始，配置会话设置 internal_tmp_mem_storage_engine 需要 SESSION_VARIABLES_ADMIN 或 SYSTEM_VARIABLES_ADMIN 权限。
+从MySQL 8.0.13 开始， TempTable 存储引擎为 VARCHAR 和 VARBINARY 列以及其他二进制大对象类型提供高效存储。
+以下变量控制 TempTable 存储引擎限制和行为：
+tmp_table_size ：从 MySQL 8.0.28 开始， tmp_table_size 定义了由 TempTable 存储引擎创建的任何单个内存内部临时表的最大大小。当 tmp_table_size 达到限制时，MySQL 自动将内存内部临时表转换为 InnoDB 磁盘内部临时表。默认 tmp_table_size 设置为 16777216 字节 (16 MiB)。
+该 tmp_table_size 限制旨在防止单个查询消耗过多的全局 TempTable 资源，这可能会影响需要 TempTable 资源的并发查询的性能。全局 TempTable 资源由 temptable_max_ram 和 temptable_max_mmap 设置控制。
+如果 tmp_table_size 限制小于 temptable_max_ram 限制，内存临时表不可能包含超过 tmp_table_size 限制允许的数据。如果 tmp_table_size 限制大于限制之 temptable_max_ram 和 temptable_max_mmap ，则内存临时表不可能包含超过限制之 temptable_max_ram 和
+的内容 temptable_max_mmap 。
+temptable_max_ram TempTable ：定义存储引擎在开始从内存映射文件分配空间之前或在 MySQL 开始使用磁盘内部临时表之前可以使用的最大 RAM 量 InnoDB ，具体取决于您的配置。默认 temptable_max_ram 设置为 1073741824 字节 (1GiB)。
+笔记
+该 temptable_max_ram 设置不考虑分配给使用 TempTable 存储引擎的每个线程的线程本地内存块。线程本地内存块的大小取决于线程的第一个内存分配请求的大小。如果请求小于 1MB（大多数情况下是这样），则线程本地内存块大小为 1MB。如果请求大于 1MB，则线程本地内存块的大小与初始内存请求的大小大致相同。线程本地内存块保存在线程本地存储中，直到线程退出。
+temptable_use_mmap ：控制 TempTable 存储引擎是否从内存映射文件分配空间或 MySQL在超过限制 InnoDB 时使用磁盘内部临时表 temptable_max_ram 。默认设置为 temptable_use_mmap=ON 。
+笔记
+该 temptable_use_mmap 变量在 MySQL 8.0.16 中引入，在 MySQL 8.0.26 中弃用；希望在未来版本的 MySQL 中删除对它的支持。设置 temptable_max_mmap=0 等同于设置 temptable_use_mmap=OFF 。
+temptable_max_mmap : 在 MySQL 8.0.23 中引入。 InnoDB 定义在 MySQL 开始使用磁盘内部临时表之前，允许 TempTable 存储引擎从内存映射文件分配的最大内存量。默认设置为 1073741824 字节 (1GiB)。 tmpdir 该限制旨在解决内存映射文件在临时目录 ( )中使用过多空间的风险。无论设置如何，设置都会禁用内存映射文件的 temptable_max_mmap=0 分配，从而有效地禁用它们的使用 temptable_use_mmap 。
+存储引擎对内存映射文件的使用 TempTable 受以下规则约束：
+临时文件在 tmpdir 变量定义的目录中创建。
+临时文件在创建和打开后立即被删除，因此不会在 tmpdir 目录中保持可见。临时文件占用的空间在临时文件打开时由操作系统保留。 TempTable 当存储引擎
+关闭临时文件
+或 mysqld 进程关闭时，空间将被回收。
+数据永远不会在 RAM 和临时文件之间、RAM 内或临时文件之间移动。
+如果空间在定义的限制内可用，则新数据将存储在 RAM 中 temptable_max_ram 。否则，新数据将存储在临时文件中。
+如果在将表的一些数据写入临时文件后 RAM 中有可用空间，则可以将剩余的表数据存储在 RAM 中。
+当使用 MEMORY 内存临时表 ( ) 的存储引擎时，如果 internal_tmp_mem_storage_engine=MEMORY 内存临时表变得太大，MySQL 会自动将内存临时表转换为磁盘表。内存中临时表的最大大小由 tmp_table_size 或 max_heap_table_size 值定义，以较小者为准。这不同于使用 MEMORY 显式创建的表 CREATE TABLE 。对于此类表，只有 max_heap_table_size 变量决定了表可以增长到多大，并且没有转换为磁盘格式。
+磁盘内部临时表的存储引擎
+在 MySQL 8.0.15 及更早版本中，该 internal_tmp_disk_storage_engine 变量定义了用于磁盘内部临时表的存储引擎。支持的存储引擎是 InnoDB 和 MyISAM 。
+从 MySQL 8.0.16 开始，MySQL 只使用 InnoDB 磁盘内部临时表的存储引擎。 MYISAM 为此，不再支持存储引擎
+。
+InnoDB 默认情况下，磁盘内部临时表是在驻留在数据目录中的会话临时表空间中创建的。有关详细信息，请参阅 第 15.6.3.5 节，“临时表空间” 。
+在 MySQL 8.0.15 及更早版本中：
+对于公用表表达式 (CTE)，用于磁盘内部临时表的存储引擎不能是 MyISAM . 如果 internal_tmp_disk_storage_engine=MYISAM ，则任何使用磁盘临时表实现 CTE 的尝试都会出错。
+使用 internal_tmp_disk_storage_engine=INNODB 时，生成超过 InnoDB 行或列限制的磁盘内部临时表的查询会返回 行大小太大 或 列太多 错误。解决方法是设置 internal_tmp_disk_storage_engine 为 MYISAM .
+内部临时表存储格式
+当内存内部临时表由 TempTable 存储引擎管理时，包含 VARCHAR 列、 VARBINARY 列和其他二进制大对象类型列（从 MySQL 8.0.13 开始支持）的行在内存中由单元格数组表示，每个单元格包含 NULL 标志、数据长度和数据指针。列值在数组之后按连续顺序放置在单个内存区域中，没有填充。数组中的每个单元格使用 16 个字节的存储空间。当 TempTable 存储引擎从内存映射文件分配空间时，同样的存储格式适用。
+当内存内部临时表由 MEMORY 存储引擎管理时，使用固定长度的行格式。 VARCHAR 和 VARBINARY 列值被填充到最大列长度，实际上将它们存储为 CHAR 和 BINARY 列。
+在 MySQL 8.0.16 之前，磁盘内部临时表由 InnoDB 或 MyISAM 存储引擎管理（取决于 internal_tmp_disk_storage_engine 设置）。两个引擎都使用动态宽度行格式存储内部临时表。列只占用所需的存储空间，与使用固定长度行的磁盘表相比，这减少了磁盘 I/O、空间需求和处理时间。从 MySQL 8.0.16 开始， internal_tmp_disk_storage_engine 不支持，磁盘上的内部临时表始终由 InnoDB .
+使用 MEMORY 存储引擎时，语句最初可以在内存中创建一个内部临时表，然后在表变得太大时将其转换为磁盘表。在这种情况下，可以通过跳过转换并首先在磁盘上创建内部临时表来实现更好的性能。该 big_tables 变量可用于强制内部临时表的磁盘存储。
+监控内部临时表创建
+当在内存或磁盘上创建内部临时表时，服务器会递增该 Created_tmp_tables 值。在磁盘上创建内部临时表时，服务器会递增该 Created_tmp_disk_tables 值。如果在磁盘上创建了太多内部临时表，请考虑调整 内部临时表存储引擎 中描述的特定于引擎的限制。
+笔记
+由于已知限制， Created_tmp_disk_tables 不计算在内存映射文件中创建的磁盘临时表。默认情况下，TempTable 存储引擎溢出机制会在内存映射文件中创建内部临时表。请参阅 内部临时表存储引擎 。
+和Performance Schema 工具可用于监视
+内存 memory/temptable/physical_ram 和
+磁盘的空间分配。报告分配的 RAM 数量。
+报告当内存映射文件用作 TempTable 溢出机制时从磁盘分配的空间量。如果
+仪器报告的值不是 0，并且内存映射文件用作 TempTable 溢出机制，则在某个时间点达到了 TempTable 内存限制。可以在 Performance Schema 内存汇总表中查询数据，例如
+. 请参阅 第 27.12.20.10 节，“内存汇总表” 。 memory/temptable/physical_disk TempTable memory/temptable/physical_ram memory/temptable/physical_disk physical_disk memory_summary_global_by_event_name

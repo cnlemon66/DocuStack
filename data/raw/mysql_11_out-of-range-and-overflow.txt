@@ -1,0 +1,68 @@
+11.1.7 超出范围和溢出处理_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.1 数值数据类型 / 
+11.1.7 超出范围和溢出处理
+11.1.7 超出范围和溢出处理
+当 MySQL 将值存储在列数据类型允许范围之外的数字列中时，结果取决于当时有效的 SQL 模式：
+如果启用了严格的 SQL 模式，MySQL 会根据 SQL 标准拒绝超出范围的值并出错，并且插入失败。
+如果没有启用限制模式，MySQL 会将值裁剪到列数据类型范围的适当端点，并存储结果值。
+当将超出范围的值分配给整数列时，MySQL 存储表示列数据类型范围的相应端点的值。
+当为浮点或定点列分配的值超出指定（或默认）精度和小数位数隐含的范围时，MySQL 存储表示该范围相应端点的值。
+假设一个表 t1 有这样的定义：
+CREATE TABLE t1 (i1 TINYINT, i2 TINYINT UNSIGNED);
+启用严格 SQL 模式后，会发生超出范围的错误：
+mysql> SET sql_mode = 'TRADITIONAL';
+mysql> INSERT INTO t1 (i1, i2) VALUES(256, 256);
+ERROR 1264 (22003): Out of range value for column 'i1' at row 1
+mysql> SELECT * FROM t1;
+Empty set (0.00 sec)
+在未启用严格 SQL 模式的情况下，会出现带有警告的裁剪：
+mysql> SET sql_mode = '';
+mysql> INSERT INTO t1 (i1, i2) VALUES(256, 256);
+mysql> SHOW WARNINGS;
++---------+------+---------------------------------------------+
+| Level | Code | Message |
++---------+------+---------------------------------------------+
+| Warning | 1264 | Out of range value for column 'i1' at row 1 |
+| Warning | 1264 | Out of range value for column 'i2' at row 1 |
++---------+------+---------------------------------------------+
+mysql> SELECT * FROM t1;
++------+------+
+| i1 | i2 |
++------+------+
+| 127 | 255 |
++------+------+
+当未启用严格 SQL 模式时，由于裁剪而发生的列分配转换将报告为 ALTER TABLE 、 LOAD DATA 、 UPDATE 和多行 INSERT 语句的警告。在严格模式下，这些语句会失败，部分或全部值不会被插入或更改，这取决于表是否是事务表和其他因素。有关详细信息，请参阅 第 5.1.11 节，“服务器 SQL 模式” 。
+数值表达式计算期间溢出会导致错误。例如，最大的有符号 BIGINT 值是 9223372036854775807，所以下面的表达式会产生错误：
+mysql> SELECT 9223372036854775807 + 1;
+ERROR 1690 (22003): BIGINT value is out of range in '(9223372036854775807 + 1)'
+在这种情况下，要使操作成功，请将值转换为无符号；
+mysql> SELECT CAST(9223372036854775807 AS UNSIGNED) + 1;
++-------------------------------------------+
+| CAST(9223372036854775807 AS UNSIGNED) + 1 |
++-------------------------------------------+
+| 9223372036854775808 |
++-------------------------------------------+
+是否发生溢出取决于操作数的范围，因此处理上述表达式的另一种方法是使用精确值算法，因为 DECIMAL 值的范围比整数大：
+mysql> SELECT 9223372036854775807.0 + 1;
++---------------------------+
+| 9223372036854775807.0 + 1 |
++---------------------------+
+| 9223372036854775808.0 |
++---------------------------+
+默认情况下，整数值之间的减法，其中一个是类型 UNSIGNED ，会产生一个无符号的结果。如果结果为负，则会产生错误：
+mysql> SET sql_mode = '';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT CAST(0 AS UNSIGNED) - 1;
+ERROR 1690 (22003): BIGINT UNSIGNED value is out of range in '(cast(0 as unsigned) - 1)'
+如果 NO_UNSIGNED_SUBTRACTION 启用 SQL 模式，则结果是否定的：
+mysql> SET sql_mode = 'NO_UNSIGNED_SUBTRACTION';
+mysql> SELECT CAST(0 AS UNSIGNED) - 1;
++-------------------------+
+| CAST(0 AS UNSIGNED) - 1 |
++-------------------------+
+| -1 |
++-------------------------+
+如果此类操作的结果用于更新 UNSIGNED 整数列，则结果将被裁剪为列类型的最大值，或者如果 NO_UNSIGNED_SUBTRACTION 启用则裁剪为 0。如果启用了严格 SQL 模式，则会发生错误并且该列保持不变。

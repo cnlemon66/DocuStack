@@ -1,0 +1,82 @@
+Redis DEL 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis DEL 命令
+删除指定的 key。若 key 不存在则忽略。
+* 语法
+DEL key [key ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 要删除的键名，可一次删除多个
+* 返回值
+条件 返回值
+成功删除的 key 数量 整数（Integer）
+* 时间复杂度
+O(N)，N 为被删除 key 的数量。对单个 key 是 O(1)。
+注意 ：删除大 key（如包含百万元素的 Hash/List）时，DEL 会阻塞 Redis 单线程。生产环境删除大 key 应使用 UNLINK （异步删除）。
+* 示例
+> SET k1 v1
+OK
+> SET k2 v2
+OK
+
+> DEL k1
+(integer) 1
+
+> DEL k1
+(integer) 0
+
+# 批量删除
+> DEL k2 k3 k4
+(integer) 1
+* 常见错误
+删除大 key 阻塞服务 ：DEL 是同步删除，释放大 key 内存时会阻塞事件循环。
+误删 key ：生产环境执行 DEL 前建议先用 TYPE 和 MEMORY USAGE 确认。
+* 最佳实践
+删除大 key 用 UNLINK ： UNLINK bigkey 会将 key 放入后台异步删除，不阻塞主线程。
+批量删除慎用 ：一次 DEL 太多 key 会造成卡顿。大量 key 删除用 SCAN + DEL/UNLINK 分批处理。
+缓存淘汰 ：缓存场景优先使用 EXPIRE 让 Redis 自动淘汰，避免手动 DEL 的误操作风险。
+* FAQ
+Q: DEL 和 UNLINK 有什么区别？ A: DEL 同步删除，会立即释放内存但可能阻塞； UNLINK 异步删除，立即返回并由后台线程释放内存，生产环境优先使用 UNLINK 。
+Q: 删除 key 后内存没有立即下降？ A: 若使用 UNLINK ，内存由后台线程释放，有短暂延迟。若使用 DEL，jemalloc 可能保留内存不立即还给 OS，需观察 mem_fragmentation_ratio 。
+Q: 如何安全清空整个数据库？ A: 使用 FLUSHDB （当前库）或 FLUSHALL （所有库），但生产环境禁用。建议用 SCAN 0 MATCH * COUNT 1000 分批删除。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

@@ -1,0 +1,61 @@
+Redis LLEN 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis LLEN 命令
+返回 List 的长度（元素数量）。
+* 语法
+LLEN key
+* 参数说明
+参数 类型 必填 说明
+key String 是 List 的键名
+* 返回值
+条件 返回值
+key 存在且为 List 返回元素数量（Integer）
+key 不存在 0
+key 非 List WRONGTYPE 错误
+* 时间复杂度
+O(1)
+*
+* 示例
+> RPUSH mylist a b c
+(integer) 3
+> LLEN mylist
+(integer) 3
+
+> LLEN nonexistent
+(integer) 0
+* 常见错误
+对非 List 使用 ：返回 WRONGTYPE。
+* 最佳实践
+队列长度监控 ：定时 LLEN 检查队列积压，超过阈值时告警或扩容消费者。
+分页计算 ： LRANGE 分页前用 LLEN 获取总长度，计算页数。
+* FAQ
+Q: LLEN 在大 List 上慢吗？ A: O(1)，不遍历元素。Redis List 维护长度计数器。
+相关命令
+BLMOVE
+BLMPOP
+BLPOP
+BRPOP
+BRPOPLPUSH
+LINDEX
+LINSERT
+LLEN
+LMOVE
+LMPOP
+LPOP
+LPOS
+LPUSH
+LPUSHX
+LRANGE
+LREM
+LSET
+LTRIM
+RPOP
+RPOPLPUSH
+RPUSH
+RPUSHX

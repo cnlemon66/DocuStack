@@ -1,0 +1,41 @@
+11.4.5 空间参考系统支持_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.4 空间数据类型 / 
+11.4.5 空间参考系统支持
+11.4.5 空间参考系统支持
+空间数据的空间参考系统 (SRS) 是一种基于坐标的地理位置系统。
+有不同类型的空间参考系统：
+投影 SRS 是地球仪在平面上的投影；即平面地图。例如，地球仪内的灯泡照亮地球仪周围的纸筒，将地图投射到纸上。结果是地理参考的：每个点映射到地球上的一个地方。该平面上的坐标系是使用长度单位（米、英尺等）而不是经度和纬度的笛卡尔坐标系。
+在这种情况下，球体是椭圆体；也就是说，扁平的球体。地球的南北轴比东西轴短一点，所以略微扁平的球体更正确，但完美的球体允许更快的计算。
+地理 SRS 是一种非投影 SRS，以任何角度单位表示椭圆体上的经度-纬度（或纬度-经度）坐标。
+在 MySQL 中由 SRID 0 表示的 SRS 表示一个无限平坦的笛卡尔平面，其轴没有分配单位。与投影的 SRS 不同，它没有地理参考，也不一定代表地球。它是一个可以用于任何事物的抽象平面。SRID 0 是 MySQL 中空间数据的默认 SRID。
+MySQL 在数据字典表中维护有关空间数据的可用空间参考系统的信息，该 mysql.st_spatial_reference_systems 表可以存储投影和地理 SRS 的条目。此数据字典表是不可见的，但 SRS 条目内容可通过 INFORMATION_SCHEMA ST_SPATIAL_REFERENCE_SYSTEMS 表获得，实现为视图 mysql.st_spatial_reference_systems （请参阅 第 26.3.36 节，“INFORMATION_SCHEMA ST_SPATIAL_REFERENCE_SYSTEMS 表” ）。
+以下示例显示了 SRS 条目的外观：
+mysql> SELECT *
+FROM INFORMATION_SCHEMA.ST_SPATIAL_REFERENCE_SYSTEMS
+WHERE SRS_ID = 4326\G
+*************************** 1. row ***************************
+SRS_NAME: WGS 84
+SRS_ID: 4326
+ORGANIZATION: EPSG
+ORGANIZATION_COORDSYS_ID: 4326
+DEFINITION: GEOGCS["WGS 84",DATUM["World Geodetic System 1984",
+SPHEROID["WGS 84",6378137,298.257223563,
+AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],
+PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],
+UNIT["degree",0.017453292519943278,
+AUTHORITY["EPSG","9122"]],
+AXIS["Lat",NORTH],AXIS["Long",EAST],
+AUTHORITY["EPSG","4326"]]
+DESCRIPTION:
+此条目描述了用于 GPS 系统的 SRS。它的名称 ( SRS_NAME ) 为 WGS 84，ID ( SRS_ID ) 为 4326，这是 欧洲石油调查组 (EPSG) 使用的 ID。
+列中的 SRS 定义 DEFINITION 是 WKT 值，如 开放地理空间联盟 文档 OGC 12-063r5 中指定的那样表示。
+SRS_ID 值表示与几何值的 SRID 相同类型的值，或作为 SRID 参数传递给空间函数。SRID 0（无单位笛卡尔平面）是特殊的。它始终是合法的空间参考系统 ID，可用于任何依赖于 SRID 值的空间数据计算。
+对于多个几何值的计算，所有值必须具有相同的 SRID，否则会发生错误。
+当 GIS 功能需要定义时，SRS 定义解析按需进行。已解析的定义存储在数据字典缓存中，以实现重用并避免为每个需要 SRS 信息的语句产生解析开销。
+为了能够对存储在数据字典中的 SRS 条目进行操作，MySQL 提供了以下 SQL 语句：
+CREATE SPATIAL REFERENCE
+SYSTEM ：请参阅 第 13.1.19 节，“CREATE SPATIAL REFERENCE SYSTEM 语句” 。此声明的描述包括有关 SRS 组件的附加信息。
+DROP SPATIAL REFERENCE
+SYSTEM ：请参阅 第 13.1.31 节，“DROP SPATIAL REFERENCE SYSTEM 语句” 。

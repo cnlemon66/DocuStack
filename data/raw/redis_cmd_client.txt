@@ -1,0 +1,92 @@
+Redis CLIENT 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis CLIENT 命令
+CLIENT 是客户端管理命令的前缀，用于查看和管理连接到 Redis 服务器的客户端。
+* 语法
+CLIENT <subcommand> [arg [arg ...]]
+* 子命令列表
+子命令 说明
+CLIENT LIST 列出所有客户端连接信息
+CLIENT INFO 返回当前客户端的详细信息
+CLIENT ID 返回当前客户端的 ID
+CLIENT KILL 关闭指定客户端连接
+CLIENT GETNAME 返回当前客户端的名称
+CLIENT SETNAME 设置当前客户端的名称
+CLIENT PAUSE 暂停客户端命令处理
+CLIENT UNPAUSE 恢复客户端命令处理
+CLIENT REPLY 控制命令回复的开关
+CLIENT NO-EVICT 设置客户端驱逐保护
+CLIENT NO-TOUCH 设置客户端不更新 LRU/LFU
+CLIENT TRACKING 启用/禁用键追踪
+CLIENT TRACKINGINFO 返回客户端追踪信息
+CLIENT GETREDIR 返回客户端重定向 ID
+CLIENT UNBLOCK 解除客户端阻塞
+CLIENT HELP 返回帮助信息
+CLIENT SETINFO 设置客户端信息（lib-name, lib-ver）
+CLIENT CACHING 控制客户端缓存行为
+* 参数说明
+参数 类型 必填 说明
+subcommand String 是 子命令名称
+arg Mixed 否 子命令的参数，因命令而异
+* 返回值
+因子命令而异，详见各子命令文档
+Error ：子命令不存在或参数错误时返回 ERR unknown subcommand
+* 时间复杂度
+因子命令而异。大多数子命令为 O(1) 或 O(N)（N 为客户端数量）。
+* 示例
+* 列出所有客户端
+> CLIENT LIST
+id=3 addr=127.0.0.1:54321 fd=8 name= age=123 idle=0 ...
+* 获取当前客户端 ID
+> CLIENT ID
+(integer) 3
+* 获取当前客户端信息
+> CLIENT INFO
+id=3 addr=127.0.0.1:54321 fd=8 name= age=123 ...
+* 常见错误
+错误 原因 解决
+ERR unknown subcommand 子命令不存在 使用 CLIENT HELP 查看支持的子命令
+ERR wrong number of arguments 子命令参数不足 检查子命令所需的参数
+ERR Syntax error 参数格式错误 参考官方文档确认参数格式
+* 最佳实践
+使用 CLIENT LIST 监控连接数和连接来源
+使用 CLIENT SETNAME 为应用连接命名，便于排查问题
+使用 CLIENT KILL 清理异常或空闲过长的连接
+生产环境定期监控 CLIENT LIST 中的 age 和 idle 字段
+* FAQ
+Q1: CLIENT 命令需要特殊权限吗？ A: 不需要，普通客户端即可执行。但某些子命令（如 KILL）可能需要管理员注意。
+Q2: 如何给连接设置名称？ A: 使用 CLIENT SETNAME myapp-connection-1 ，然后在 CLIENT LIST 中通过 name= 字段识别。
+Q3: CLIENT 命令本身会计入客户端的命令统计吗？ A: 是的，CLIENT 命令也会正常计入命令统计和慢查询日志（如果执行时间超过阈值）。
+相关命令
+AUTH
+CLIENT
+CLIENT CACHING
+CLIENT GETNAME
+CLIENT GETREDIR
+CLIENT HELP
+CLIENT ID
+CLIENT INFO
+CLIENT KILL
+CLIENT LIST
+CLIENT NO-EVICT
+CLIENT NO-TOUCH
+CLIENT PAUSE
+CLIENT REPLY
+CLIENT SETINFO
+CLIENT SETNAME
+CLIENT TRACKING
+CLIENT TRACKINGINFO
+CLIENT UNBLOCK
+CLIENT UNPAUSE
+ECHO
+HELLO
+PING
+QUIT
+RESET
+SELECT

@@ -1,0 +1,47 @@
+11.4.10 创建空间索引_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.4 空间数据类型 / 
+11.4.10 创建空间索引
+11.4.10 创建空间索引
+对于 InnoDB 和 MyISAM 表，MySQL 可以使用类似于创建常规索引的语法创建空间索引，但使用 SPATIAL 关键字。必须声明空间索引中的列 NOT NULL 。以下示例演示了如何创建空间索引：
+与 CREATE TABLE ：
+CREATE TABLE geom (g GEOMETRY NOT NULL SRID 4326, SPATIAL INDEX(g));
+与 ALTER TABLE ：
+CREATE TABLE geom (g GEOMETRY NOT NULL SRID 4326);
+ALTER TABLE geom ADD SPATIAL INDEX(g);
+与 CREATE INDEX ：
+CREATE TABLE geom (g GEOMETRY NOT NULL SRID 4326);
+CREATE SPATIAL INDEX g ON geom (g);
+SPATIAL INDEX 创建 R 树索引。对于支持空间列的非空间索引的存储引擎，引擎会创建 B 树索引。空间值的 B 树索引对精确值查找很有用，但对范围扫描没有用。
+优化器可以使用在受 SRID 限制的列上定义的空间索引。有关详细信息，请参阅 第 11.4.1 节，“空间数据类型” 和 第 8.3.3 节，“SPATIAL 索引优化” 。
+有关索引空间列的更多信息，请参阅 第 13.1.15 节，“CREATE INDEX 语句” 。
+要删除空间索引，请使用 ALTER
+TABLE or DROP INDEX ：
+与 ALTER TABLE ：
+ALTER TABLE geom DROP INDEX g;
+与 DROP INDEX ：
+DROP INDEX g ON geom;
+示例：假设一个表 geom 包含 32,000 多个几何图形，这些几何图形存储在 g type 的列中 GEOMETRY 。该表还有一个用于存储对象 ID 值
+的 AUTO_INCREMENT 列
+。 fid
+mysql> DESCRIBE geom;
++-------+----------+------+-----+---------+----------------+
+| Field | Type | Null | Key | Default | Extra |
++-------+----------+------+-----+---------+----------------+
+| fid | int(11) | | PRI | NULL | auto_increment |
+| g | geometry | | | | |
++-------+----------+------+-----+---------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT COUNT(*) FROM geom;
++----------+
+| count(*) |
++----------+
+| 32376 |
++----------+
+1 row in set (0.00 sec)
+要在列上添加空间索引 g ，请使用以下语句：
+mysql> ALTER TABLE geom ADD SPATIAL INDEX(g);
+Query OK, 32376 rows affected (4.05 sec)
+Records: 32376 Duplicates: 0 Warnings: 0

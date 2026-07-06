@@ -1,0 +1,43 @@
+8.6.3 优化 REPAIR TABLE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.6 优化 MyISAM 表 / 
+8.6.3 优化 REPAIR TABLE 语句
+8.6.3 优化 REPAIR TABLE 语句
+REPAIR TABLE 对于 MyISAM 表类似于使用 myisamchk 进行修复操作，并且应用一些相同的性能优化：
+myisamchk 有控制内存分配的变量。您可以通过设置这些变量来提高其性能，如 第 4.6.4.6 节“myisamchk 内存使用” 。
+对于 REPAIR TABLE ，同样的道理，但是因为修复是由服务器完成的，所以你设置的是服务器系统变量，而不是 myisamchk 变量。此外，除了设置内存分配变量外，增加 myisam_max_sort_file_size 系统变量会增加修复使用更快的文件排序方法的可能性，并避免使用键缓存方法进行更慢的修复。在检查确保有足够的可用空间来保存表文件的副本后，将变量设置为系统的最大文件大小。包含原始表文件的文件系统中必须有可用空间。
+假设使用以下选项设置其内存分配变量来完成 myisamchk 表修复操作：
+--key_buffer_size=128M --myisam_sort_buffer_size=256M
+--read_buffer_size=64M --write_buffer_size=64M
+其中一些 myisamchk 变量对应于服务器系统变量：
+myisamchk 变量 系统变量
+key_buffer_size key_buffer_size
+myisam_sort_buffer_size myisam_sort_buffer_size
+read_buffer_size read_buffer_size
+write_buffer_size 没有任何
+每个服务器系统变量都可以在运行时设置，其中一些 ( myisam_sort_buffer_size , read_buffer_size ) 除了全局值外还有一个会话值。设置会话值将更改的影响限制在您当前的会话中，并且不会影响其他用户。更改仅全局变量 ( key_buffer_size , myisam_max_sort_file_size ) 也会影响其他用户。对于 key_buffer_size ，您必须考虑到缓冲区是与这些用户共享的。例如，如果将 myisamchk key_buffer_size 变量设置为 128MB，则可以设置相应的 key_buffer_size 大于该值的系统变量（如果尚未设置得更大），以允许其他会话中的活动使用密钥缓冲区。但是，更改全局键缓冲区大小会使缓冲区无效，从而导致磁盘 I/O 增加并降低其他会话的速度。避免此问题的另一种方法是使用单独的键缓存，将要修复的表中的索引分配给它，并在修复完成时释放它。请参阅 第 8.10.2.2 节，“多个密钥缓存” 。
+根据前面的说明， REPAIR
+TABLE 可以进行如下操作，使用类似于 myisamchk 命令的设置。这里分配了一个单独的 128MB 密钥缓冲区，并且假定文件系统允许至少 100GB 的文件大小。
+SET SESSION myisam_sort_buffer_size = 256*1024*1024;
+SET SESSION read_buffer_size = 64*1024*1024;
+SET GLOBAL myisam_max_sort_file_size = 100*1024*1024*1024;
+SET GLOBAL repair_cache.key_buffer_size = 128*1024*1024;
+CACHE INDEX tbl_name IN repair_cache;
+LOAD INDEX INTO CACHE tbl_name ;
+REPAIR TABLE tbl_name ;
+SET GLOBAL repair_cache.key_buffer_size = 0;
+如果您打算更改全局变量，但只想在操作期间这样做，以 REPAIR
+TABLE 尽量减少对其他用户的影响，请将其值保存在用户变量中，然后再恢复。例如：
+SET @old_myisam_sort_buffer_size = @@GLOBAL.myisam_max_sort_file_size;
+SET GLOBAL myisam_max_sort_file_size = 100*1024*1024*1024;
+REPAIR TABLE tbl_name ;
+SET GLOBAL myisam_max_sort_file_size = @old_myisam_max_sort_file_size;
+REPAIR
+TABLE 如果您希望这些值在默认情况下生效，则可以在服务器启动时全局设置
+影响的系统变量。例如，将这些行添加到服务器 my.cnf 文件：
+[mysqld]
+myisam_sort_buffer_size=256M
+key_buffer_size=1G
+myisam_max_sort_file_size=100G
+这些设置不包括 read_buffer_size . 将 read_buffer_size 全局设置为一个较大的值会对所有会话执行此操作，并且可能会由于为具有许多并发会话的服务器分配过多的内存而导致性能下降。

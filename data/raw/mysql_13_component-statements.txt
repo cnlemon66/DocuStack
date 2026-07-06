@@ -1,0 +1,7 @@
+13.7.4 组件、插件和可加载函数语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.7 数据库管理语句 / 
+13.7.4 组件、插件和可加载函数语句
+13.7.4 组件、插件和可加载函数语句
+13.7.4.1 可加载函数的 CREATE FUNCTION 语句 13.7.4.2 可加载函数的 DROP FUNCTION 语句 13.7.4.3 安装组件语句 13.7.4.4 安装插件语句 13.7.4.5 UNINSTALL COMPONENT 语句 13.7.4.6 UNINSTALL PLUGIN 语句

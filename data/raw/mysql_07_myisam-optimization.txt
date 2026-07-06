@@ -1,0 +1,20 @@
+7.6.4 MyISAM表优化_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 7.6 MyISAM表维护和崩溃恢复 / 
+7.6.4 MyISAM表优化
+7.6.4 MyISAM表优化
+要合并碎片化的行并消除因删除或更新行而导致的空间浪费，
+请在恢复模式下
+运行 myisamchk ：
+$> myisamchk -r tbl_name
+您可以使用 OPTIMIZE TABLE SQL 语句以相同的方式优化表。 OPTIMIZE TABLE 进行表修复和键分析，并对索引树进行排序，以便键查找更快。实用程序和服务器之间也不存在不需要的交互的可能性，因为在您使用 OPTIMIZE
+TABLE . 请参阅 第 13.7.3.4 节，“OPTIMIZE TABLE 语句” 。
+myisamchk 有许多其他选项可用于提高表的性能：
+--analyze 或 -a ：执行密钥分布分析。这通过使连接优化器更好地选择连接表的顺序以及它应该使用哪些索引来提高连接性能。
+--sort-index or -S : 对索引块进行排序。这优化了查找并使使用索引的表扫描更快。
+--sort-records= index_num or ：根据给定索引对数据行进行排序。这使您的数据更加本地化，​​并可能加快
+使用该索引
+的基于范围的操作和操作。 -R index_num SELECT ORDER
+BY
+有关所有可用选项的完整描述，请参阅 第 4.6.4 节，“myisamchk — MyISAM 表维护实用程序” 。

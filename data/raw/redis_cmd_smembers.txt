@@ -1,0 +1,63 @@
+Redis SMEMBERS 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SMEMBERS 命令
+返回 Set 中的所有成员。
+* 语法
+SMEMBERS key
+* 参数说明
+参数 类型 必填 说明
+key String 是 Set 的键名
+* 返回值
+条件 返回值
+key 存在 返回所有成员的数组
+key 不存在 空数组 []
+* 时间复杂度
+O(N)，N 为 Set 的基数（成员数量）。
+⚠️ 生产环境警告 ：大 Set（>5000 成员）的 SMEMBERS 会阻塞 Redis，造成延迟飙升。应使用 SSCAN 渐进式遍历。
+* 示例
+> SADD tags redis database cache
+(integer) 3
+
+> SMEMBERS tags
+1) "cache"
+2) "database"
+3) "redis"
+
+# 不存在
+> SMEMBERS nokey
+(empty array)
+* 常见错误
+阻塞服务 ：SMEMBERS 大 Set 是最常见的 Redis 性能事故之一。
+客户端内存溢出 ：返回结果全部加载到客户端内存。
+* 最佳实践
+生产禁用大 Set SMEMBERS ：成员 > 5000 时，改用 SSCAN key 0 COUNT 100 。
+判断存在性 ：用 SISMEMBER key member （O(1)），不要用 SMEMBERS 后遍历。
+随机抽样 ：用 SRANDMEMBER key count 获取随机成员，不需要全部遍历。
+* FAQ
+Q: SMEMBERS 返回有序吗？ A: 不保证有序。Set 是无序集合，返回顺序取决于内部哈希表实现。
+Q: 如何替代 SMEMBERS 遍历大 Set？ A: 使用 SSCAN key cursor [MATCH pattern] [COUNT count] 分批遍历。
+Q: SMEMBERS 和 SISMEMBER 如何选择？ A: 只需判断单个成员是否存在用 SISMEMBER （O(1)）；需要全部成员才用 SMEMBERS，且必须确认 Set 不大。
+相关命令
+SADD
+SCARD
+SDIFF
+SDIFFSTORE
+SINTER
+SINTERCARD
+SINTERSTORE
+SISMEMBER
+SMEMBERS
+SMISMEMBER
+SMOVE
+SPOP
+SRANDMEMBER
+SREM
+SSCAN
+SUNION
+SUNIONSTORE

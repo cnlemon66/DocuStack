@@ -1,0 +1,8 @@
+15.5 InnoDB 内存结构_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 
+15.5 InnoDB 内存结构
+15.5 InnoDB 内存结构
+15.5.1 缓冲池 15.5.2 更改缓冲区 15.5.3 自适应哈希索引 15.5.4 日志缓冲区
+本节介绍 InnoDB 内存结构和相关主题。

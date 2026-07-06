@@ -1,0 +1,151 @@
+Redis SLOWLOG 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SLOWLOG 命令
+SLOWLOG 查看和管理 Redis 慢查询日志，记录执行时间超过阈值的命令。
+* 语法
+SLOWLOG GET [count]
+SLOWLOG LEN
+SLOWLOG RESET
+SLOWLOG HELP
+* 参数说明
+参数 类型 必填 说明
+GET Subcommand 否 获取慢查询日志条目，可选 count 限制条数
+count Integer 否 指定返回的条目数量，默认返回全部
+LEN Subcommand 否 返回当前慢查询日志长度
+RESET Subcommand 否 清空所有慢查询日志条目
+HELP Subcommand 否 返回 SLOWLOG 子命令的帮助信息
+* 返回值
+SLOWLOG GET ：条目数组，每条包含 [id, timestamp, execution_time, command_array, client_addr, client_name]
+SLOWLOG LEN ：日志当前长度（Integer）
+SLOWLOG RESET ： OK
+SLOWLOG HELP ：子命令说明数组（Array）
+* 时间复杂度
+SLOWLOG GET ：O(N)，N 为返回的条目数量
+SLOWLOG LEN ： O(1) - SLOWLOG RESET ：O(N)，N 为日志条目数量
+SLOWLOG HELP ： O(1) ---
+* 示例
+* 获取慢查询日志
+> SLOWLOG GET 2
+1) 1) (integer) 1 # 日志 ID
+2) (integer) 1717000000 # 时间戳
+3) (integer) 50000 # 执行时间（微秒）
+4) 1) "KEYS" # 命令
+2) "*" # 参数
+5) "192.168.1.100:54321" # 客户端地址
+6) "" # 客户端名称
+2) 1) (integer) 0
+2) (integer) 1716999900
+3) (integer) 120000
+4) 1) "HGETALL"
+2) "big:hash"
+5) "192.168.1.101:54322"
+6) ""
+* 查看日志长度
+> SLOWLOG LEN
+(integer) 10
+* 清空日志
+> SLOWLOG RESET
+OK
+* 常见错误
+错误 原因 解决
+ERR wrong number of arguments 子命令参数数量错误 SLOWLOG GET 的 count 可选，其他子命令无需参数
+* 最佳实践
+慢查询分析 ：定期执行 SLOWLOG GET 分析慢查询，识别 KEYS *、大 HGETALL 、大 LRANGE 等性能杀手
+配置阈值 ：通过 slowlog-log-slower-than （微秒）设置记录阈值，默认 10000 微秒（10 毫秒）
+日志长度控制 ：通过 slowlog-max-len 限制日志条目数量，防止内存无限增长
+排除 AOF 和副本 ：慢查询日志不记录来自 AOF 重放和副本同步的命令，仅记录客户端请求
+* FAQ
+Q1: SLOWLOG 记录哪些命令？ A: 执行时间超过 slowlog-log-slower-than 阈值的客户端命令。不包括来自 AOF 重放和副本同步的命令。
+Q2: SLOWLOG 中 execution_time 的单位是什么？ A: 微秒（μs）。1 毫秒 = 1000 微秒。
+Q3: 如何永久关闭慢查询日志？ A: 将 slowlog-log-slower-than 设为 -1，则所有命令都不会被记录。
+相关命令
+ACL
+ACL CAT
+ACL DELUSER
+ACL DRYRUN
+ACL GENPASS
+ACL GETUSER
+ACL HELP
+ACL LIST
+ACL LOAD
+ACL LOG
+ACL SAVE
+ACL SETUSER
+ACL USERS
+ACL WHOAMI
+BGREWRITEAOF
+BGSAVE
+COMMAND
+COMMAND COUNT
+COMMAND DOCS
+COMMAND GETKEYS
+COMMAND GETKEYSANDFLAGS
+COMMAND HELP
+COMMAND INFO
+COMMAND LIST
+CONFIG
+CONFIG GET
+CONFIG HELP
+CONFIG RESETSTAT
+CONFIG REWRITE
+CONFIG SET
+DBSIZE
+DEBUG
+DEBUG OBJECT
+DEBUG SEGFAULT
+FAILOVER
+FLUSHALL
+FLUSHDB
+HOTKEYS
+HOTKEYS GET
+HOTKEYS HELP
+HOTKEYS RESET
+HOTKEYS START
+HOTKEYS STOP
+INFO
+LASTSAVE
+LATENCY
+LATENCY DOCTOR
+LATENCY GRAPH
+LATENCY HELP
+LATENCY HISTOGRAM
+LATENCY HISTORY
+LATENCY LATEST
+LATENCY RESET
+LOLWUT
+MEMORY
+MEMORY DOCTOR
+MEMORY HELP
+MEMORY MALLOC-STATS
+MEMORY PURGE
+MEMORY STATS
+MEMORY USAGE
+MODULE
+MODULE HELP
+MODULE LIST
+MODULE LOAD
+MODULE LOADEX
+MODULE UNLOAD
+MONITOR
+PSYNC
+REPLCONF
+REPLICAOF
+RESTORE-ASKING
+ROLE
+SAVE
+SHUTDOWN
+SLAVEOF
+SLOWLOG
+SLOWLOG GET
+SLOWLOG HELP
+SLOWLOG LEN
+SLOWLOG RESET
+SWAPDB
+SYNC
+TIME

@@ -1,0 +1,13 @@
+13.6.7 条件处理_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.6 复合语句语法 / 
+13.6.7 条件处理
+13.6.7 条件处理
+13.6.7.1 DECLARE ... CONDITION 语句 13.6.7.2 DECLARE ... HANDLER 语句 13.6.7.3 GET DIAGNOSTICS 语句 13.6.7.4 RESIGNAL 语句 13.6.7.5 SIGNAL 语句 13.6.7.6 处理程序的范围规则 13.6.7.7 MySQL诊断区 13.6.7.8 条件处理和 OUT 或 INOUT 参数
+存储程序执行期间可能会出现需要特殊处理的情况，例如退出当前程序块或继续执行。可以为一般情况（例如警告或异常）或特定情况（例如特定错误代码）定义处理程序。可以为特定条件分配名称并在处理程序中以这种方式引用。
+要命名条件，请使用 DECLARE ...
+CONDITION 语句。要声明处理程序，请使用该 DECLARE ...
+HANDLER 语句。请参阅 第 13.6.7.1 节，“DECLARE ... CONDITION 语句” 和 第 13.6.7.2 节，“DECLARE ... HANDLER 语句” 。有关在条件发生时服务器如何选择处理程序的信息，请参阅 第 13.6.7.6 节，“处理程序的作用域规则” 。
+要提出条件，请使用 SIGNAL 语句。要修改条件处理程序中的条件信息，请使用 RESIGNAL . 请参阅 第 13.6.7.1 节，“DECLARE ... CONDITION 语句” 和 第 13.6.7.2 节，“DECLARE ... HANDLER 语句” 。
+要从诊断区域检索信息，请使用 GET DIAGNOSTICS 语句（请参阅 第 13.6.7.3 节，“GET DIAGNOSTICS 语句” ）。有关诊断区域的信息，请参阅 第 13.6.7.7 节，“MySQL 诊断区域” 。

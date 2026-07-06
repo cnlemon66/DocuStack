@@ -1,0 +1,17 @@
+13.1.7 ALTER PROCEDURE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.7 ALTER PROCEDURE 语句
+13.1.7 ALTER PROCEDURE 语句
+ALTER PROCEDURE proc_name [ characteristic ...] characteristic : {
+COMMENT ' string '
+| LANGUAGE SQL
+| { CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }
+| SQL SECURITY { DEFINER | INVOKER }
+}
+该语句可用于更改存储过程的特性。 ALTER PROCEDURE 一个语句中可以指定多个更改
+。但是，您不能使用此语句更改存储过程的参数或主体； DROP
+PROCEDURE 要进行此类更改，您必须使用和删除并重新创建过程 CREATE
+PROCEDURE 。
+您必须拥有该 ALTER ROUTINE 程序的特权。默认情况下，该特权自动授予过程创建者。可以通过禁用 automatic_sp_privileges 系统变量来更改此行为。请参阅 第 25.2.2 节，“存储例程和 MySQL 特权” 。

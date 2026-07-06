@@ -1,0 +1,14 @@
+13.1.11 ALTER VIEW 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.11 ALTER VIEW 语句
+13.1.11 ALTER VIEW 语句
+ALTER
+[ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}]
+[DEFINER = user ]
+[SQL SECURITY { DEFINER | INVOKER }]
+VIEW view_name [( column_list )]
+AS select_statement [WITH [CASCADED | LOCAL] CHECK OPTION]
+此语句更改必须存在的视图的定义。语法类似于 CREATE
+VIEW 第 13.1.23 节，“CREATE VIEW 语句” ）。此语句需要视图的 CREATE VIEW 和 DROP 权限，以及语句中引用的每个列的一些权限 SELECT 。 ALTER VIEW 仅允许定义者或具有 SET_USER_ID 特权（或已弃用的 SUPER 特权）的用户使用。

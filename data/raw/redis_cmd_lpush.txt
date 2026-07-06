@@ -1,0 +1,73 @@
+Redis LPUSH 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis LPUSH 命令
+在 List 头部（左侧）插入一个或多个元素。
+* 语法
+LPUSH key element [element ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 List 的键名
+element String 是 插入的元素，可一次插入多个
+* 返回值
+条件 返回值
+插入成功 返回插入后 List 的长度
+key 非 List 类型 WRONGTYPE 错误
+* 时间复杂度
+O(1)（单个元素），O(N)（N 个元素）
+* 示例
+> LPUSH mylist a
+(integer) 1
+
+> LPUSH mylist b
+(integer) 2
+
+# 一次插入多个
+> LPUSH mylist c d e
+(integer) 5
+
+> LRANGE mylist 0 -1
+1) "e"
+2) "d"
+3) "c"
+4) "b"
+5) "a"
+* 常见错误
+对非 List 类型使用 ：若 key 是 String/Hash 等，会返回 WRONGTYPE。
+* 最佳实践
+队列头部插入 ：LPUSH + RPOP 实现先进先出队列（FIFO）。
+栈用法 ：LPUSH + LPOP 实现后进先出栈（LIFO）。
+批量插入 ：一次 LPUSH 多个元素，减少网络往返。
+控制 List 长度 ：配合 LTRIM key 0 999 限制队列长度，防止无限增长。
+* FAQ
+Q: LPUSH 和 RPUSH 有什么区别？ A: LPUSH 在头部插入， RPUSH 在尾部插入。使用 LPUSH+ RPOP 或 RPUSH + LPOP 都可实现 FIFO 队列。
+Q: LPUSH 可以插入重复元素吗？ A: 可以。List 允许重复元素，与 Set 不同。
+Q: 如何实现固定长度的队列？ A: 插入后用 LTRIM key 0 N-1 裁剪，原子操作保证队列长度不超过 N。
+相关命令
+BLMOVE
+BLMPOP
+BLPOP
+BRPOP
+BRPOPLPUSH
+LINDEX
+LINSERT
+LLEN
+LMOVE
+LMPOP
+LPOP
+LPOS
+LPUSH
+LPUSHX
+LRANGE
+LREM
+LSET
+LTRIM
+RPOP
+RPOPLPUSH
+RPUSH
+RPUSHX

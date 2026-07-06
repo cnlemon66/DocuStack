@@ -1,0 +1,75 @@
+Redis RENAME 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis RENAME 命令
+重命名 key。若 newkey 已存在则覆盖。
+* 语法
+RENAME key newkey
+* 参数说明
+参数 类型 必填 说明
+key String 是 原键名
+newkey String 是 新键名
+* 返回值
+条件 返回值
+重命名成功 OK
+key 不存在 错误 ERR no such key
+* 时间复杂度
+O(1)
+*
+* 示例
+> SET mykey "value"
+OK
+> RENAME mykey newkey
+OK
+> GET newkey
+"value"
+> GET mykey
+(nil)
+* 常见错误
+key 不存在 ：返回错误。
+覆盖已有 key ：newkey 已存在则静默覆盖。
+* 最佳实践
+临时 key 重命名 ：操作完成后将临时 key 重命名为正式 key，实现原子替换。
+避免覆盖 ：需要 newkey 不存在时才重命名，用 RENAMENX 。
+* FAQ
+Q: RENAME 和 RENAMENX 有什么区别？ A: RENAME 总是执行，覆盖已有 newkey； RENAMENX 只在 newkey 不存在时执行。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

@@ -1,0 +1,177 @@
+5.1.15 MySQL 服务器时区支持_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.1 MySQL 服务器 / 
+5.1.15 MySQL 服务器时区支持
+5.1.15 MySQL 服务器时区支持
+本节介绍 MySQL 维护的时区设置，如何加载命名时间支持所需的系统表，如何与时区更改保持同步，以及如何启用闰秒支持。
+从 MySQL 8.0.19 开始，插入的日期时间值也支持时区偏移；有关详细信息，请参阅 第 11.2.2 节，“DATE、DATETIME 和 TIMESTAMP 类型” 。
+有关复制设置中时区设置的信息，请参阅 第 17.5.1.14 节，“复制和系统功能” 和 第 17.5.1.33 节，“复制和时区” 。
+时区变量
+填充时区表
+与时区变化保持同步
+时区闰秒支持
+时区变量
+MySQL 服务器维护几个时区设置：
+服务器系统时区。当服务器启动时，它会尝试确定主机的时区并使用它来设置 system_time_zone 系统变量。
+要在启动时明确指定 MySQL 服务器的系统时区，请在启动 mysqld TZ 之前设置环境变量。如果你使用 mysqld_safe 启动服务器，它的
+选项提供了另一种设置系统时区的方法。和
+的允许值取决于系统。请查阅您的操作系统文档以查看可接受的值。 --timezone TZ --timezone
+服务器当前时区。全局 time_zone 系统变量表示服务器当前运行的时区，初始 time_zone 值为 'SYSTEM' ，表示服务器时区与系统时区相同。
+笔记
+如果设置为 SYSTEM ，则每个需要时区计算的 MySQL 函数调用都会调用系统库来确定当前系统时区。此调用可能受全局互斥锁保护，从而导致争用。
+初始全局服务器时区值可以在启动时使用 --default-time-zone 命令行上的选项明确指定，或者您可以在选项文件中使用以下行：
+default-time-zone=' timezone '
+如果您有 SYSTEM_VARIABLES_ADMIN 特权（或已弃用的 SUPER 特权），则可以在运行时使用以下语句设置全局服务器时区值：
+SET GLOBAL time_zone = timezone ;
+每会话时区。每个连接的客户端都有自己的会话时区设置，由会话 time_zone 变量给出。最初，会话变量从全局 time_zone 变量中获取其值，但客户端可以使用以下语句更改自己的时区：
+SET time_zone = timezone ;
+会话时区设置会影响对时区敏感的时间值的显示和存储。这包括由 NOW() 或
+等函数显示的值 CURTIME() ，以及存储在列中和从 TIMESTAMP 列中检索的值。列的值 TIMESTAMP 从会话时区转换为 UTC 以供存储，并从 UTC 转换为会话时区以供检索。
+会话时区设置不会影响函数显示的值，例如 UTC_TIMESTAMP() or values in DATE 、 TIME 或 DATETIME columns。这些数据类型中的值也不存储在 UTC 中；时区仅在从 TIMESTAMP 值转换时适用于它们。如果您想要、 或
+值的特定于区域设置的算术 DATE ，
+请将它们转换为 UTC，执行算术，然后再转换回来。 TIME DATETIME
+可以像这样检索当前的全局和会话时区值：
+SELECT @@GLOBAL.time_zone, @@SESSION.time_zone;
+timezone 值可以以多种格式给出，其中不区分大小写：
+值为 'SYSTEM' ，表示服务器时区与系统时区相同。
+作为指示与 UTC 格式的偏移量的字符串
+，以or
+为前缀，例如,
+, or 。对于小于 10 的小时值，可以选择使用前导零；在这种情况下，MySQL 在存储和检索值时会在前面加上一个前导零。MySQL 将
+or转换为
+. [ H ] H : MM + - '+10:00' '-6:00' '+05:30' '-00:00' '-0:00' '+00:00'
+在 MySQL 8.0.19 之前，这个值必须在 到 的范围内 '-12:59' ， '+13:00' 包括在内；从 MySQL 8.0.19 开始，允许的范围是 '-13:59' 到 '+14:00' ，包括在内。
+作为命名时区，例如 'Europe/Helsinki' 、 'US/Eastern' 、 'MET' 或 'UTC' 。
+笔记
+mysql 仅当已创建并填充数据库
+中的时区信息表时，才能使用命名时区。否则，使用命名时区会导致错误：
+mysql> SET time_zone = 'UTC';
+ERROR 1298 (HY000): Unknown or incorrect time zone: 'UTC'
+填充时区表
+系统模式中存在多个表 mysql 来存储时区信息（请参阅 第 5.3 节，“mysql 系统模式” ）。MySQL 安装过程创建时区表，但不加载它们。要手动执行此操作，请使用以下说明。
+笔记
+加载时区信息不一定是一次性操作，因为信息偶尔会发生变化。当发生此类更改时，使用旧规则的应用程序会过时，您可能会发现有必要重新加载时区表以保持 MySQL 服务器使用的信息最新。请参阅 与时区变化保持同步 。
+如果您的系统有自己的 zoneinfo 数据库（描述时区的文件集），请使用 mysql_tzinfo_to_sql 程序加载时区表。此类系统的示例包括 Linux、macOS、FreeBSD 和 Solaris。这些文件的一个可能位置是 /usr/share/zoneinfo 目录。如果您的系统没有 zoneinfo 数据库，您可以使用可下载的包，如本节后面所述。
+要从命令行加载时区表，请将 zoneinfo 目录路径名传递给 mysql_tzinfo_to_sql 并将输出发送到 mysql 程序。例如：
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root -p mysql
+此处显示的 mysql 命令假定您使用
+具有修改系统架构 root 中表的权限的帐户连接到服务器。 mysql 根据需要调整连接参数。
+mysql_tzinfo_to_sql 读取系统的时区文件并从中生成 SQL 语句。 mysql 处理这些语句以加载时区表。
+mysql_tzinfo_to_sql 也可用于加载单个时区文件或生成闰秒信息：
+tz_file 要加载对应于时区名称
+的单个时区文件
+，请像这样 tz_name 调用 mysql_tzinfo_to_sql ：
+mysql_tzinfo_to_sql tz_file tz_name | mysql -u root -p mysql
+使用这种方法，您必须执行单独的命令来为服务器需要了解的每个命名区域加载时区文件。
+如果您的时区必须考虑闰秒，请像这样初始化闰秒信息，其中 tz_file 是您的时区文件的名称：
+mysql_tzinfo_to_sql --leap tz_file | mysql -u root -p mysql
+运行 mysql_tzinfo_to_sql 后，重新启动服务器，这样它就不会继续使用任何以前缓存的时区数据。
+如果您的系统没有 zoneinfo 数据库（例如，Windows），您可以使用包含 SQL 语句的包，该包可从 MySQL 开发人员专区下载：
+https://mysql.net.cn/downloads/timezones.html
+警告
+如果您的系统有 zoneinfo 数据库，请
+不要 使用可下载的时区包。 请改用 mysql_tzinfo_to_sql 实用程序。否则，您可能会导致 MySQL 和系统上其他应用程序之间的日期时间处理有所不同。
+要使用已下载的 SQL 语句时区包，将其解压缩，然后将解压缩的文件内容加载到时区表中：
+mysql -u root -p mysql < file_name
+然后重启服务器。
+警告
+不要 使用 包含 MyISAM 表格的可下载时区包。这适用于较旧的 MySQL 版本。MySQL 现在 InnoDB 用于时区表。试图用 MyISAM 表格替换它们会导致问题。
+与时区变化保持同步
+当时区规则发生变化时，使用旧规则的应用程序就会过时。要保持最新状态，有必要确保您的系统使用当前时区信息。对于 MySQL，要保持最新状态需要考虑多个因素：
+如果 MySQL 服务器的时区设置为 ，则操作系统时间会影响 MySQL 服务器使用的时间值 SYSTEM 。确保您的操作系统使用最新的时区信息。对于大多数操作系统，最新的更新或服务包可以让您的系统为时间变化做好准备。检查您的操作系统供应商的网站以获取解决时间更改的更新。
+如果您用
+使用与 mysqld 启动 /etc/localtime 时生效的规则不同的规则的版本替换系统的时区文件
+，请重新启动 mysqld 以便它使用更新的规则。否则， mysqld 可能不会注意到系统何时更改其时间。
+如果您在 MySQL 中使用命名时区，请确保 mysql 数据库中的时区表是最新的：
+如果您的系统有自己的 zoneinfo 数据库，只要 zoneinfo 数据库更新，就重新加载 MySQL 时区表。
+对于没有自己的 zoneinfo 数据库的系统，请检查 MySQL 开发人员专区以获取更新。当有新的更新可用时，下载并使用它来替换当前时区表的内容。
+有关这两种方法的说明，请参阅 填充时区表 。 mysqld 缓存它查找的时区信息，因此在更新时区表后，重新启动 mysqld 以确保它不会继续提供过时的时区数据。
+如果您不确定命名时区是否可用，以用作服务器的时区设置或由设置自己的时区的客户端使用，请检查您的时区表是否为空。以下查询确定包含时区名称的表是否有任何行：
+mysql> SELECT COUNT(*) FROM mysql.time_zone_name;
++----------+
+| COUNT(*) |
++----------+
+| 0 |
++----------+
+计数为零表示该表为空。在这种情况下，当前没有应用程序使用命名时区，您不需要更新表（除非您想要启用命名时区支持）。大于零的计数表示该表不为空并且其内容可用于命名时区支持。在这种情况下，请务必重新加载您的时区表，以便使用命名时区的应用程序可以获得正确的查询结果。
+要检查您的 MySQL 安装是否针对夏令时规则的更改进行了正确更新，请使用如下所示的测试。该示例使用适用于美国 3 月 11 日凌晨 2 点发生的 2007 DST 1 小时更改的值
+测试使用此查询：
+SELECT
+CONVERT_TZ('2007-03-11 2:00:00','US/Eastern','US/Central') AS time1,
+CONVERT_TZ('2007-03-11 3:00:00','US/Eastern','US/Central') AS time2;
+这两个时间值表示 DST 更改发生的时间，使用命名时区需要使用时区表。期望的结果是两个查询返回相同的结果（输入时间，转换为“美国/中部”时区的等效值）。
+在更新时区表之前，您会看到如下不正确的结果：
++---------------------+---------------------+
+| time1 | time2 |
++---------------------+---------------------+
+| 2007-03-11 01:00:00 | 2007-03-11 02:00:00 |
++---------------------+---------------------+
+更新表格后，您应该会看到正确的结果：
++---------------------+---------------------+
+| time1 | time2 |
++---------------------+---------------------+
+| 2007-03-11 01:00:00 | 2007-03-11 01:00:00 |
++---------------------+---------------------+
+时区闰秒支持
+闰秒值返回时带有以 结尾的时间部分 :59:59 。这意味着诸如 之类的函数 NOW() 可以在闰秒期间连续两秒或三秒返回相同的值。具有以 结尾 :59:60 或被 :59:61 视为无效的时间部分的文字时间值仍然是正确的。
+如果需要 TIMESTAMP 在闰秒前一秒搜索值，则使用与值的比较可能会获得异常结果。以下示例演示了这一点。它将会话时区更改为 UTC，因此内部值（采用 UTC）和显示值（已应用时区校正）
+之间没有区别
+。 ' YYYY-MM-DD
+hh:mm:ss ' TIMESTAMP
+mysql> CREATE TABLE t1 (
+a INT,
+ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+PRIMARY KEY (ts)
+);
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> -- change to UTC
+mysql> SET time_zone = '+00:00';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> -- Simulate NOW() = '2008-12-31 23:59:59'
+mysql> SET timestamp = 1230767999;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO t1 (a) VALUES (1);
+Query OK, 1 row affected (0.00 sec)
+
+mysql> -- Simulate NOW() = '2008-12-31 23:59:60'
+mysql> SET timestamp = 1230768000;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO t1 (a) VALUES (2);
+Query OK, 1 row affected (0.00 sec)
+
+mysql> -- values differ internally but display the same
+mysql> SELECT a, ts, UNIX_TIMESTAMP(ts) FROM t1;
++------+---------------------+--------------------+
+| a | ts | UNIX_TIMESTAMP(ts) |
++------+---------------------+--------------------+
+| 1 | 2008-12-31 23:59:59 | 1230767999 |
+| 2 | 2008-12-31 23:59:59 | 1230768000 |
++------+---------------------+--------------------+
+2 rows in set (0.00 sec)
+
+mysql> -- only the non-leap value matches
+mysql> SELECT * FROM t1 WHERE ts = '2008-12-31 23:59:59';
++------+---------------------+
+| a | ts |
++------+---------------------+
+| 1 | 2008-12-31 23:59:59 |
++------+---------------------+
+1 row in set (0.00 sec)
+
+mysql> -- the leap value with seconds=60 is invalid
+mysql> SELECT * FROM t1 WHERE ts = '2008-12-31 23:59:60';
+Empty set, 2 warnings (0.00 sec)
+要解决此问题，您可以使用基于列中实际存储的 UTC 值的比较，该列应用了闰秒校正：
+mysql> -- selecting using UNIX_TIMESTAMP value return leap value
+mysql> SELECT * FROM t1 WHERE UNIX_TIMESTAMP(ts) = 1230768000;
++------+---------------------+
+| a | ts |
++------+---------------------+
+| 2 | 2008-12-31 23:59:59 |
++------+---------------------+
+1 row in set (0.00 sec)

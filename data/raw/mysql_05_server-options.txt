@@ -1,0 +1,765 @@
+5.1.7 服务器命令选项_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.1 MySQL 服务器 / 
+5.1.7 服务器命令选项
+5.1.7 服务器命令选项
+当您启动 mysqld 服务器时，您可以使用 第 4.2.2 节，“指定程序选项” 中描述的任何方法指定程序选项。最常见的方法是在选项文件或命令行中提供选项。但是，在大多数情况下，最好确保服务器每次运行时都使用相同的选项。确保这一点的最佳方法是将它们列在选项文件中。请参见 第 4.2.2.2 节，“使用选项文件” 。该部分还描述了选项文件格式和语法。
+mysqld 从 [mysqld] 和 [server] 组中读取选项。 mysqld_safe 从 [mysqld] 、 [server] 、 [mysqld_safe] 和 [safe_mysqld] 组中读取选项。 mysql.server 从 [mysqld] 和 [mysql.server] 组中读取选项。
+mysqld 接受许多命令选项。如需简要总结，请执行以下命令：
+mysqld --help
+要查看完整列表，请使用以下命令：
+mysqld --verbose --help
+列表中的一些项目实际上是可以在服务器启动时设置的系统变量。这些可以在运行时使用 SHOW VARIABLES 语句显示。前面的 mysqld 命令显示的一些项目没有出现在 SHOW
+VARIABLES 输出中；这是因为它们只是选项而不是系统变量。
+以下列表显示了一些最常见的服务器选项。其他部分描述了其他选项：
+影响安全的选项：参见 第 6.1.4 节，“与安全相关的 mysqld 选项和变量” 。
+SSL 相关选项：请参阅 加密连接的命令选项 。
+二进制日志控制选项：参见 第 5.4.4 节，“二进制日志” 。
+与复制相关的选项：请参阅 第 17.1.6 节，“复制和二进制日志记录选项和变量” 。
+加载插件的选项，例如可插拔存储引擎：请参阅 第 5.6.1 节，“安装和卸载插件” 。
+特定于特定存储引擎的选项：请参阅 第 15.14 节，“InnoDB 启动选项和系统变量” 和 第 16.2.1 节，“MyISAM 启动选项” 。
+一些选项控制缓冲区或高速缓存的大小。对于给定的缓冲区，服务器可能需要分配内部数据结构。这些结构通常是从分配给缓冲区的总内存中分配的，所需的空间量可能取决于平台。这意味着当您为控制缓冲区大小的选项分配一个值时，实际可用的空间量可能与分配的值不同。在某些情况下，金额可能小于分配的值。也有可能是服务器向上调整了一个值。例如，如果将值 0 分配给最小值为 1024 的选项，则服务器会将值设置为 1024。
+除非另有说明，否则缓冲区大小、长度和堆栈大小的值以字节为单位给出。
+一些选项采用文件名值。除非另有说明，否则如果值为相对路径名，则默认文件位置为数据目录。要明确指定位置，请使用绝对路径名。假设数据目录是 /var/mysql/data . 如果文件值选项作为相对路径名给出，则它位于 /var/mysql/data . 如果该值是绝对路径名，则其位置由路径名给出。
+您还可以使用变量名作为选项在服务器启动时设置服务器系统变量的值。要为服务器系统变量赋值，请使用 形式的选项
+。例如，
+将
+变量的值设置为 384MB。 -- var_name = value --sort_buffer_size=384M sort_buffer_size
+当您为变量赋值时，MySQL 可能会自动更正该值以保持在给定范围内，或者如果仅允许某些值，则将值调整为最接近的允许值。
+要限制系统变量可以在运行时使用语句设置的
+最大值，请
+在服务器启动时 SET 使用表单的选项指定此最大值
+。 --maximum- var_name = value
+SET 您可以使用该语句
+在运行时更改大多数系统变量的值。请参阅 第 13.7.6.1 节，“变量赋值的 SET 语法” 。
+第 5.1.8 节，“服务器系统变量” ，提供了所有变量的完整描述，以及在服务器启动和运行时设置它们的附加信息。有关更改系统变量的信息，请参阅 第 5.1.1 节，“配置服务器” 。
+--help , -?
+命令行格式 --help
+显示一条简短的帮助消息并退出。使用 --verbose 和 --help 选项查看完整消息。
+--admin-ssl , --skip-admin-ssl
+命令行格式 --admin-ssl[={OFF|ON}]
+介绍 8.0.21
+弃用 8.0.26
+类型 布尔值
+默认值 ON
+该 --admin-ssl 选项与 --ssl 选项类似，只是它适用于管理连接接口而不是主连接接口。有关这些接口的信息，请参阅 第 5.1.12.1 节，“连接接口” 。
+该 --admin-ssl 选项指定服务器允许但不需要管理界面上的加密连接。默认情况下启用此选项。
+--admin-ssl 可以以否定形式指定为 --skip-admin-ssl 或同义词 ( --admin-ssl=OFF , --disable-admin-ssl )。在这种情况下，该选项指定服务器 不允许 加密连接，无论
+
+和
+
+系统变量的设置如何。 admin_tsl_ xxx admin_ssl_ xxx
+该 --admin-ssl 选项仅在服务器启动时对管理界面是否支持加密连接有影响。它被忽略并且对运行时的操作没有影响 ALTER
+INSTANCE RELOAD TLS 。例如，您可以使用 --admin-ssl=OFF 来启动禁用加密连接的管理界面，然后重新配置 TLS 并执行 ALTER
+INSTANCE RELOAD TLS FOR CHANNEL mysql_admin 以在运行时启用加密连接。
+有关配置连接加密支持的一般信息，请参阅 第 6.3.1 节，“配置 MySQL 以使用加密连接” 。该讨论是针对主连接接口编写的，但参数名称与管理连接接口的参数名称类似。考虑至少在服务器端设置 admin_ssl_cert 和 admin_ssl_key 系统变量，在客户端设置 --ssl-ca (or --ssl-capath ) 选项。有关管理界面的其他具体信息，请参阅 加密连接的管理界面支持 。
+因为默认启用对加密连接的支持，所以通常不需要指定 --admin-ssl . 从 MySQL 8.0.26 开始， --admin-ssl 已弃用并在未来的 MySQL 版本中删除。如果需要禁用加密连接，则无需 --admin-ssl 以否定形式指定即可完成。将 admin_tls_version 系统变量设置为空值以指示不支持任何 TLS 版本。例如，服务器 my.cnf 文件中的这些行禁用加密连接：
+[mysqld]
+admin_tls_version=''
+--allow-suspicious-udfs
+命令行格式 --allow-suspicious-udfs[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+此选项控制是否可以加载仅具有 xxx main 函数符号的可加载函数。默认情况下，该选项是关闭的，只能加载至少有一个辅助符号的可加载函数；这可以防止尝试从包含合法函数的共享对象文件以外的共享对象文件加载函数。请参阅 可加载函数安全预防措施 。
+--ansi
+命令行格式 --ansi
+使用标准 (ANSI) SQL 语法而不是 MySQL 语法。为了更精确地控制服务器 SQL 模式，请改用该 --sql-mode 选项。请参阅 第 1.7 节，“MySQL 标准合规性” 和 第 5.1.11 节，“服务器 SQL 模式” 。
+--basedir= dir_name , -b dir_name
+命令行格式 --basedir=dir_name
+系统变量 basedir
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 目录名称
+默认值 parent of mysqld installation directory
+MySQL 安装目录的路径。此选项设置 basedir 系统变量。
+服务器可执行文件在启动时确定自己的完整路径名，并使用其所在目录的父目录作为默认 basedir 值。这反过来又使服务器能够 basedir 在搜索与服务器相关的信息（例如 share 包含错误消息的目录）时使用它。
+--character-set-client-handshake
+命令行格式 --character-set-client-handshake[={OFF|ON}]
+类型 布尔值
+默认值 ON
+不要忽略客户端发送的字符集信息。要忽略客户端信息并使用默认服务器字符集，请使用 --skip-character-set-client-handshake ; 这使得 MySQL 的行为类似于 MySQL 4.0。
+--chroot= dir_name , -r dir_name
+命令行格式 --chroot=dir_name
+类型 目录名称
+使用系统调用在启动时
+将 mysqld 服务器置于封闭环境中
+。 chroot() 这是推荐的安全措施。使用此选项在一定程度上限制了 LOAD DATA 和 SELECT ... INTO
+OUTFILE 。
+--console
+命令行格式 --console
+特定于平台 视窗
+（仅限 Windows。）使默认错误日志目标成为控制台。这会影响将自己的输出目标基于默认目标的日志接收器。请参阅 第 5.4.2 节，“错误日志” 。 如果使用此选项， mysqld 不会关闭控制台窗口。
+--console --log-error 如果两者都给出
+，则优先
+。
+--core-file
+命令行格式 --core-file[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+如果mysqld 死了，
+写一个核心文件。核心文件的名称和位置取决于系统。在 Linux 上，一个名为 core 的文件
+被写入进程的当前工作目录，对于 mysqld 来说是数据目录。
+表示服务器进程的进程 ID。在 macOS 上，一个名为的核心文件
+被写入该目录。在 Solaris 上，使用 coreadm 命令指定核心文件的写入位置以及命名方式。 core. pid pid core. pid /cores
+对于某些系统，要获得核心文件，您还必须指定 mysqld_safe --core-file-size 选项
+。参见 第 4.3.2 节，“mysqld_safe — MySQL 服务器启动脚本” 。在某些系统（例如 Solaris）上，如果您也使用该
+选项，则不会获得核心文件。可能会有额外的限制或限制。例如，可能需要
+在启动服务器之前执行 ulimit -c unlimited 。 请查阅您的系统文档。 --user
+该 innodb_buffer_pool_in_core_file 变量可用于减小支持它的操作系统上的核心文件的大小。有关详细信息，请参阅 第 15.8.3.7 节，“从核心文件中排除缓冲池页面” 。
+--daemonize , -D
+命令行格式 --daemonize[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+此选项使服务器作为传统的分支守护进程运行，允许它与使用 systemd 进行进程控制的操作系统一起工作。有关详细信息，请参阅 第 2.5.9 节，“使用 systemd 管理 MySQL 服务器” 。
+--daemonize --initialize 与和
+互斥 --initialize-insecure 。
+如果服务器使用该 --daemonize 选项启动并且未连接到 tty 设备， --log-error="" 则在没有显式日志记录选项的情况下使用默认错误日志记录选项，将错误输出定向到默认日志文件。
+-D 是的同义词 --daemonize 。
+--datadir= dir_name , -h dir_name
+命令行格式 --datadir=dir_name
+系统变量 datadir
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 目录名称
+MySQL 服务器数据目录的路径。此选项设置 datadir 系统变量。请参阅该变量的说明。
+--debug[= debug_options ] , -# [ debug_options ]
+命令行格式 --debug[=debug_options]
+系统变量 debug
+范围 全局，会话
+动态的 是的
+SET_VAR 提示适用 不
+类型 细绳
+默认值 (Unix) d:t:i:o,/tmp/mysqld.trace
+默认值 (Windows) d:t:i:O,\mysqld.trace
+如果 MySQL 配置了 CMake 选项，您可以使用此选项来获取 mysqld 正在执行的操作的跟踪文件。典型的字符串是
+. 默认值是在 Unix 和Windows 上。 -DWITH_DEBUG=1 debug_options d:t:o, file_name d:t:i:o,/tmp/mysqld.trace d:t:i:O,\mysqld.trace
+使用 -DWITH_DEBUG=1 调试支持配置 MySQL 使您可以 --debug="d,parser_debug" 在启动服务器时使用该选项。这会导致用于处理 SQL 语句的 Bison 解析器将解析器跟踪转储到服务器的标准错误输出。通常，此输出会写入错误日志。
+这个选项可以多次给出。以前一个值开头 + 或 - 加上或减去前一个值的值。例如，
+将值设置为
+。 --debug=T --debug=+P P:T
+有关详细信息，请参阅 第 5.9.4 节，“DBUG 包” 。
+--debug-sync-timeout[= N ]
+命令行格式 --debug-sync-timeout[=#]
+类型 整数
+控制是否启用用于测试和调试的调试同步工具。使用调试同步需要使用 CMake 选项配置 MySQL（请参阅 第 2.9.7 节，“MySQL 源配置选项” ）。如果未编译 Debug Sync，则此选项不可用。选项值是以秒为单位的超时。默认值为 0，即禁用调试同步。要启用它，请指定一个大于 0 的值；该值也成为各个同步点的默认超时值。如果选项没有值，则超时设置为 300 秒。 -DENABLE_DEBUG_SYNC=1
+有关调试同步工具的描述以及如何使用同步点，请参阅 MySQL 内部结构：测试同步 。
+--default-time-zone= timezone
+命令行格式 --default-time-zone=name
+类型 细绳
+设置默认服务器时区。此选项设置全局 time_zone 系统变量。如果没有给出该选项，则默认时区与系统时区相同（由 system_time_zone 系统变量的值给出。
+变量 system_time_zone 不同于
+. time_zone 尽管它们可能具有相同的值，但后一个变量用于为每个连接的客户端初始化时区。请参阅 第 5.1.15 节，“MySQL 服务器时区支持” 。
+--defaults-extra-file= file_name
+在全局选项文件之后但（在 Unix 上）在用户选项文件之前读取此选项文件。如果该文件不存在或无法访问，则会发生错误。如果 file_name 不是绝对路径名，则将其解释为相对于当前目录。如果使用它，这必须是命令行上的第一个选项。
+有关此选项和其他选项文件选项的其他信息，请参阅 第 4.2.2.3 节，“影响选项文件处理的命令行选项” 。
+--defaults-file= file_name
+只读给定的选项文件。如果该文件不存在或无法访问，则会发生错误。如果 file_name 不是绝对路径名，则将其解释为相对于当前目录。
+例外：即使有 --defaults-file ， mysqld 也会读取 mysqld-auto.cnf .
+笔记
+如果使用它，这必须是命令行上的第一个选项，除非服务器是使用 --defaults-file and --install （或 --install-manual ）选项启动的， --install （或 --install-manual ）必须是第一个。
+有关此选项和其他选项文件选项的其他信息，请参阅 第 4.2.2.3 节，“影响选项文件处理的命令行选项” 。
+--defaults-group-suffix= str
+不仅要阅读通常的选项组，还要阅读具有通常名称和后缀 str . 例如， mysqld 通常读取该 [mysqld] 组。如果此选项作为 给出 --defaults-group-suffix=_other ， mysqld 也会读取该 [mysqld_other] 组。
+有关此选项和其他选项文件选项的其他信息，请参阅 第 4.2.2.3 节，“影响选项文件处理的命令行选项” 。
+--early-plugin-load= plugin_list
+命令行格式 --early-plugin-load=plugin_list
+类型 细绳
+默认值 empty string
+此选项告诉服务器在加载强制内置插件之前和存储引擎初始化之前加载哪些插件。只有使用 .编译的插件才支持早期加载 PLUGIN_OPT_ALLOW_EARLY 。如果给出了多个 --early-plugin-load 选项，则只有最后一个适用。
+选项值是以分号分隔的 plugin_library 和
+
+值列表。每个都是包含插件代码的库文件的名称，每个
+都是要加载的插件的名称。如果一个插件库的命名没有任何前面的插件名称，服务器将加载库中的所有插件。使用前面的插件名称，服务器仅从库中加载指定的插件。服务器在系统变量
+命名的目录中查找插件库文件
+。 name = plugin_library plugin_library name plugin_dir
+例如，如果名为 myplug1 和 myplug2 的插件包含在插件库文件 myplug1.so 和 myplug2.so 中，则使用此选项执行早期插件加载：
+mysqld --early-plugin-load="myplug1=myplug1.so;myplug2=myplug2.so"
+引号将参数值括起来，否则某些命令解释器会将分号 ( ; ) 解释为特殊字符。（例如，Unix shell 将其视为命令终止符。）
+每个命名插件仅在mysqld 的单次调用时提前加载
+。重启后，插件不会提前加载，除非 --early-plugin-load 再次使用。
+如果服务器是使用 --initialize 或
+启动的，则不会加载 --initialize-insecure 指定的插件
+。 --early-plugin-load
+如果服务器运行 --help ，则加载指定的插件 --early-plugin-load 但不初始化。此行为可确保插件选项显示在帮助消息中。
+InnoDB 表空间加密依赖MySQL Keyring进行加密密钥管理，需要使用的keyring插件必须在存储引擎初始化之前加载，以方便 InnoDB 加密表的恢复。例如，想要 keyring_file 在启动时加载插件的管理员应该使用 --early-plugin-load 适当的选项值（例如 keyring_file.so 在 Unix 和类 Unix 系统或 keyring_file.dll Windows 上）。
+有关 InnoDB 表空间加密的信息，请参阅 第 15.13 节，“InnoDB 静态数据加密” 。有关插件加载的一般信息，请参阅 第 5.6.1 节，“安装和卸载插件” 。
+笔记
+对于 MySQL Keyring，仅当使用密钥环插件管理密钥库时才使用此选项。如果密钥库管理使用密钥环组件而不是插件，请使用清单文件指定组件加载；请参阅 第 6.4.4.2 节，“密钥环组件安装” 。
+--exit-info[= flags ] , -T [ flags ]
+命令行格式 --exit-info[=flags]
+类型 整数
+这是可用于调试 mysqld 服务器的不同标志的位掩码。 除非您确切 知道它的作用，
+否则不要使用此选项！
+--external-locking
+命令行格式 --external-locking[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+启用外部锁定（系统锁定），默认情况下禁用。如果在 lockd 不能完全工作的系统（如 Linux）上使用此选项， mysqld 很容易死锁。
+要显式禁用外部锁定，请使用 --skip-external-locking .
+外部锁定仅影响 MyISAM 表访问。有关更多信息，包括可以和不能使用它的条件，请参阅 第 8.11.5 节，“外部锁定” 。
+--flush
+命令行格式 --flush[={OFF|ON}]
+系统变量 flush
+范围 全球的
+动态的 是的
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+在每个 SQL 语句之后将所有更改刷新（同步）到磁盘。通常，MySQL 仅在每个 SQL 语句之后才将所有更改写入磁盘，并让操作系统处理同步到磁盘的操作。请参阅 第 B.3.3.3 节，“如果 MySQL 持续崩溃怎么办” 。
+笔记
+如果 --flush 已指定，则 的值 flush_time 无关紧要，并且更改为 flush_time 对刷新行为没有影响。
+--gdb
+命令行格式 --gdb[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+安装中断处理程序 SIGINT （需要停止 mysqld 以 ^C 设置断点）并禁用堆栈跟踪和核心文件处理。参见 第 5.9.1.4 节，“在 gdb 下调试 mysqld” 。
+在 Windows 上，此选项还抑制用于实现 RESTART 语句的分叉：分叉使一个进程充当另一个进程的监视器，另一个进程充当服务器。但是，分叉使得确定要附加到调试的服务器进程更加困难，因此启动服务器会 --gdb 抑制分叉。对于使用此选项启动的服务器， RESTART 只会退出并且不会重新启动。
+在非调试设置中， --no-monitor 可用于抑制派生监视器进程。
+--initialize , -I
+命令行格式 --initialize[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+此选项用于通过创建数据目录并填充 mysql 系统模式中的表来初始化 MySQL 安装。有关详细信息，请参阅 第 2.10.1 节“初始化数据目录” 。
+当服务器启动时 --initialize ，某些功能不可用，这些功能限制了 init_file 系统变量命名的任何文件中允许的语句。有关详细信息，请参阅该变量的说明。另外， disabled_storage_engines 系统变量没有作用。
+--ndbcluster 与 一起使用时
+该选项将被忽略 --initialize 。
+--initialize 与 互斥 --daemonize 。
+-I 是的同义词 --initialize 。
+--initialize-insecure
+命令行格式 --initialize-insecure[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+此选项用于通过创建数据目录并填充 mysql 系统模式中的表来初始化 MySQL 安装。这个选项暗示 --initialize 。有关详细信息，请参阅该选项的说明和 第 2.10.1 节“初始化数据目录” 。
+--initialize-insecure 与 互斥 --daemonize 。
+--innodb- xxx
+InnoDB 为存储引擎
+设置一个选项。这些 InnoDB 选项列在 第 15.14 节，“InnoDB 启动选项和系统变量” 中。
+--install
+[ service_name ]
+命令行格式 --install [service_name]
+特定于平台 视窗
+（仅限 Windows）将服务器安装为在 Windows 启动期间自动启动的 Windows 服务。默认服务名称是 MySQL 如果没有 service_name 给出值。有关详细信息，请参阅 第 2.3.4.8 节，“将 MySQL 作为 Windows 服务启动” 。
+笔记
+如果服务器是用 --defaults-file 和 --install 选项启动的， --install 必须是第一个。
+--install-manual
+[ service_name ]
+命令行格式 --install-manual [service_name]
+特定于平台 视窗
+（仅限 Windows）将服务器安装为必须手动启动的 Windows 服务。它不会在 Windows 启动期间自动启动。默认服务名称是 MySQL 如果没有 service_name 给出值。有关详细信息，请参阅 第 2.3.4.8 节，“将 MySQL 作为 Windows 服务启动” 。
+笔记
+如果服务器是用 --defaults-file 和 --install-manual 选项启动的， --install-manual 必须是第一个。
+--language= lang_name ,
+-L lang_name
+命令行格式 --language=name
+弃用 是的; 改用 lc-messages-dir _
+系统变量 language
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 目录名称
+默认值 /usr/local/mysql/share/mysql/english/
+用于错误消息的语言。 lang_name 可以作为语言名称或安装语言文件的目录的完整路径名给出。请参阅 第 10.12 节，“设置错误消息语言” 。
+--lc-messages-dir and --lc-messages 应该使用而不是 --language , 已弃用（并作为 的同义词处理 --lc-messages-dir ）。您应该期望 --language 在未来的 MySQL 版本中删除该选项。
+--large-pages
+命令行格式 --large-pages[={OFF|ON}]
+系统变量 large_pages
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+特定于平台 Linux
+类型 布尔值
+默认值 OFF
+一些硬件/操作系统架构支持大于默认值（通常为 4KB）的内存页。这种支持的实际实现取决于底层硬件和操作系统。由于减少了转换后备缓冲区 (TLB) 未命中，执行大量内存访问的应用程序可以通过使用大页面来提高性能。
+MySQL 支持大页面支持的 Linux 实现（在 Linux 中称为 HugeTLB）。请参阅 第 8.12.3.2 节，“启用大页面支持” 。有关 Solaris 对大页面的支持，请参阅该 --super-large-pages 选项的描述。
+--large-pages 默认情况下禁用。
+--lc-messages= locale_name
+命令行格式 --lc-messages=name
+系统变量 lc_messages
+范围 全局，会话
+动态的 是的
+SET_VAR 提示适用 不
+类型 细绳
+默认值 en_US
+用于错误消息的语言环境。默认值为 en_US 。服务器将参数转换为语言名称并将其与 的值组合 --lc-messages-dir 以生成错误消息文件的位置。请参阅 第 10.12 节，“设置错误消息语言” 。
+--lc-messages-dir= dir_name
+命令行格式 --lc-messages-dir=dir_name
+系统变量 lc_messages_dir
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 目录名称
+错误信息所在的目录。服务器使用该值和 的值 --lc-messages 来生成错误消息文件的位置。请参阅 第 10.12 节，“设置错误消息语言” 。
+--local-service
+命令行格式 --local-service
+（仅限 Windows） --local-service 服务名称后面的选项会导致服务器使用 LocalService 具有有限系统权限的 Windows 帐户运行。如果 --defaults-file 和 --local-service 都在服务名称之后给出，则它们的顺序可以是任意的。请参阅 第 2.3.4.8 节，“将 MySQL 作为 Windows 服务启动” 。
+--log-error[= file_name ]
+命令行格式 --log-error[=file_name]
+系统变量 log_error
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 文件名
+将默认错误日志目标设置为命名文件。这会影响将自己的输出目标基于默认目标的日志接收器。请参阅 第 5.4.2 节，“错误日志” 。
+如果该选项没有命名文件，则 Unix 和类 Unix 系统上的默认错误日志目标是 host_name .err 数据目录中命名的文件。Windows 上的默认目标是相同的，除非 --pid-file 指定了该选项。 .err 在这种情况下，文件名是数据目录中
+带有后缀的 PID 文件基本名称。
+如果该选项命名一个文件，则默认目标是该文件（ .err 如果名称没有后缀，则添加后缀），位于数据目录下，除非给出绝对路径名以指定不同的位置。
+如果无法将错误日志输出重定向到错误日志文件，则会出现错误，启动失败。
+在 Windows上，如果两者都给出， --console 则优先。 --log-error 在这种情况下，默认的错误日志目的地是控制台而不是文件。
+--log-isam[= file_name ]
+命令行格式 --log-isam[=file_name]
+类型 文件名
+记录对此文件的所有 MyISAM 更改（仅在调试时使用 MyISAM ）。
+--log-raw
+命令行格式 --log-raw[={OFF|ON}]
+系统变量（≥ 8.0.19） log_raw
+适用范围（≥ 8.0.19） 全球的
+动态（≥ 8.0.19） 是的
+SET_VAR 提示适用（≥ 8.0.19） 不
+类型 布尔值
+默认值 OFF
+写入通用查询日志、慢查询日志和二进制日志的某些语句中的密码由服务器重写，不会以纯文本形式出现。 --log-raw 通过使用该选项启动服务器，可以抑制一般查询日志的密码重写
+。此选项可用于诊断目的，以查看服务器接收到的语句的确切文本，但出于安全原因，不建议在生产中使用。
+如果安装了查询重写插件，该 --log-raw 选项会影响语句日志记录，如下所示：
+如果没有 --log-raw ，服务器会记录查询重写插件返回的语句。这可能与收到的声明不同。
+使用 --log-raw ，服务器记录收到的原始语句。
+有关详细信息，请参阅 第 6.1.2.3 节，“密码和日志记录” 。
+--log-short-format
+命令行格式 --log-short-format[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+如果已激活，则将较少的信息记录到慢查询日志中。
+--log-tc= file_name
+命令行格式 --log-tc=file_name
+类型 文件名
+默认值 tc.log
+内存映射事务协调器日志文件的名称（用于在禁用二进制日志时影响多个存储引擎的 XA 事务）。默认名称是 tc.log . 如果未作为完整路径名给出，则该文件将在数据目录下创建。此选项未使用。
+--log-tc-size= size
+命令行格式 --log-tc-size=#
+类型 整数
+默认值 6 * page size
+最小值 6 * page size
+最大值（64 位平台） 18446744073709551615
+最大值（32 位平台） 4294967295
+内存映射事务协调器日志的大小（以字节为单位）。默认值和最小值是页面大小的 6 倍，并且该值必须是页面大小的倍数。
+--memlock
+命令行格式 --memlock[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+将mysqld 进程
+锁定在内存中。如果您遇到操作系统导致 mysqld 交换到磁盘的问题，此选项可能会有所帮助。
+--memlock 在支持 mlockall() 系统调用的系统上工作；这包括 Solaris、大多数使用 2.4 或更高内核的 Linux 发行版，可能还有其他 Unix 系统。在 Linux 系统上，您可以 mlockall() 通过检查它是否在系统 mman.h 文件中定义来判断是否支持（以及此选项），如下所示：
+$> grep mlockall /usr/include/sys/mman.h
+如果 mlockall() 支持，您应该在上一个命令的输出中看到如下内容：
+extern int mlockall (int __flags) __THROW;
+重要的
+使用此选项可能需要您将服务器运行为 root ，出于安全原因，这通常不是一个好主意。请参阅 第 6.1.5 节，“如何以普通用户身份运行 MySQL” 。
+在 Linux 和其他系统上，您可以 root 通过更改 limits.conf 文件来避免运行服务器的需要。 请参阅第 8.12.3.2 节“启用大页面支持” 中有关 memlock 限制的注释
+。
+您不得在不支持 mlockall() 系统调用的系统上使用此选项；如果这样做， mysqld 很可能会在您尝试启动它时立即退出。
+--myisam-block-size= N
+命令行格式 --myisam-block-size=#
+类型 整数
+默认值 1024
+最小值 1024
+最大值 16384
+用于 MyISAM 索引页的块大小。
+--no-defaults
+不要读取任何选项文件。如果程序启动因从选项文件中读取未知选项而失败， --no-defaults 可用于防止它们被读取。如果使用它，这必须是命令行上的第一个选项。
+有关此选项和其他选项文件选项的其他信息，请参阅 第 4.2.2.3 节，“影响选项文件处理的命令行选项” 。
+--no-dd-upgrade
+命令行格式 --no-dd-upgrade[={OFF|ON}]
+弃用 8.0.16
+类型 布尔值
+默认值 OFF
+笔记
+从 MySQL 8.0.16 开始不推荐使用此选项。它被 --upgrade 选项所取代，它提供了对数据字典和服务器升级行为的更好控制。
+防止在MySQL服务器启动过程中自动升级数据字典表。在将现有安装就地升级到较新的 MySQL 版本后启动 MySQL 服务器时，通常会使用此选项，这可能包括对数据字典表定义的更改。
+指定时 --no-dd-upgrade ，服务器端发现自己期望的数据字典版本与数据字典本身存储的版本不一致，启动失败，报错禁止数据字典升级；
+[ERROR] [MY-011091] [Server] Data dictionary upgrade prohibited by the
+command line option '--no_dd_upgrade'.
+[ERROR] [MY-010020] [Server] Data Dictionary initialization failed.
+在正常启动期间，将服务器的数据字典版本与数据字典中存储的版本进行比较，以确定是否应升级数据字典表定义。如果需要并支持升级，服务器会创建具有更新定义的数据字典表，将持久化的元数据复制到新表中，以原子方式用新表替换旧表，并重新初始化数据字典。如果不需要升级，则启动继续而不更新数据字典表。
+--no-monitor
+命令行格式 --no-monitor[={OFF|ON}]
+介绍 8.0.12
+特定于平台 视窗
+类型 布尔值
+默认值 OFF
+（仅限 Windows）。此选项抑制用于实现 RESTART 语句的分叉：分叉使一个进程充当另一个进程的监视器，另一个进程充当服务器。对于使用此选项启动的服务器， RESTART 只会退出并且不会重新启动。
+--no-monitor 在 MySQL 8.0.12 之前不可用。该 --gdb 选项可用作解决方法。
+--old-style-user-limits
+命令行格式 --old-style-user-limits[={OFF|ON}]
+弃用 8.0.30
+类型 布尔值
+默认值 OFF
+启用旧式用户限制。（在 MySQL 5.0.3 之前，帐户资源限制是针对用户连接的每个主机单独计算的，而不是 user 表中的每个帐户行。）请参阅 第 6.2.21 节，“设置帐户资源限制” 。
+此选项已弃用，并且从 MySQL 8.0.30 开始，在命令行或选项文件中使用它会导致 MySQL 发出警告。期望在未来的版本中删除此选项；在这种情况发生之前，您现在应该检查您的应用程序是否使用 --old-style-user-limits 并删除它们可能对其具有的任何依赖项。
+--performance-schema-xxx
+配置性能模式选项。有关详细信息，请参阅 第 27.14 节，“性能模式命令选项” 。
+--plugin-load= plugin_list
+命令行格式 --plugin-load=plugin_list
+系统变量 plugin_load
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 细绳
+此选项告诉服务器在启动时加载指定的插件。如果给出了多个 --plugin-load 选项，则只有最后一个适用。可以使用 --plugin-load-add 选项指定要加载的其他插件。
+选项值是以分号分隔的 plugin_library 和
+
+值列表。每个都是包含插件代码的库文件的名称，每个
+都是要加载的插件的名称。如果一个插件库的命名没有任何前面的插件名称，服务器将加载库中的所有插件。使用前面的插件名称，服务器仅从库中加载指定的插件。服务器在系统变量
+命名的目录中查找插件库文件
+。 name = plugin_library plugin_library name plugin_dir
+例如，如果名为 myplug1 和 myplug2 的插件包含在插件库文件 myplug1.so 和 myplug2.so 中，则使用此选项执行早期插件加载：
+mysqld --plugin-load="myplug1=myplug1.so;myplug2=myplug2.so"
+引号将参数值括起来，否则某些命令解释器会将分号 ( ; ) 解释为特殊字符。（例如，Unix shell 将其视为命令终止符。）
+每个命名插件仅针对mysqld 的单次调用加载
+。 --plugin-load 重新启动后，除非再次使用，否则不会加载插件。这与 形成对比 INSTALL PLUGIN ，后者向表中添加一个条目以 mysql.plugins 导致在每次正常的服务器启动时加载插件。
+在正常的启动序列中，服务器通过读取 mysql.plugins 系统表来确定加载哪些插件。如果服务器以该 --skip-grant-tables 选项启动，则表中注册的插件 mysql.plugins 不会加载并且不可用。 --plugin-load 即使在给定的情况下也能加载插件 --skip-grant-tables 。 --plugin-load 还允许在启动时加载无法在运行时加载的插件。
+有关插件加载的其他信息，请参阅 第 5.6.1 节，“安装和卸载插件” 。
+--plugin-load-add= plugin_list
+命令行格式 --plugin-load-add=plugin_list
+系统变量 plugin_load_add
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 细绳
+此选项是对 --plugin-load 选项的补充。 --plugin-load-add 将一个或多个插件添加到要在启动时加载的插件集中。参数格式与 for 相同 --plugin-load 。 --plugin-load-add 可用于避免将大量插件指定为单个冗长笨拙的 --plugin-load 参数。
+--plugin-load-add 可以在没有 的情况下给出 --plugin-load ，但它的任何实例 --plugin-load-add 出现在 之前 --plugin-load 。没有效果，因为 --plugin-load 重置了要加载的插件集。换句话说，这些选项：
+--plugin-load=x --plugin-load-add=y
+相当于这个选项：
+--plugin-load="x;y"
+但是这些选项：
+--plugin-load-add=y --plugin-load=x
+相当于这个选项：
+--plugin-load=x
+有关插件加载的其他信息，请参阅 第 5.6.1 节，“安装和卸载插件” 。
+--plugin- xxx
+指定属于服务器插件的选项。例如，许多存储引擎可以构建为插件，对于这样的引擎，可以用 --plugin 前缀指定它们的选项。因此，
+可以将 --innodb-file-per-table 选项 InnoDB 指定为 --plugin-innodb-file-per-table 。
+对于可以启用或禁用的布尔选项， --skip 前缀和其他替代格式也受支持（请参阅 第 4.2.2.4 节，“程序选项修饰符” ）。例如， --skip-plugin-innodb-file-per-table 禁用 innodb-file-per-table .
+前缀的基本原理 --plugin 是，如果名称与内置服务器选项发生冲突，它可以明确指定插件选项。例如，如果插件编写者将插件命名为 “ sql ” 并实现 “ mode ” 选项，则选项名称可能是 --sql-mode ，这将与同名的内置选项冲突。在这种情况下，将解决对冲突名称的引用，以支持内置选项。为避免歧义，用户可以将插件选项指定为 --plugin-sql-mode . 使用的 --plugin 建议为插件选项添加前缀以避免任何歧义问题。
+--port= port_num , -P port_num
+命令行格式 --port=port_num
+系统变量 port
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 整数
+默认值 3306
+最小值 0
+最大值 65535
+侦听 TCP/IP 连接时使用的端口号。在 Unix 和类 Unix 系统上，端口号必须为 1024 或更高，除非服务器由 root 操作系统用户启动。将此选项设置为 0 会导致使用默认值。
+--port-open-timeout= num
+命令行格式 --port-open-timeout=#
+类型 整数
+默认值 0
+在某些系统上，当服务器停止时，TCP/IP 端口可能不会立即可用。如果服务器随后快速重新启动，则其重新打开端口的尝试可能会失败。此选项表示如果无法打开，服务器应等待 TCP/IP 端口空闲的秒数。默认是不等待。
+--print-defaults
+打印程序名称和它从选项文件中获取的所有选项。密码值被屏蔽。如果使用它，它必须是命令行上的第一个选项，除非它可以紧接在 --defaults-file 或
+之后使用 --defaults-extra-file 。
+有关此选项和其他选项文件选项的其他信息，请参阅 第 4.2.2.3 节，“影响选项文件处理的命令行选项” 。
+--remove
+[ service_name ]
+命令行格式 --remove [service_name]
+特定于平台 视窗
+（仅限 Windows）删除 MySQL Windows 服务。默认服务名称是 MySQL 如果没有 service_name 给出值。有关详细信息，请参阅 第 2.3.4.8 节，“将 MySQL 作为 Windows 服务启动” 。
+--safe-user-create
+命令行格式 --safe-user-create[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+如果启用此选项，则用户无法使用该 GRANT 语句创建新的 MySQL 用户，除非该用户具有
+系统表或表中任何列的 INSERT 权限
+。 mysql.user 如果您希望用户能够创建具有用户有权授予的权限的新用户，您应该授予用户以下权限：
+GRANT INSERT(user) ON mysql.user TO ' user_name '@' host_name ';
+这样可以确保用户不能直接更改任何权限列，而必须使用 GRANT 语句将权限授予其他用户。
+--skip-grant-tables
+命令行格式 --skip-grant-tables[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+此选项会影响服务器启动顺序：
+--skip-grant-tables 导致服务器不读取 mysql 系统模式中的授权表，因此根本不使用特权系统就可以启动。这使任何有权访问服务器的人都可以 不受限制地访问所有数据库 。
+因为启动服务器时 --skip-grant-tables 会禁用身份验证检查，所以在这种情况下，服务器还会通过启用来禁用远程连接 skip_networking 。
+要使启动的服务器 --skip-grant-tables 在运行时加载授权表，请执行权限刷新操作，可以通过以下方式完成：
+FLUSH
+PRIVILEGES 连接到服务器后
+
+发出 MySQL语句。
+从命令行
+
+执行 mysqladmin flush-privileges 或 mysqladmin reload命令。
+特权刷新也可能由于启动后执行的其他操作而隐式发生，从而导致服务器开始使用授权表。例如，如果服务器在启动序列期间执行升级，则会刷新权限。
+--skip-grant-tables 禁用失败登录跟踪和临时帐户锁定，因为这些功能取决于授权表。请参阅 第 6.2.15 节，“密码管理” 。
+--skip-grant-tables 导致服务器不加载在数据字典或 mysql 系统模式中注册的某些其他对象：
+使用数据字典表
+
+安装 CREATE EVENT 并注册的计划事件。 events
+使用安装并在系统表中 INSTALL
+PLUGIN 注册的
+
+插件。 mysql.plugin
+要使即使在使用 时也加载插件 --skip-grant-tables ，请使用 --plugin-load 或 --plugin-load-add 选项。
+使用并在系统表中 CREATE
+FUNCTION 注册的
+
+可加载函数
+。 mysql.func
+--skip-grant-tables 在 组件启动期间不抑制加载
+。
+--skip-grant-tables 导致 disabled_storage_engines 系统变量无效。
+--skip-host-cache
+命令行格式 --skip-host-cache
+弃用 8.0.30
+禁用内部主机缓存以加快名称到 IP 的解析。禁用缓存后，服务器会在每次客户端连接时执行 DNS 查找。
+使用 --skip-host-cache 类似于将 host_cache_size 系统变量设置为 0，但 host_cache_size 更灵活，因为它还可以用于在运行时调整、启用或禁用主机缓存，而不仅仅是在服务器启动时。
+从 MySQL 8.0.30 开始，这个选项被弃用；你应该 SET
+GLOBAL host_cache_size = 0 改用。
+使用 启动服务器 --skip-host-cache 不会阻止对 值的运行时更改 host_cache_size ，但此类更改没有任何效果，即使 host_cache_size 设置大于 0，也不会重新启用缓存。
+有关主机缓存如何工作的更多信息，请参阅 第 5.1.12.3 节，“DNS 查找和主机缓存” 。
+--skip-innodb
+禁用 InnoDB 存储引擎。在这种情况下，因为默认存储引擎是 InnoDB ，服务器不会启动，除非您还使用 --default-storage-engine 并将
+默认值设置为永久和表 --default-tmp-storage-engine 的其他引擎
+。 TEMPORARY
+InnoDB 无法禁用存储引擎，该
+
+选项 --skip-innodb 已弃用且无效。它的使用会导致警告。期望在未来的 MySQL 版本中删除此选项。
+--skip-new
+命令行格式 --skip-new
+此选项禁用（过去考虑的）新的、可能不安全的行为。它导致这些设置： delay_key_write=OFF , concurrent_insert=NEVER , automatic_sp_privileges=OFF 。它还会导致 OPTIMIZE TABLE 映射到不支持 ALTER TABLE 的存储引擎。 OPTIMIZE
+TABLE
+--skip-show-database
+命令行格式 --skip-show-database
+系统变量 skip_show_database
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+此选项设置 skip_show_database 系统变量，该变量控制允许谁使用该 SHOW DATABASES 语句。请参阅 第 5.1.8 节，“服务器系统变量” 。
+--skip-stack-trace
+命令行格式 --skip-stack-trace
+不要写堆栈跟踪。当您在调试器下运行 mysqld 时，此选项很有用。在某些系统上，您还必须使用此选项来获取核心文件。参见 第 5.9 节，“调试 MySQL” 。
+--slow-start-timeout= timeout
+命令行格式 --slow-start-timeout=#
+类型 整数
+默认值 15000
+此选项控制 Windows 服务控制管理器的服务启动超时。该值是服务控制管理器在启动期间尝试终止 Windows 服务之前等待的最大毫秒数。默认值为 15000（15 秒）。如果 MySQL 服务启动时间过长，您可能需要增加此值。值为 0 表示没有超时。
+--socket= path
+命令行格式 --socket={file_name|pipe_name}
+系统变量 socket
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 细绳
+默认值 (Windows) MySQL
+默认值（其他） /tmp/mysql.sock
+在 Unix 上，此选项指定侦听本地连接时要使用的 Unix 套接字文件。默认值为 /tmp/mysql.sock 。如果给出此选项，服务器将在数据目录中创建文件，除非给出绝对路径名以指定不同的目录。在 Windows 上，该选项指定在侦听使用命名管道的本地连接时要使用的管道名称。默认值为 MySQL （不区分大小写）。
+--sql-mode= value [, value [, value ...]]
+命令行格式 --sql-mode=name
+系统变量 sql_mode
+范围 全局，会话
+动态的 是的
+SET_VAR 提示适用 是的
+类型 放
+默认值 ONLY_FULL_GROUP_BY STRICT_TRANS_TABLES NO_ZERO_IN_DATE NO_ZERO_DATE ERROR_FOR_DIVISION_BY_ZERO NO_ENGINE_SUBSTITUTION
+有效值
+ALLOW_INVALID_DATES
+ANSI_QUOTES
+ERROR_FOR_DIVISION_BY_ZERO
+HIGH_NOT_PRECEDENCE
+IGNORE_SPACE
+NO_AUTO_VALUE_ON_ZERO
+NO_BACKSLASH_ESCAPES
+NO_DIR_IN_CREATE
+NO_ENGINE_SUBSTITUTION
+NO_UNSIGNED_SUBTRACTION
+NO_ZERO_DATE
+NO_ZERO_IN_DATE
+ONLY_FULL_GROUP_BY
+PAD_CHAR_TO_FULL_LENGTH
+PIPES_AS_CONCAT
+REAL_AS_FLOAT
+STRICT_ALL_TABLES
+STRICT_TRANS_TABLES
+TIME_TRUNCATE_FRACTIONAL
+设置 SQL 模式。请参阅 第 5.1.11 节，“服务器 SQL 模式” 。
+笔记
+MySQL 安装程序可能会在安装过程中配置 SQL 模式。
+如果 SQL 模式不同于默认模式或您期望的模式，请检查服务器在启动时读取的选项文件中的设置。
+--ssl , --skip-ssl
+命令行格式 --ssl[={OFF|ON}]
+弃用 8.0.26
+被禁用 skip-ssl
+类型 布尔值
+默认值 ON
+该 --ssl 选项指定服务器允许但不要求在主连接接口上进行加密连接。默认情况下启用此选项。
+类似的选项 与 类似 --admin-ssl ， --ssl 只是它适用于管理连接接口而不是主连接接口。有关这些接口的信息，请参阅 第 5.1.12.1 节，“连接接口” 。
+--ssl 可以以否定形式指定为 --skip-ssl 或同义词 ( --ssl=OFF , --disable-ssl )。在这种情况下，该选项指定服务器 不允许 加密连接，无论
+和
+系统变量的设置如何。 tls_ xxx ssl_ xxx
+该 --ssl 选项仅在服务器启动时对服务器是否支持加密连接有影响。它被忽略并且对运行时的操作没有影响 ALTER INSTANCE RELOAD
+TLS 。例如，您可以 --ssl=OFF 在禁用加密连接的情况下启动服务器，然后重新配置 TLS 并执行 ALTER INSTANCE RELOAD TLS 以在运行时启用加密连接。
+有关配置服务器是否允许客户端使用 SSL 连接以及指示在哪里可以找到 SSL 密钥和证书的更多信息，请参阅 第 6.3.1 节，“配置 MySQL 以使用加密连接” ，其中还描述了证书和密钥文件自动生成的服务器功能和自动发现。考虑至少在服务器端设置 ssl_cert 和 ssl_key 系统变量，在客户端设置 --ssl-ca (or --ssl-capath ) 选项。
+因为默认启用对加密连接的支持，所以通常不需要指定 --ssl . 从 MySQL 8.0.26 开始， --ssl 已弃用并在未来的 MySQL 版本中删除。如果需要禁用加密连接，则无需 --ssl 以否定形式指定即可完成。将 tls_version 系统变量设置为空值以指示不支持任何 TLS 版本。例如，服务器 my.cnf 文件中的这些行禁用加密连接：
+[mysqld]
+tls_version=''
+--standalone
+命令行格式 --standalone
+特定于平台 视窗
+仅适用于 Windows；指示 MySQL 服务器不作为服务运行。
+--super-large-pages
+命令行格式 --super-large-pages[={OFF|ON}]
+特定于平台 索拉里斯
+类型 布尔值
+默认值 OFF
+MySQL 中大页面的标准使用尝试使用支持的最大大小，最多 4MB。在 Solaris 下， “ 超大页面 ” 功能允许使用高达 256MB 的页面。此功能可用于最新的 SPARC 平台。可以使用 --super-large-pages 或 --skip-super-large-pages 选项启用或禁用它。
+--symbolic-links , --skip-symbolic-links
+命令行格式 --symbolic-links[={OFF|ON}]
+弃用 是的
+类型 布尔值
+默认值 OFF
+启用或禁用符号链接支持。在 Unix 上，启用符号链接意味着您可以
+使用语句的or
+选项将 MyISAM 索引文件或数据文件链接到另一个目录。如果您删除或重命名表，其符号链接指向的文件也会被删除或重命名。请参阅 第 8.12.2.2 节，“在 Unix 上使用 MyISAM 表的符号链接” 。 INDEX DIRECTORY DATA DIRECTORY CREATE TABLE
+笔记
+不推荐使用符号链接支持以及 --symbolic-links 控制它的选项；你应该期望它会在未来版本的 MySQL 中被删除。此外，默认情况下禁用该选项。相关的 have_symlink 系统变量也已弃用；希望它在未来版本的 MySQL 中被删除。
+此选项在 Windows 上没有意义。
+--sysdate-is-now
+命令行格式 --sysdate-is-now[={OFF|ON}]
+类型 布尔值
+默认值 OFF
+SYSDATE() 默认情况下返回它执行的时间，而不是它出现的语句开始执行的时间。这与 的行为不同 NOW() 。此选项导致 SYSDATE() 成为的同义词 NOW() 。有关二进制日志记录和复制的影响的信息，请参阅 SYSDATE() 第 12.7 节“日期和时间函数” 和 SET
+TIMESTAMP 第 5.1.8 节“服务器系统变量” 中的说明。
+--tc-heuristic-recover={COMMIT|ROLLBACK}
+命令行格式 --tc-heuristic-recover=name
+类型 枚举
+默认值 OFF
+有效值
+OFF
+COMMIT
+ROLLBACK
+在手动启发式恢复中使用的决定。
+如果 --tc-heuristic-recover 指定了一个选项，则无论手动启发式恢复是否成功，服务器都会退出。
+在具有多个能够进行两阶段提交的存储引擎的系统上，该 ROLLBACK 选项不安全并导致恢复停止并出现以下错误：
+[ERROR] --tc-heuristic-recover rollback
+strategy is not safe on systems with more than one 2-phase-commit-capable
+storage engine. Aborting crash recovery.
+--transaction-isolation= level
+命令行格式 --transaction-isolation=name
+系统变量 transaction_isolation
+范围 全局，会话
+动态的 是的
+SET_VAR 提示适用 不
+类型 枚举
+默认值 REPEATABLE-READ
+有效值
+READ-UNCOMMITTED
+READ-COMMITTED
+REPEATABLE-READ
+SERIALIZABLE
+设置默认事务隔离级别。该 level 值可以是 READ-UNCOMMITTED 、 READ-COMMITTED 、 REPEATABLE-READ 或 SERIALIZABLE 。请参阅 第 13.3.7 节，“SET TRANSACTION 语句” 。
+默认事务隔离级别也可以在运行时使用 SET
+TRANSACTION 语句或通过设置 transaction_isolation 系统变量来设置。
+--transaction-read-only
+命令行格式 --transaction-read-only[={OFF|ON}]
+系统变量 transaction_read_only
+范围 全局，会话
+动态的 是的
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+设置默认事务访问模式。默认情况下，只读模式是禁用的，所以模式是读/写。
+要在运行时设置默认事务访问模式，请使用 SET TRANSACTION 语句或设置 transaction_read_only 系统变量。请参阅 第 13.3.7 节，“SET TRANSACTION 语句” 。
+--tmpdir= dir_name , -t dir_name
+命令行格式 --tmpdir=dir_name
+系统变量 tmpdir
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 目录名称
+用于创建临时文件的目录路径。 /tmp 如果您的默认目录驻留在太小而无法容纳临时表的分区上，这可能很有用。此选项接受以循环方式使用的多个路径。路径应 : 在 Unix 上以冒号字符 ( ) 分隔 ; ，在 Windows 上以分号字符 ( ) 分隔。
+--tmpdir 可以是非永久位置，例如基于内存的文件系统上的目录或服务器主机重新启动时清除的目录。如果 MySQL 服务器充当副本，并且您使用的是非永久位置
+，请考虑使用或
+系统变量 --tmpdir 为副本设置不同的临时目录
+。对于副本，用于复制
+语句的临时文件存储在此目录中，因此如果临时文件已被删除，它们可以在机器重启后继续存在，但如果临时文件已被删除，复制现在可以在重启后继续。 replica_load_tmpdir slave_load_tmpdir LOAD DATA
+有关临时文件存储位置的更多信息，请参阅 第 B.3.3.5 节，“MySQL 存储临时文件的位置” 。
+--upgrade= value
+命令行格式 --upgrade=value
+介绍 8.0.16
+类型 枚举
+默认值 AUTO
+有效值
+AUTO
+NONE
+MINIMAL
+FORCE
+此选项控制服务器是否以及如何在启动时执行自动升级。自动升级包括两个步骤：
+第一步：数据字典升级。
+这一步升级：
+mysql 架构
+中的数据字典表
+。如果实际数据字典版本低于当前预期版本，则服务器升级数据字典。如果它不能或被阻止这样做，则服务器无法运行。
+性能模式和 INFORMATION_SCHEMA .
+第二步：服务器升级。
+此步骤包括所有其他升级任务。如果现有安装数据的 MySQL 版本低于服务器预期的版本，则必须升级：
+架构中的系统表 mysql （其余非数据字典表）。
+sys 架构
+
+。
+用户模式。
+有关升级步骤 1 和 2 的详细信息，请参阅 第 2.11.3 节，“MySQL 升级过程升级了什么” 。
+这些 --upgrade 选项值是允许的：
+AUTO
+服务器对其发现的任何过时的内容执行自动升级（步骤 1 和 2）。 --upgrade 如果未明确指定
+，则这是默认操作。
+NONE
+服务器在启动过程中不执行自动升级步骤（跳过步骤 1 和 2）。因为此选项值阻止数据字典升级，所以如果发现数据字典已过期，服务器将退出并显示错误：
+[ERROR] [MY-013381] [Server] Server shutting down because upgrade is
+required, yet prohibited by the command line option '--upgrade=NONE'.
+[ERROR] [MY-010334] [Server] Failed to initialize DD Storage Engine
+[ERROR] [MY-010020] [Server] Data Dictionary initialization failed.
+MINIMAL
+服务器升级数据字典、性能模式和 INFORMATION_SCHEMA , 如有必要（步骤 1）。请注意，使用此选项升级后，无法启动组复制，因为复制内部所依赖的系统表未更新，并且其他区域的功能减少也可能很明显。
+FORCE
+服务器升级数据字典、性能模式和 INFORMATION_SCHEMA , 如有必要（步骤 1）。此外，服务器会强制升级其他所有内容（第 2 步）。使用此选项预计服务器启动时间会更长，因为服务器会检查所有模式中的所有对象。
+FORCE 如果服务器认为不需要执行第 2 步的操作，这对于强制执行它们很有用。例如，您可能认为系统表丢失或已损坏并想要强制修复。
+下表总结了服务器对每个选项值采取的操作。
+期权价值 服务器执行第 1 步？ 服务器执行第 2 步？
+AUTO 如有必要 如有必要
+NONE 不 不
+MINIMAL 如有必要 不
+FORCE 如有必要 是的
+--user={ user_name | user_id } , -u
+{ user_name | user_id }
+命令行格式 --user=name
+类型 细绳
+以具有名称或数字用户 ID 的用户身份
+运行 mysqld 服务器。（在此上下文中的 “ 用户 ” 指的是系统登录帐户，而不是授权表中列出的 MySQL 用户。） user_name user_id
+启动 mysqld 时，
+此选项是 必需 的。服务器在其启动序列期间更改其用户 ID，导致它以该特定用户而不是
+. 请参阅 第 6.1.1 节，“安全准则” 。 root root
+为避免用户 --user=root 向文件添加选项 my.cnf （从而导致服务器运行为 root ）的可能安全漏洞， mysqld 仅使用指定的第一个 --user 选项并在有多个 --user 选项时产生警告。 /etc/my.cnf 和
+中的选项在 $MYSQL_HOME/my.cnf 命令行选项之前进行处理，因此建议您将 --user 选项放入 /etc/my.cnf 并指定 . 以外的值 root 。中的选项在 /etc/my.cnf 任何其他 --user 选项之前找到，这确保服务器以非用户身份运行 root ，如果 --user 找到任何其他选项，则会出现警告。
+--validate-config
+命令行格式 --validate-config[={OFF|ON}]
+介绍 8.0.16
+类型 布尔值
+默认值 OFF
+验证服务器启动配置。如果未发现任何错误，服务器将以退出代码 0 终止。如果发现错误，服务器将显示诊断消息并以退出代码 1 终止。还可能显示警告和信息消息，具体取决于 log_error_verbosity 值，但不产生立即验证终止或退出代码 1。有关更多信息，请参阅 第 5.1.3 节，“服务器配置验证” 。
+--validate-user-plugins[={OFF|ON}]
+命令行格式 --validate-user-plugins[={OFF|ON}]
+类型 布尔值
+默认值 ON
+如果启用此选项（默认），服务器将检查每个用户帐户并在发现会使帐户无法使用的情况时发出警告：
+该帐户需要未加载的身份验证插件。
+该帐户需要 sha256_password 或 caching_sha2_password 身份验证插件，但服务器启动时未按插件要求启用 SSL 或 RSA。
+启用 --validate-user-plugins 会减慢服务器初始化和 FLUSH
+PRIVILEGES . 如果您不需要额外的检查，您可以在启动时禁用此选项以避免性能下降。
+--verbose , -v
+将此选项与 --help 详细帮助选项一起使用。
+--version , -V
+显示版本信息并退出。

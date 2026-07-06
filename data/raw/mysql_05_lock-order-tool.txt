@@ -1,0 +1,179 @@
+5.9.3 LOCK_ORDER 工具_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.9 调试 MySQL / 
+5.9.3 LOCK_ORDER 工具
+5.9.3 LOCK_ORDER 工具
+MySQL 服务器是一个多线程应用程序，它使用大量内部锁定和与锁定相关的原语，例如互斥体、rwlocks（包括 prlocks 和 sxlocks）、条件和文件。在服务器中，与锁相关的对象集会随着新功能的实现和代码重构而发生变化以提高性能。与任何使用锁定原语的多线程应用程序一样，当同时持有多个锁时，在执行期间始终存在遇到死锁的风险。对于 MySQL，死锁的影响是灾难性的，会导致服务完全丢失。
+从 MySQL 8.0.17 开始，为了能够检测锁获取死锁并强制运行时执行不受死锁影响，MySQL 支持 LOCK_ORDER 工具。这使得锁顺序依赖图能够被定义为服务器设计的一部分，并且服务器运行时检查以确保锁获取是非循环的并且执行路径符合该图。
+本节提供有关使用 LOCK_ORDER 工具的信息，但只是在基本级别。有关完整的详细信息，请参阅 MySQL Server Doxygen 文档的锁定顺序部分，该文档位于 https://mysql.net.cn/doc/index-other.html 。
+LOCK_ORDER 工具用于调试服务器，不用于生产。
+要使用 LOCK_ORDER 工具，请遵循以下过程：
+从源代码构建 MySQL，使用 CMake 选项配置它，以便构建包含 LOCK_ORDER 工具。 -DWITH_LOCK_ORDER=ON
+笔记
+WITH_LOCK_ORDER 启用
+
+该选项后，MySQL 构建需要 flex 程序。
+要在启用 LOCK_ORDER 工具的情况下运行服务器，请在服务器启动时启用 lock_order 系统变量。LOCK_ORDER 配置的其他几个系统变量也可用。
+对于 MySQL 测试套件操作， mysql-test-run.pl 有一个 --lock-order 选项可以控制在测试用例执行期间是否启用 LOCK_ORDER 工具。
+系统变量描述了以下 LOCK_ORDER 工具的配置操作，假设 MySQL 已构建为包含 LOCK_ORDER 工具。主变量为 lock_order ，表示是否在运行时启用 LOCK_ORDER 工具：
+如果 lock_order 被禁用（默认），则其他 LOCK_ORDER 系统变量没有任何影响。
+如果 lock_order 启用，则其他系统变量配置要启用的 LOCK_ORDER 功能。
+笔记
+通常，LOCK_ORDER 工具是通过执行
+带有选项的 mysql-test-run.pl 来配置的，并且 mysql-test-run.pl 将 LOCK_ORDER 系统变量设置为适当的值。 --lock-order
+所有 LOCK_ORDER 系统变量必须在服务器启动时设置。在运行时，它们的值是可见的但不能更改。
+有些系统变量成对存在，例如 lock_order_debug_loop 和 lock_order_trace_loop 。对于此类对，变量在与其关联的条件发生时按如下方式区分：
+如果 _debug_ 启用该变量，则会引发调试断言。
+如果 _trace_ 启用该变量，则会将错误打印到日志中。
+表 5.8 LOCK_ORDER 系统变量汇总
+变量的名称 变量类型 可变范围
+锁单 布尔值 全球的
+lock_order_debug_loop 布尔值 全球的
+lock_order_debug_missing_arc 布尔值 全球的
+lock_order_debug_missing_key 布尔值 全球的
+lock_order_debug_missing_unlock 布尔值 全球的
+lock_order_dependencies 文件名 全球的
+lock_order_extra_dependencies 文件名 全球的
+lock_order_output_directory 目录名称 全球的
+lock_order_print_txt 布尔值 全球的
+lock_order_trace_loop 布尔值 全球的
+lock_order_trace_missing_arc 布尔值 全球的
+lock_order_trace_missing_key 布尔值 全球的
+lock_order_trace_missing_unlock 布尔值 全球的
+lock_order
+命令行格式 --lock-order[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+是否在运行时启用 LOCK_ORDER 工具。如果 lock_order 被禁用（默认），则其他 LOCK_ORDER 系统变量没有任何影响。如果 lock_order 启用，则其他系统变量配置要启用的 LOCK_ORDER 功能。
+如果 lock_order 启用，如果服务器遇到未在锁定顺序图中声明的锁定获取序列，则会引发错误。
+lock_order_debug_loop
+命令行格式 --lock-order-debug-loop[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_debug_loop
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+当 LOCK_ORDER 工具遇到在锁定顺序图中标记为循环的依赖项时，它是否会导致调试断言失败。
+lock_order_debug_missing_arc
+命令行格式 --lock-order-debug-missing-arc[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_debug_missing_arc
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+LOCK_ORDER 工具在遇到未在锁定顺序图中声明的依赖项时是否会导致调试断言失败。
+lock_order_debug_missing_key
+命令行格式 --lock-order-debug-missing-key[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_debug_missing_key
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+LOCK_ORDER 工具在遇到未正确检测性能模式的对象时是否会导致调试断言失败。
+lock_order_debug_missing_unlock
+命令行格式 --lock-order-debug-missing-unlock[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_debug_missing_unlock
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+当 LOCK_ORDER 工具遇到一个锁被销毁但仍持有时是否会导致调试断言失败。
+lock_order_dependencies
+命令行格式 --lock-order-dependencies=file_name
+介绍 8.0.17
+系统变量 lock_order_dependencies
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 文件名
+默认值 empty string
+lock_order_dependencies.txt 定义服务器锁定顺序依赖关系图
+
+的文件的路径
+。
+允许指定任何依赖项。本例中使用了一个空的依赖图。
+lock_order_extra_dependencies
+命令行格式 --lock-order-extra-dependencies=file_name
+介绍 8.0.17
+系统变量 lock_order_extra_dependencies
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 文件名
+默认值 empty string
+包含锁定顺序依赖关系图的附加依赖关系的文件的路径。这对于修改 lock_order_dependencies.txt 文件中定义的主服务器依赖关系图很有用，附加的依赖关系描述了第三方代码的行为。（另一种方法是修改 lock_order_dependencies.txt 自身，不鼓励这样做。）
+如果未设置此变量，则不使用辅助文件。
+lock_order_output_directory
+命令行格式 --lock-order-output-directory=dir_name
+介绍 8.0.17
+系统变量 lock_order_output_directory
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 目录名称
+默认值 empty string
+LOCK_ORDER 工具写入其日志的目录。如果未设置此变量，则默认为当前目录。
+lock_order_print_txt
+命令行格式 --lock-order-print-txt[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_print_txt
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+LOCK_ORDER 工具是否执行锁定顺序图分析并打印文本报告。该报告包括检测到的任何锁获取周期。
+lock_order_trace_loop
+命令行格式 --lock-order-trace-loop[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_trace_loop
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+当 LOCK_ORDER 工具遇到在锁顺序图中被标记为循环的依赖项时，它是否在日志文件中打印跟踪。
+lock_order_trace_missing_arc
+命令行格式 --lock-order-trace-missing-arc[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_trace_missing_arc
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 ON
+LOCK_ORDER 工具在遇到未在锁定顺序图中声明的依赖项时是否在日志文件中打印跟踪。
+lock_order_trace_missing_key
+命令行格式 --lock-order-trace-missing-key[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_trace_missing_key
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 OFF
+当 LOCK_ORDER 工具遇到未正确使用 Performance Schema 检测的对象时，它是否在日志文件中打印跟踪。
+lock_order_trace_missing_unlock
+命令行格式 --lock-order-trace-missing-unlock[={OFF|ON}]
+介绍 8.0.17
+系统变量 lock_order_trace_missing_unlock
+范围 全球的
+动态的 不
+SET_VAR 提示适用 不
+类型 布尔值
+默认值 ON
+LOCK_ORDER 工具在遇到锁被销毁时是否在日志文件中打印跟踪信息。

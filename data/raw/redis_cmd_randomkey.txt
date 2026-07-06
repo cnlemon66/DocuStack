@@ -1,0 +1,89 @@
+Redis RANDOMKEY 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis RANDOMKEY 命令
+从数据库中随机返回一个键名。
+* 语法
+RANDOMKEY
+* 参数说明
+参数 类型 必填 说明
+无 - - 本命令无参数
+* 返回值
+条件 返回值
+数据库非空 字符串，随机返回一个键名
+数据库为空 nil
+* 时间复杂度
+O(1)
+*
+* 示例
+* 基本用法
+> SET key1 "value1"
+OK
+> SET key2 "value2"
+OK
+> RANDOMKEY
+"key2"
+> RANDOMKEY
+"key1"
+* 空数据库
+> FLUSHDB
+OK
+> RANDOMKEY
+(nil)
+* 与 TYPE 配合使用
+> RANDOMKEY
+"mylist"
+> TYPE mylist
+list
+* 常见错误
+错误 原因 解决
+ERR wrong number of arguments 传入了参数 RANDOMKEY 不带任何参数
+* 最佳实践
+场景：随机抽样检查数据、调试时查看数据库内容、键空间分析
+不建议用于大规模随机遍历 ： RANDOMKEY 可能重复返回同一键，遍历整个键空间应使用 SCAN
+配合 TYPE 、 TTL 、 MEMORY USAGE 等命令进行随机检查
+注意： RANDOMKEY 不会从数据库中删除键，只是返回一个随机键名
+* FAQ
+Q1: RANDOMKEY 能遍历整个数据库的所有键吗？ A: 不能。RANDOMKEY 每次只返回一个随机键，且可能重复。要遍历所有键，请使用 SCAN 命令。
+Q2: RANDOMKEY 返回的键均匀分布吗？ A: Redis 使用近似均匀随机算法，理论上每个键被返回的概率相同。但由于内部哈希表实现细节，极端情况下分布可能略有偏差。
+Q3: RANDOMKEY 会删除返回的键吗？ A: 不会。RANDOMKEY 是只读命令，仅返回键名，不会修改数据库。要获取并删除，请使用 RANDOMKEY 后接 DEL ，或使用 SPOP （仅限 Set 类型）。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

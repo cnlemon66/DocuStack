@@ -1,0 +1,25 @@
+7.6.1 使用 myisamchk 进行崩溃恢复_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 7.6 MyISAM表维护和崩溃恢复 / 
+7.6.1 使用 myisamchk 进行崩溃恢复
+7.6.1 使用 myisamchk 进行崩溃恢复
+本节介绍如何检查和处理 MySQL 数据库中的数据损坏。如果您的表经常损坏，您应该尝试找出原因。请参阅 第 B.3.3.3 节，“如果 MySQL 持续崩溃怎么办” 。
+有关 MyISAM 表如何损坏的解释，请参阅 第 16.2.4 节，“MyISAM 表问题” 。
+如果在禁用外部锁定（默认）的情况下运行 mysqld ，当 mysqld 使用同一个表时，您不能可靠地使用 myisamchk 检查
+表。如果您可以确定在
+运行 myisamchk时没有人可以使用 mysqld 访问这些表，那么您只需
+在开始检查表之前执行 mysqladmin flush- tables。 如果不能保证这一点，
+则必须在检查表时停止 mysqld 。 如果你运行 myisamchk 来检查 mysqld的表 正在同时更新，您可能会收到一个表已损坏的警告，即使它没有。
+如果服务器在启用外部锁定的情况下运行，您可以随时使用 myisamchk 检查表。在这种情况下，如果服务器尝试更新 myisamchk 正在使用的表，则服务器会等待 myisamchk 完成后再继续。
+如果您使用 myisamchk 来修复或优化表，您 必须 始终确保 mysqld 服务器未使用该表（如果禁用外部锁定，这也适用）。如果您不停止 mysqld ，您至少应该在
+运行 myisamchk 之前执行 mysqladmin flush-tables 。如果服务器和 myisamchk 同时访问表，
+您的表 可能会损坏。
+执行崩溃恢复时，重要的是要了解数据库中的每个 MyISAM 表 tbl_name 对应于下表所示的数据库目录中的三个文件。
+文件 目的
+tbl_name .MYD 数据文件
+tbl_name .MYI 索引文件
+这三种文件类型中的每一种都可能以各种方式损坏，但问题最常发生在数据文件和索引文件中。
+myisamchk .MYD 通过逐行创建数据文件的副本来工作
+它通过删除旧 .MYD 文件并将新文件重命名为原始文件名来结束修复阶段。如果使用 --quick ， myisamchk 不会创建临时 .MYD 文件，而是假定该 .MYD 文件是正确的并且只生成一个新的索引文件而不触及该 .MYD 文件。这是安全的，因为 myisamchk 会自动检测 .MYD 文件是否损坏并在损坏时中止修复。您还可以 向myisamchk --quick 指定该选项两次
+。在这种情况下， myisamchk 不会因某些错误（例如重复键错误）而中止，而是尝试通过修改 .MYD 文件来解决它们。 --quick 通常，仅当可用磁盘空间太少而无法执行正常修复时，使用两个在这种情况下，您至少应该在运行 myisamchk 之前备份表。

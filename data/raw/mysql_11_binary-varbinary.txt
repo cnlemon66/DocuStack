@@ -1,0 +1,44 @@
+11.3.3 BINARY 和 VARBINARY 类型_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.3 字符串数据类型 / 
+11.3.3 BINARY 和 VARBINARY 类型
+11.3.3 BINARY 和 VARBINARY 类型
+BINARY and VARBINARY 类型类似于 CHAR and
+
+， VARCHAR 只是它们存储二进制字符串而不是非二进制字符串。也就是说，它们存储字节串而不是字符串。这意味着它们具有 binary 字符集和排序规则，并且比较和排序基于值中字节的数值。
+and的允许最大长度与 BINARY and相同， VARBINARY 只是 CHAR and VARCHAR 的长度以字节 BINARY 而 VARBINARY 不是字符为单位。
+和
+数据类型不同于 BINARY 和
+数据类型。对于后一种类型，该属性不会导致该列被视为二进制字符串列。相反，它会导致使用列字符集的二进制 ( ) 排序规则（如果未指定列字符集，则使用表默认字符集），并且列本身存储非二进制字符串而不是二进制字节字符串。例如，如果默认字符集是
+,则被视为. 这不同于
+，后者存储 5 个字节的二进制字符串，这些字符串具有 VARBINARY CHAR BINARY VARCHAR BINARY BINARY _bin utf8mb4 CHAR(5) BINARY CHAR(5) CHARACTER SET utf8mb4 COLLATE
+utf8mb4_bin BINARY(5) binary 字符集和排序规则。有关字符集排序规则与非二进制字符集排序规则之间差异的信息
+， binary 请
+参阅 第 10.8.5 节，“二进制排序规则与 _bin 排序规则的比较” 。 binary _bin
+如果未启用严格的 SQL 模式，并且您为 BINARY 或 VARBINARY 列分配了一个超过该列最大长度的值，该值将被截断以适合并生成警告。对于截断情况，要导致发生错误（而不是警告）并禁止插入值，请使用严格的 SQL 模式。请参阅 第 5.1.11 节，“服务器 SQL 模式” 。
+存储值时 BINARY ，它们会用填充值右填充到指定长度。填充值是 0x00 （零字节）。 0x00 对于插入，值用右填充，并且没有尾随字节被删除以进行检索。所有字节在比较中都是有意义的，包括 ORDER
+BY 和 DISTINCT 运算。 0x00 和 space 在比较中有所不同， 0x00 在 space 之前进行排序。
+示例：对于 BINARY(3) 列，
+插入时 'a ' 变为
+。插入时变为。两个插入的值在检索时保持不变。 'a \0' 'a\0' 'a\0\0'
+对于 VARBINARY ，没有用于插入的填充，也没有用于检索的字节被剥离。所有字节在比较中都是有意义的，包括 ORDER
+BY 和 DISTINCT 运算。 0x00 和 space 在比较中有所不同， 0x00 在 space 之前进行排序。
+对于尾随填充字节被剥离或比较忽略它们的情况，如果列具有需要唯一值的索引，则将值插入到仅尾随填充字节数不同的列中会导致重复键错误。例如，如果表包含 'a' ，则尝试存储 'a\0' 会导致重复键错误。
+如果您打算使用该 BINARY 数据类型来存储二进制数据，并且您要求检索的值与存储的值完全相同，那么您应该仔细考虑前面的填充和剥离特性。以下示例说明了 0x00 -padding BINARY 值如何影响列值比较：
+mysql> CREATE TABLE t (c BINARY(3));
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> INSERT INTO t SET c = 'a';
+Query OK, 1 row affected (0.01 sec)
+
+mysql> SELECT HEX(c), c = 'a', c = 'a\0\0' from t;
++--------+---------+-------------+
+| HEX(c) | c = 'a' | c = 'a\0\0' |
++--------+---------+-------------+
+| 610000 | 0 | 1 |
++--------+---------+-------------+
+1 row in set (0.09 sec)
+如果检索到的值必须与为存储指定的值相同且没有填充，则最好使用 VARBINARY 或其中一种 BLOB 数据类型。
+笔记
+在 mysql 客户端中，二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。

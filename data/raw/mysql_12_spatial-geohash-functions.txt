@@ -1,0 +1,68 @@
+12.17.10 空间 Geohash 函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.17空间分析函数 / 
+12.17.10 空间 Geohash 函数
+12.17.10 空间 Geohash 函数
+Geohash 是一种将任意精度的经纬度坐标编码为文本字符串的系统。Geohash 值是仅包含从中选择的字符的字符串 "0123456789bcdefghjkmnpqrstuvwxyz" 。
+本节中的函数启用对 geohash 值的操作，它为应用程序提供导入和导出 geohash 数据以及索引和搜索 geohash 值的功能。
+除非另有说明，本节中的函数按如下方式处理它们的几何参数：
+如果任何参数是 NULL ，则返回值为 NULL 。
+如果任何参数无效，则会发生错误。
+如果任何参数的经度或纬度超出范围，则会发生错误：
+如果经度值不在 (−180, 180] 范围内， ER_GEOMETRY_PARAM_LONGITUDE_OUT_OF_RANGE 则会发生错误（ ER_LONGITUDE_OUT_OF_RANGE MySQL 8.0.12 之前）。
+如果纬度值不在 [−90, 90] 范围内， ER_GEOMETRY_PARAM_LATITUDE_OUT_OF_RANGE 则会发生错误（ ER_LATITUDE_OUT_OF_RANGE MySQL 8.0.12 之前）。
+显示的范围以度为单位。由于浮点运算，确切的范围限制略有偏差。
+如果任何点参数不具有 SRID 0 或 4326， ER_SRS_NOT_FOUND 则会发生错误。 point 不检查参数 SRID 有效性。
+如果任何 SRID 参数引用未定义的空间参考系统 (SRS)， ER_SRS_NOT_FOUND 则会发生错误。
+如果任何 SRID 参数不在 32 位无符号整数的范围内， ER_DATA_OUT_OF_RANGE 则会发生错误。
+否则，返回值为非 NULL 。
+这些 geohash 函数可用：
+ST_GeoHash( longitude , latitude , max_length ) , ST_GeoHash( point , max_length )
+返回连接字符集和排序规则中的 geohash 字符串。
+对于第一个语法， longitude 必须是 [−180, 180] 范围内的数字，并且 latitude 必须是 [−90, 90] 范围内的数字。对于第二种语法， POINT 需要一个值，其中 X 和 Y 坐标分别在经度和纬度的有效范围内。
+结果字符串不超过 max_length 字符数，上限为 100。字符串可能比 max_length 字符数短，因为创建 geohash 值的算法会继续，直到它创建了一个字符串，该字符串是位置或 max_length 字符的精确表示， 以先到者为准。
+ST_GeoHash() 如本节介绍中所述处理其参数。
+mysql> SELECT ST_GeoHash(180,0,10), ST_GeoHash(-180,-90,15);
++----------------------+-------------------------+
+| ST_GeoHash(180,0,10) | ST_GeoHash(-180,-90,15) |
++----------------------+-------------------------+
+| xbpbpbpbpb | 000000000000000 |
++----------------------+-------------------------+
+ST_LatFromGeoHash( geohash_str )
+从 geohash 字符串值返回纬度，作为 [−90, 90] 范围内的双精度数字。
+解码函数从参数 ST_LatFromGeoHash() 中读取不超过 433 个字符 geohash_str 。这表示坐标值内部表示中信息的上限。第 433 个之后的字符将被忽略，即使它们在其他方面是非法的并会产生错误。
+ST_LatFromGeoHash() 如本节介绍中所述处理其参数。
+mysql> SELECT ST_LatFromGeoHash(ST_GeoHash(45,-20,10));
++------------------------------------------+
+| ST_LatFromGeoHash(ST_GeoHash(45,-20,10)) |
++------------------------------------------+
+| -20 |
++------------------------------------------+
+ST_LongFromGeoHash( geohash_str )
+从 geohash 字符串值返回经度，作为 [−180, 180] 范围内的双精度数字。
+说明中 ST_LatFromGeoHash() 有关从 geohash_str 参数处理的最大字符数的说明也适用于 ST_LongFromGeoHash() .
+ST_LongFromGeoHash() 如本节介绍中所述处理其参数。
+mysql> SELECT ST_LongFromGeoHash(ST_GeoHash(45,-20,10));
++-------------------------------------------+
+| ST_LongFromGeoHash(ST_GeoHash(45,-20,10)) |
++-------------------------------------------+
+| 45 |
++-------------------------------------------+
+ST_PointFromGeoHash( geohash_str , srid )
+POINT 给定一个 geohash 字符串值，
+
+返回一个包含解码后的 geohash 值的值。
+该点的X、Y坐标分别为[−180, 180]范围内的经度和[−90, 90]范围内的纬度。
+srid 参数是一个 32 位无符号整数
+
+。
+说明中 ST_LatFromGeoHash() 有关从 geohash_str 参数处理的最大字符数的说明也适用于 ST_PointFromGeoHash() .
+ST_PointFromGeoHash() 如本节介绍中所述处理其参数。
+mysql> SET @gh = ST_GeoHash(45,-20,10);
+mysql> SELECT ST_AsText(ST_PointFromGeoHash(@gh,0));
++---------------------------------------+
+| ST_AsText(ST_PointFromGeoHash(@gh,0)) |
++---------------------------------------+
+| POINT(45 -20) |
++---------------------------------------+

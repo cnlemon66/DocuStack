@@ -1,0 +1,23 @@
+13.1.31 DROP SPATIAL REFERENCE SYSTEM 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.31 DROP SPATIAL REFERENCE SYSTEM 语句
+13.1.31 DROP SPATIAL REFERENCE SYSTEM 语句
+DROP SPATIAL REFERENCE SYSTEM
+[IF EXISTS] srid srid : 32-bit unsigned integer
+此语句从数据字典中删除 空间参考系统 (SRS) 定义。它需要 SUPER 特权。
+例子：
+DROP SPATIAL REFERENCE SYSTEM 4120;
+IF EXISTS 如果不存在具有 SRID 值的 SRS 定义，除非指定
+，否则会发生错误。在这种情况下，会出现警告而不是错误。
+如果 SRID 值被现有表中的某些列使用，则会发生错误。例如：
+mysql> DROP SPATIAL REFERENCE SYSTEM 4326;
+ERROR 3716 (SR005): Can't modify SRID 4326. There is at
+least one column depending on it.
+要确定哪些列或哪些列使用 SRID，请使用以下查询：
+SELECT * FROM INFORMATION_SCHEMA.ST_GEOMETRY_COLUMNS WHERE SRS_ID=4326;
+SRID 值必须在 32 位无符号整数范围内，但有以下限制：
+SRID 0 是有效的 SRID，但不能与 一起使用 DROP SPATIAL REFERENCE SYSTEM 。
+如果该值在保留的 SRID 范围内，则会出现警告。保留范围是 [0, 32767]（由 EPSG 保留），[60,000,000, 69,999,999]（由 EPSG 保留）和 [2,000,000,000, 2,147,483,647]（由 MySQL 保留）。EPSG 代表 欧洲石油调查组 。
+用户不应丢弃 SRID 在保留范围内的 SRS。如果删除系统安装的 SRS，则可能会为 MySQL 升级重新创建 SRS 定义。

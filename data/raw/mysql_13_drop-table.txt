@@ -1,0 +1,27 @@
+13.1.32 DROP TABLE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.32 DROP TABLE 语句
+13.1.32 DROP TABLE 语句
+DROP [TEMPORARY] TABLE [IF EXISTS] tbl_name [, tbl_name ] ...
+[RESTRICT | CASCADE]
+DROP TABLE 删除一个或多个表。您必须拥有 DROP 每个表的权限。
+小心 这个声明！对于每个表，它删除表定义和所有表数据。如果表已分区，则该语句会删除表定义、其所有分区、存储在这些分区中的所有数据以及与删除的表关联的所有分区定义。
+删除表也会删除表的所有触发器。
+DROP TABLE 导致隐式提交，除非与 TEMPORARY 关键字一起使用。请参阅 第 13.3.3 节，“导致隐式提交的语句” 。
+重要的
+删除表时，不会 自动删除
+专门为该表授予的权限。它们必须手动删除。请参阅 第 13.7.1.6 节，“GRANT 语句” 。
+如果在参数列表中命名的任何表都不存在，则 DROP TABLE 行为取决于是否 IF EXISTS 给出了子句：
+如果没有 IF EXISTS ，该语句将失败并显示错误，指示它无法删除哪些不存在的表，并且不会进行任何更改。
+使用 IF EXISTS ，不存在的表不会发生错误。该语句删除所有确实存在的命名表，并 NOTE 为每个不存在的表生成一个诊断。这些注释可以用 显示 SHOW WARNINGS 。请参阅 第 13.7.7.42 节，“显示警告声明” 。
+IF EXISTS 也可用于在异常情况下删除表，在这种情况下，数据字典中有条目但存储引擎没有管理表。（例如，如果在从存储引擎中删除表之后但在删除数据字典条目之前发生服务器异常退出。）
+该 TEMPORARY 关键字具有以下作用：
+该语句仅删除 TEMPORARY 表。
+该语句不会导致隐式提交。
+不检查访问权限。表仅在创建它的 TEMPORARY 会话中可见，因此无需检查。
+包括 TEMPORARY 关键字是防止意外删除非 TEMPORARY 表的好方法。
+和
+关键字什么都不做 RESTRICT 。 CASCADE 他们被允许更容易地从其他数据库系统移植。
+DROP TABLE 并非所有 innodb_force_recovery 设置都支持。请参阅 第 15.21.3 节，“强制 InnoDB 恢复” 。

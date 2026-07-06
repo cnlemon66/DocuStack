@@ -1,0 +1,22 @@
+13.8.4 USE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.8 效用语句 / 
+13.8.4 USE 语句
+13.8.4 USE 语句
+USE db_name
+该 USE 语句告诉 MySQL 使用指定的数据库作为后续语句的默认（当前）数据库。此语句需要对数据库或其中的某些对象具有某些权限。
+USE 指定的数据库在会话结束或发出另一条语句
+
+之前保持默认：
+USE db1;
+SELECT COUNT(*) FROM mytable; # selects from db1.mytable
+USE db2;
+SELECT COUNT(*) FROM mytable; # selects from db2.mytable
+数据库名称必须在一行中指定。不支持数据库名称中的换行符。
+通过 USE 语句使特定数据库成为默认数据库并不排除访问其他数据库中的表。以下示例访问数据库中的表和数据库中 author 的
+
+表： db1 editor db2
+USE db1;
+SELECT author_name,editor_name FROM author,db2.editor
+WHERE author.editor_id = db2.editor.editor_id;

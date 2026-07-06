@@ -1,0 +1,84 @@
+Redis GET 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis GET 命令
+返回 key 对应的 String 类型的 value。
+* 语法
+GET key
+* 参数说明
+参数 类型 必填 说明
+key String 是 要查找的键名
+* 返回值
+条件 返回值
+key 存在且为 String 类型 返回对应的 value
+key 不存在 (nil)
+key 存在但非 String 类型 返回错误： WRONGTYPE Operation against a key holding the wrong kind of value
+* 时间复杂度
+O(1)
+*
+* 示例
+> SET mykey hello
+OK
+
+> GET mykey
+"hello"
+
+# key 不存在
+> GET nonexistent
+(nil)
+
+# key 类型不匹配
+> HSET hashkey field value
+(integer) 1
+> GET hashkey
+(error) WRONGTYPE Operation against a key holding the wrong kind of value
+* 常见错误
+WRONGTYPE ：对非 String 类型的 key 执行 GET。应先用 TYPE key 确认类型，或使用对应类型的读取命令。
+key 不存在时返回 nil ：业务层需区分 "key 不存在" 和 "value 为空字符串"（ SET key "" 返回的是空字符串，不是 nil）。
+* 最佳实践
+读取前不需要用 EXISTS 判断，直接 GET 后判断是否为 nil 即可，减少一次 RTT。
+大 value（>10KB）的频繁读取应考虑压缩或拆分存储。
+缓存场景下配合 EXPIRE 使用，避免脏数据长期存活。
+* FAQ
+Q: GET 和 MGET 有什么区别？ A: MGET 可一次读取多个 key，减少网络往返。批量读取时优先使用 MGET 。
+Q: GET 返回二进制安全吗？ A: 是。Redis 的 String 是二进制安全的，可以存储图片、序列化对象等任意二进制数据。
+Q: 为什么 GET 一个存在的 key 返回 nil？ A: 可能 key 已过期、被删除，或类型不是 String。使用 TYPE key 和 TTL key 排查。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

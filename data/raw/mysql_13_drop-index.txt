@@ -1,0 +1,18 @@
+13.1.27 DROP INDEX 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.27 DROP INDEX 语句
+13.1.27 DROP INDEX 语句
+DROP INDEX index_name ON tbl_name [ algorithm_option | lock_option ] ... algorithm_option :
+ALGORITHM [=] {DEFAULT | INPLACE | COPY} lock_option :
+LOCK [=] {DEFAULT | NONE | SHARED | EXCLUSIVE}
+DROP INDEX index_name 删除表中
+命名的索引 tbl_name 。此语句映射 ALTER TABLE 到删除索引的语句。请参阅 第 13.1.9 节，“ALTER TABLE 语句” 。
+要删除主键，索引名称始终是 PRIMARY ，必须将其指定为带引号的标识符，因为 PRIMARY 它是保留字：
+DROP INDEX `PRIMARY` ON t;
+表的可变宽度列上的索引 NDB 被联机删除；也就是说，没有任何表复制。该表未被锁定以防止来自其他 NDB Cluster API 节点的访问，尽管在操作期间它被锁定以防止 同一 API 节点上的其他操作。只要服务器确定可以这样做，它就会自动完成；您不必使用任何特殊的 SQL 语法或服务器选项来使其发生。
+ALGORITHM LOCK 可以给出和子句来影响表的复制方法和在修改表的索引时读取和写入表的并发级别。它们的含义与 ALTER TABLE 语句相同。有关详细信息，请参阅 第 13.1.9 节，“ALTER TABLE 语句”
+ALGORITHM=INPLACE MySQL NDB Cluster 使用标准 MySQL 服务器支持的相同语法
+支持在线操作
+。有关更多信息，请参阅 第 23.6.11 节，“在 NDB Cluster 中使用 ALTER TABLE 进行在线操作” 。

@@ -1,0 +1,196 @@
+Redis 常见问题排查
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis 常见问题排查
+* 概述
+本文档总结 Redis 使用过程中常见的问题及其排查方法，帮助开发者快速定位和解决问题。
+* 连接问题
+* 1. 无法连接 Redis
+现象 ： Could not connect to Redis at 127.0.0.1:6379: Connection refused
+排查步骤 ：
+检查 Redis 服务是否启动：
+ps aux | grep redis
+systemctl status redis
+检查端口是否监听：
+netstat -tlnp | grep 6379
+ss -tlnp | grep 6379
+检查防火墙设置：
+iptables -L | grep 6379
+firewall-cmd --list-ports
+检查配置文件绑定地址：
+bind 127.0.0.1 # 只允许本地连接
+bind 0.0.0.0 # 允许所有连接
+* 2. 连接数过多
+现象 ： ERR max number of clients reached
+解决方案 ：
+增加最大连接数：
+maxclients 20000
+使用连接池管理连接
+检查是否有连接泄漏
+设置合理的超时时间：
+timeout 300
+tcp-keepalive 60
+* 内存问题
+* 1. 内存不足
+现象 ： OOM command not allowed when used memory > 'maxmemory'
+排查步骤 ：
+查看内存使用情况：
+INFO memory
+查找大键：
+redis-cli --bigkeys
+分析内存碎片：
+INFO memory
+# 查看 mem_fragmentation_ratio
+解决方案 ：
+增加 maxmemory：
+maxmemory 8gb
+设置淘汰策略：
+maxmemory-policy allkeys-lru
+启用内存碎片整理（Redis 4.0+）：
+activedefrag yes
+优化数据结构，删除不必要的数据
+* 2. 内存碎片率高
+现象 ： mem_fragmentation_ratio 远大于 1
+解决方案 ：
+重启 Redis 服务
+启用主动碎片整理： activedefrag yes
+active-defrag-ignore-bytes 100mb
+active-defrag-threshold-lower 10
+* 性能问题
+* 1. 响应延迟高
+排查步骤 ：
+检查慢查询日志：
+SLOWLOG GET 10
+监控命令执行时间：
+redis-cli --latency
+检查是否有阻塞命令：
+KEYS *
+FLUSHALL
+FLUSHDB
+DEBUG SEGFAULT
+解决方案 ：
+使用 SCAN 替代 KEYS
+避免在高峰期执行大操作
+使用 Pipeline 减少网络往返
+优化查询逻辑
+* 2. CPU 使用率高
+排查步骤 ：
+检查是否有大量计算密集型操作
+分析命令使用模式： INFO commandstats
+解决方案 ：
+减少复杂计算
+使用 Lua 脚本合并操作
+考虑使用集群分散负载
+* 持久化问题
+* 1. RDB 保存失败
+现象 ： Background saving error
+排查步骤 ：
+检查磁盘空间：
+df -h
+检查目录权限：
+ls -ld /var/lib/redis
+检查系统内存（fork 需要双倍内存）：
+free -h
+cat /proc/sys/vm/overcommit_memory
+解决方案 ：
+清理磁盘空间
+修改目录权限：
+chown redis:redis /var/lib/redis
+设置 overcommit_memory：
+echo 1 > /proc/sys/vm/overcommit_memory
+* 2. AOF 重写失败
+现象 ： Background AOF rewrite failed
+排查步骤 ：
+检查磁盘空间
+检查 AOF 文件大小：
+ls -lh /var/lib/redis/appendonly.aof
+检查是否有大量写入
+解决方案 ：
+增加磁盘空间
+调整自动重写条件：
+auto-aof-rewrite-percentage 50
+auto-aof-rewrite-min-size 64mb
+手动触发重写：
+BGREWRITEAOF
+* 主从复制问题
+* 1. 复制中断
+现象 ：从节点无法同步数据
+排查步骤 ：
+检查主从连接：
+INFO replication
+检查网络状况：
+ping 主节点IP
+检查主节点日志
+解决方案 ：
+检查网络配置
+设置正确的 masterauth
+重新配置复制： REPLICAOF 主节点IP 端口
+* 2. 复制延迟
+现象 ：从节点数据明显落后于主节点
+排查步骤 ：
+检查复制延迟：
+INFO replication
+# 查看 master_last_io_seconds_ago
+检查网络带宽
+检查主节点负载
+解决方案 ：
+优化网络连接
+减少主节点写入压力
+考虑使用多个从节点分担读压力
+* 集群问题
+* 1. 集群节点故障
+现象 ： CLUSTERDOWN The cluster is down
+排查步骤 ：
+检查节点状态：
+CLUSTER NODES
+检查节点间连接
+检查配置文件
+解决方案 ：
+重启故障节点
+重新加入集群：
+CLUSTER MEET 节点IP 端口
+重新分配槽位：
+CLUSTER ADDSLOTS 槽位范围
+* 2. 数据迁移失败
+现象 ： MIGRATE 命令失败
+排查步骤 ：
+检查目标节点状态
+检查网络连接
+检查键是否存在
+解决方案 ：
+确保目标节点正常运行
+使用 COPY 选项保留原键
+分批迁移大数据量
+* 安全问题
+* 1. 未授权访问
+现象 ： NOAUTH Authentication required
+解决方案 ：
+设置密码：
+requirepass your_password
+使用 ACL（Redis 6.0+）：
+ACL SETUSER username on >password ~* +@all
+绑定指定 IP：
+bind 127.0.0.1 192.168.1.100
+* 2. 数据泄露
+排查步骤 ：
+检查访问日志
+检查网络配置
+检查客户端权限
+解决方案 ：
+启用 SSL/TLS
+使用 VPN 或私有网络
+定期审计访问权限
+* 总结
+遇到问题时应遵循以下排查流程：
+收集错误信息和日志
+检查基本配置和连接
+分析资源使用情况
+逐步缩小问题范围
+应用解决方案并验证
+建议定期备份数据，保持配置文档更新，以便快速恢复和排查问题。
+Redis管理 Redis最佳实践

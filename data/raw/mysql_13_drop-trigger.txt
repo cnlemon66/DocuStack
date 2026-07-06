@@ -1,0 +1,10 @@
+13.1.34 DROP TRIGGER 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.34 DROP TRIGGER 语句
+13.1.34 DROP TRIGGER 语句
+DROP TRIGGER [IF EXISTS] [ schema_name .] trigger_name
+此语句删除触发器。模式（数据库）名称是可选的。如果省略模式，触发器将从默认模式中删除。 DROP TRIGGER 需要 TRIGGER 与触发器关联的表的特权。
+用于 IF EXISTS 防止不存在的触发器发生错误。使用 NOTE 时为不存在的触发器生成 IF EXISTS A。请参阅 第 13.7.7.42 节，“显示警告声明” 。
+如果删除表，表的触发器也会被删除。

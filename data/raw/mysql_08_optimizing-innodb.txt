@@ -1,0 +1,8 @@
+8.5 优化 InnoDB 表_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 
+8.5 优化 InnoDB 表
+8.5 优化 InnoDB 表
+8.5.1 优化 InnoDB 表的存储布局 8.5.2 优化 InnoDB 事务管理 8.5.3 优化 InnoDB 只读事务 8.5.4 优化 InnoDB 重做日志记录 8.5.5 InnoDB 表的批量数据加载 8.5.6 优化 InnoDB 查询 8.5.7 优化 InnoDB DDL 操作 8.5.8 优化 InnoDB 磁盘 I/O 8.5.9 优化 InnoDB 配置变量 8.5.10 为多表系统优化 InnoDB
+InnoDB 是 MySQL 客户通常在可靠性和并发性很重要的生产数据库中使用的存储引擎。 InnoDB 是 MySQL 中的默认存储引擎。本节介绍如何优化 InnoDB 表的数据库操作。

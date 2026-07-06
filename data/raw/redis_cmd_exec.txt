@@ -1,0 +1,58 @@
+Redis EXEC 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis EXEC 命令
+EXEC 执行 MULTI 开始后队列中的所有命令，并返回各命令的执行结果。
+* 语法
+EXEC
+* 参数说明
+该命令无额外参数。
+* 返回值
+返回一个数组，包含事务中每个命令的返回值；如果事务被 WATCH 的 key 修改过，则返回 nil（事务放弃执行）。
+* 时间复杂度
+O(N)，N 为事务队列中命令数量。
+* 示例
+* 正常提交事务
+> MULTI
+OK
+> SET a 1
+QUEUED
+> INCR b
+QUEUED
+> EXEC
+1) OK
+2) (integer) 1
+* WATCH 冲突放弃
+> WATCH a
+OK
+> MULTI
+OK
+> SET a 2
+QUEUED
+> EXEC
+(nil)
+* 常见错误
+错误 原因 解决
+ERR EXEC without MULTI 未开启事务 必须先执行 MULTI
+EXECABORT 事务队列中存在语法错误 Redis 2.6.5+ 会在入队时检测错误并拒绝 EXEC
+* 最佳实践
+将一组相关操作封装为原子事务，避免中间状态被其他客户端干扰。
+配合 WATCH 实现乐观锁：检测冲突后客户端需重试。
+避免在事务中放入依赖上一条命令结果的命令（如 GET 后 SET 依赖其值）。
+* FAQ
+EXEC 能保证原子性吗？ 能保证命令队列顺序执行且不被其他命令穿插，但不支持回滚；某命令失败后续命令仍会执行。
+EXEC 和 Lua 脚本哪个更适合事务？ 需要条件逻辑或依赖中间结果时用 Lua；简单原子批量操作用 MULTI /EXEC 更轻量。
+WATCH 后事务被放弃会怎样？ EXEC 返回 nil，客户端应检测并重新执行 WATCH - MULTI -EXEC 流程。
+* Related topics
+Redis事务机制详解
+相关命令
+DISCARD
+EXEC
+MULTI
+UNWATCH
+WATCH

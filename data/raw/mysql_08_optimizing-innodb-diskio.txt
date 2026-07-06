@@ -1,0 +1,87 @@
+8.5.8 优化 InnoDB 磁盘 I/O_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.5 优化 InnoDB 表 / 
+8.5.8 优化 InnoDB 磁盘 I/O
+8.5.8 优化 InnoDB 磁盘 I/O
+如果您遵循 SQL 操作的数据库设计和调优技术的最佳实践，但由于磁盘 I/O 活动繁重，您的数据库仍然很慢，请考虑这些磁盘 I/O 优化。如果 Unix top 工具或 Windows 任务管理器显示您的工作负载的 CPU 使用百分比低于 70%，则您的工作负载可能受磁盘限制。
+增加缓冲池大小
+当表数据缓存在 InnoDB 缓冲池中时，可以通过查询重复访问它而不需要任何磁盘 I/O。使用选项指定缓冲池的大小 innodb_buffer_pool_size 。此内存区域非常重要，通常建议将 innodb_buffer_pool_size 其配置为系统内存的 50% 到 75%。有关详细信息，请参阅 第 8.12.3.1 节，“MySQL 如何使用内存” 。
+调整冲水方式
+fsync() 在某些版本的 GNU/Linux 和 Unix 中，使用 Unix调用（ InnoDB 默认使用）和类似方法将
+文件刷新到磁盘的速度出奇地慢。如果数据库写入性能是一个问题，请将 innodb_flush_method 参数设置为进行基准测试 O_DSYNC 。
+配置操作系统刷新的阈值
+默认情况下，当 InnoDB 创建一个新的数据文件，例如一个新的日志文件或表空间文件时，该文件在刷新到磁盘之前会被完全写入操作系统缓存，这会导致大量的磁盘写入活动发生在一次。要强制从操作系统缓存中定期刷新更小的数据，您可以使用该 innodb_fsync_threshold 变量定义阈值（以字节为单位）。当达到字节阈值时，操作系统缓存的内容被刷新到磁盘。默认值 0 强制默认行为，即仅在文件完全写入缓存后才将数据刷新到磁盘。
+在多个 MySQL 实例使用相同存储设备的情况下，指定一个阈值以强制进行更小的定期刷新可能是有益的。例如，创建一个新的 MySQL 实例及其关联的数据文件可能会导致磁盘写入活动激增，从而影响使用相同存储设备的其他 MySQL 实例的性能。配置阈值有助于避免写入活动出现此类激增。
+使用 fdatasync() 而不是 fsync()
+在支持 fdatasync() 系统调用的
+平台上 innodb_use_fdatasync ，MySQL 8.0.26 中引入的变量允许使用 fdatasync() instead of fsync() 操作系统刷新。除非 fdatasync() 后续数据检索需要，否则系统调用不会刷新对文件元数据的更改，从而提供潜在的性能优势。
+设置的子集， innodb_flush_method 例如 fsync 、 O_DSYNC 和 O_DIRECT use fsync() 系统调用。该 innodb_use_fdatasync 变量在使用这些设置时适用。
+在 Linux 上将 noop 或 deadline I/O 调度程序与本机 AIO 结合使用
+InnoDB 使用 Linux 上的异​​步 I/O 子系统（本机 AIO）来执行数据文件页面的预读和写入请求。此行为 innodb_use_native_aio 由默认启用的配置选项控制。对于原生 AIO，I/O 调度程序的类型对 I/O 性能的影响更大。通常，建议使用 noop 和 deadline I/O 调度器。执行基准测试以确定哪个 I/O 调度程序为您的工作负载和环境提供最佳结果。有关详细信息，请参阅 第 15.8.6 节，“在 Linux 上使用异步 I/O” 。
+在 Solaris 10 上为 x86_64 架构使用直接 I/O
+在 Solaris 10 上为 x86_64 架构（AMD Opteron）使用 InnoDB 存储引擎时，对相关文件使用直接 I/O InnoDB 以避免性能下降 InnoDB 。要对用于存储 - 相关文件的整个 UFS 文件系统使用直接 I/O，请使用
+选项 InnoDB 挂载它 forcedirectio ；看 mount_ufs(1M) 。（Solaris 10/x86_64 上的默认设置是 不 使用此选项。）要仅将直接 I/O 应用于 InnoDB 文件操作而不是整个文件系统，请设置 innodb_flush_method =
+O_DIRECT . 使用此设置， InnoDB 调用 directio() 而不是 fcntl() 用于数据文件的 I/O（不适用于日志文件的 I/O）。
+在 Solaris 2.6 或更高版本中对数据和日志文件使用原始存储
+在任何 Solaris 2.6 及更高版本和任何平台 (sparc/x86/x64/amd64) 上 InnoDB 使用具有大
+值
+的存储引擎时，在原始设备或单独的直接 I/O UFS 上对数据文件和日志文件进行基准测试文件系统，如前所述使用挂载选项。（如果要对日志文件进行直接 I/O，
+则必须使用挂载选项而不是设置
+。） Veritas 文件系统 VxFS 的用户应使用挂载选项。 innodb_buffer_pool_size InnoDB forcedirectio innodb_flush_method convosync=direct
+不要将其他 MySQL 数据文件（例如 MyISAM 表的数据文件）放在直接 I/O 文件系统上。可执行文件或库 不得 放在直接 I/O 文件系统上。
+使用额外的存储设备
+可以使用额外的存储设备来设置 RAID 配置。有关相关信息，请参阅 第 8.12.1 节，“优化磁盘 I/O” 。
+或者， InnoDB 表空间数据文件和日志文件可以放在不同的物理磁盘上。有关详细信息，请参阅以下部分：
+第 15.8.1 节，“InnoDB 启动配置”
+第 15.6.1.2 节，“在外部创建表”
+创建通用表空间
+第 15.6.1.4 节，“移动或复制 InnoDB 表”
+考虑非旋转存储
+非旋转存储通常为随机 I/O 操作提供更好的性能；顺序 I/O 操作的旋转存储。在旋转和非旋转存储设备之间分布数据和日志文件时，请考虑主要对每个文件执行的 I/O 操作类型。
+面向随机 I/O 的文件通常包括 file-per-table 和 通用表空间 数据文件、 撤消表空间 文件和 临时表空间 文件。面向顺序 I/O 的文件包括 InnoDB 系统表空间 文件（由于
+MySQL 8.0.20 之前的双写缓冲和 更改缓冲 ），MySQL 8.0.20 中引入的双写文件，以及 二进制日志 文件和 重做日志 文件等日志
+文件。
+使用非旋转存储时查看以下配置选项的设置：
+innodb_checksum_algorithm
+该 crc32 选项使用更快的校验和算法，建议用于快速存储系统。
+innodb_flush_neighbors
+优化旋转存储设备的 I/O。对于非旋转存储或旋转和非旋转存储的混合禁用它。默认情况下禁用。
+innodb_idle_flush_pct
+允许在空闲期间限制页面刷新，这有助于延长非旋转存储设备的使用寿命。在 MySQL 8.0.18 中引入。
+innodb_io_capacity
+默认设置 200 通常足以满足低端非旋转存储设备的需求。对于更高端的总线连接设备，请考虑更高的设置，例如 1000。
+innodb_io_capacity_max
+默认值 2000 适用于使用非循环存储的工作负载。对于高端、总线连接的非旋转存储设备，请考虑更高的设置，例如 2500。
+innodb_log_compressed_pages
+如果重做日志位于非旋转存储上，请考虑禁用此选项以减少日志记录。请参阅 禁用压缩页面的日志记录 。
+innodb_log_file_size （在 MySQL 8.0.30 中已弃用）
+如果重做日志位于非旋转存储上，请配置此选项以最大化缓存和写入组合。
+innodb_redo_log_capacity
+如果重做日志位于非旋转存储上，请配置此选项以最大化缓存和写入组合。
+innodb_page_size
+考虑使用与磁盘内部扇区大小相匹配的页面大小。早期的 SSD 设备通常有 4KB 的扇区大小。一些较新的设备有 16KB 的扇区大小。默认 InnoDB 页面大小为 16KB。使页面大小接近存储设备块大小可以最大限度地减少重写到磁盘的未更改数据量。
+binlog_row_image
+如果二进制日志在非旋转存储上并且所有表都有主键，请考虑将此选项设置为 minimal 以减少日志记录。
+确保为您的操作系统启用了 TRIM 支持。它通常默认启用。
+增加 I/O 容量以避免积压
+如果吞吐量由于 InnoDB 检查点 操作而周期性下降，请考虑增加 innodb_io_capacity 配置选项的值。较高的值会导致更频繁
+的 刷新 ，避免可能导致吞吐量下降的工作积压。
+如果刷新不落后，则降低 I/O 容量
+InnoDB 如果系统在刷新 操作
+方面没有落后
+，请考虑降低 innodb_io_capacity 配置选项的值。通常，您可以将此选项值保持在尽可能低的水平，但又不能低到导致吞吐量周期性下降的程度，如前文所述。在您可以降低选项值的典型场景中，您可能会在以下输出中看到类似这样的组合 SHOW ENGINE
+INNODB STATUS ：
+历史列表长度低，低于几千。
+插入缓冲区合并靠近插入的行。
+缓冲池中的修改页面始终远低于 innodb_max_dirty_pages_pct 缓冲池。（在服务器不进行批量插入时测量；在批量插入期间修改页面百分比显着上升是正常的。）
+Log sequence number - Last checkpoint InnoDB 小于日志文件 总大小的 7/8，理想情况下小于 6/8 。
+在 Fusion-io 设备上存储系统表空间文件
+您可以通过将包含双写存储区域的文件存储在支持原子写入的 Fusion-io 设备上来利用与双写缓冲区相关的 I/O 优化。（在 MySQL 8.0.20 之前，双写缓冲区存储驻留在系统表空间数据文件中。从 MySQL 8.0.20 开始，存储区域驻留在双写文件中。请参阅 第 15.6.4 节，“双写缓冲区” .) 当doublewrite存储区文件被放置在支持原子写的Fusion-io设备上时，doublewrite buffer被自动禁用，所有数据文件都使用Fusion-io原子写。此功能仅在 Fusion-io 硬件上受支持，并且仅在 Linux 上为 Fusion-io NVMFS 启用。要充分利用此功能，
+建议 innodb_flush_method 设置 O_DIRECT 为 。
+笔记
+因为双写缓冲区设置是全局的，所以对于不驻留在 Fusion-io 硬件上的数据文件，双写缓冲区也被禁用。
+禁用压缩页面的日志记录
+使用 InnoDB 表 压缩 功能时，当对压缩数据进行更改时，重新压缩 页面 的图像将写入 重做日志。 此行为由 控制
+，默认情况下启用它以防止
+在恢复期间使用不同版本的压缩算法 innodb_log_compressed_pages 时可能发生的损坏。 zlib 如果您确定 zlib 版本不会更改，请禁用 innodb_log_compressed_pages 以减少修改压缩数据的工作负载的重做日志生成。

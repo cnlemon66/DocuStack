@@ -1,0 +1,483 @@
+8.9.3 优化器提示_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.9 控制查询优化器 / 
+8.9.3 优化器提示
+8.9.3 优化器提示
+控制优化器策略的一种方法是设置 optimizer_switch 系统变量（请参阅 第 8.9.2 节，“可切换优化” ）。对该变量的更改会影响所有后续查询的执行；要以不同方式影响一个查询，有必要 optimizer_switch 在每个查询之前进行更改。
+另一种控制优化器的方法是使用优化器提示，它可以在单独的语句中指定。由于优化器提示基于每个语句应用，因此与使用 optimizer_switch . 例如，您可以在一条语句中对一个表启用优化，而对另一个表禁用优化。语句中的提示优先于 optimizer_switch 标志。
+例子：
+SELECT /*+ NO_RANGE_OPTIMIZATION(t3 PRIMARY, f2_idx) */ f1
+FROM t3 WHERE f1 > 30 AND f1 < 33;
+SELECT /*+ BKA(t1) NO_BKA(t2) */ * FROM t1 INNER JOIN t2 WHERE ...;
+SELECT /*+ NO_ICP(t1, t2) */ * FROM t1 INNER JOIN t2 WHERE ...;
+SELECT /*+ SEMIJOIN(FIRSTMATCH, LOOSESCAN) */ * FROM t1 ...;
+EXPLAIN SELECT /*+ NO_ICP(t1) */ * FROM t1 WHERE ...;
+SELECT /*+ MERGE(dt) */ * FROM (SELECT * FROM t1) AS dt;
+INSERT /*+ SET_VAR(foreign_key_checks=OFF) */ INTO t2 VALUES(2);
+此处描述的优化器提示不同于 第 8.9.4 节“索引提示” 中描述的索引提示。优化器和索引提示可以单独使用，也可以一起使用。
+优化器提示概述
+优化器提示语法
+加入订单优化器提示
+表级优化器提示
+索引级优化器提示
+子查询优化器提示
+语句执行时间优化器提示
+变量设置提示语法
+资源组提示语法
+命名查询块的优化器提示
+优化器提示概述
+优化器提示适用于不同的范围级别：
+全局：提示影响整个语句
+查询块：提示影响语句中的特定查询块
+表级：提示影响查询块中的特定表
+索引级别：提示影响表中的特定索引
+下表总结了可用的优化器提示、它们影响的优化器策略以及它们应用的一个或多个范围。稍后给出更多细节。
+表 8.2 可用的优化器提示
+提示名称 描述 适用范围
+BKA , NO_BKA 影响批处理密钥访问加入处理 查询块、表
+BNL , NO_BNL MySQL 8.0.20 之前：影响 Block Nested-Loop 连接处理；MySQL 8.0.18及以后版本：同样影响hash join优化；MySQL 8.0.20 及更高版本：仅影响散列连接优化 查询块、表
+DERIVED_CONDITION_PUSHDOWN , NO_DERIVED_CONDITION_PUSHDOWN 使用或忽略物化派生表的派生条件下推优化（MySQL 8.0.22新增） 查询块、表
+GROUP_INDEX , NO_GROUP_INDEX 在操作中使用或忽略指定的一个或多个索引进行索引扫描 GROUP BY （MySQL 8.0.20新增） 指数
+HASH_JOIN , NO_HASH_JOIN 影响 Hash Join 优化（仅限 MySQL 8.0.18 查询块、表
+INDEX , NO_INDEX 作为 JOIN_INDEX , GROUP_INDEX , 和 ORDER_INDEX 的组合，或者作为 NO_JOIN_INDEX , NO_GROUP_INDEX , 和
+的组合 NO_ORDER_INDEX （MySQL 8.0.20 新增） 指数
+INDEX_MERGE , NO_INDEX_MERGE 影响索引合并优化 表、索引
+JOIN_FIXED_ORDER 使用 FROM 子句中指定的表顺序作为连接顺序 查询块
+JOIN_INDEX , NO_JOIN_INDEX 对任意访问方式使用或忽略指定索引（MySQL 8.0.20新增） 指数
+JOIN_ORDER 使用提示中指定的表顺序作为连接顺序 查询块
+JOIN_PREFIX 对连接顺序的第一个表使用提示中指定的表顺序 查询块
+JOIN_SUFFIX 对连接顺序的最后一张表使用提示中指定的表顺序 查询块
+MAX_EXECUTION_TIME 限制语句执行时间 全球的
+MERGE , NO_MERGE 影响派生表/视图合并到外部查询块 桌子
+MRR , NO_MRR 影响多范围读取优化 表、索引
+NO_ICP 影响索引条件下推优化 表、索引
+NO_RANGE_OPTIMIZATION 影响范围优化 表、索引
+ORDER_INDEX , NO_ORDER_INDEX 使用或忽略指定的一个或多个索引对行进行排序（MySQL 8.0.20 新增） 指数
+QB_NAME 为查询块分配名称 查询块
+RESOURCE_GROUP 在语句执行期间设置资源组 全球的
+SEMIJOIN , NO_SEMIJOIN 影响半连接策略；从 MySQL 8.0.17 开始，这也适用于反连接 查询块
+SKIP_SCAN , NO_SKIP_SCAN 影响跳过扫描优化 表、索引
+SET_VAR 在语句执行期间设置变量 全球的
+SUBQUERY 影响物化， IN 到 EXISTS 子查询策略 查询块
+禁用优化会阻止优化器使用它。启用优化意味着优化器可以自由使用该策略（如果它适用于语句执行），而不是优化器必须使用它。
+优化器提示语法
+MySQL 支持 SQL 语句中的注释，如 第 9.7 节，“注释” 中所述。必须在 /*+ ... */ 注释中指定优化器提示。也就是说，优化器提示使用 /* ... */ C 风格注释语法的变体，在注释开始序列 + 后有一个字符。 /* 例子：
+/*+ BKA(t1) */
+/*+ BNL(t1, t2) */
+/*+ NO_RANGE_OPTIMIZATION(t4 PRIMARY) */
+/*+ QB_NAME(qb2) */
++ 字符
+
+后允许有空格。
+SELECT 解析器在, UPDATE , INSERT , REPLACE , 和 DELETE 语句
+的初始关键字之后识别优化器提示注释。在这些上下文中允许提示：
+在查询和数据更改语句的开头：
+SELECT /*+ ... */ ...
+INSERT /*+ ... */ ...
+REPLACE /*+ ... */ ...
+UPDATE /*+ ... */ ...
+DELETE /*+ ... */ ...
+在查询块的开头：
+(SELECT /*+ ... */ ... )
+(SELECT ... ) UNION (SELECT /*+ ... */ ... )
+(SELECT /*+ ... */ ... ) UNION (SELECT /*+ ... */ ... )
+UPDATE ... WHERE x IN (SELECT /*+ ... */ ...)
+INSERT ... SELECT /*+ ... */ ...
+在以 EXPLAIN . 例如：
+EXPLAIN SELECT /*+ ... */ ...
+EXPLAIN UPDATE ... WHERE x IN (SELECT /*+ ... */ ...)
+这意味着您可以使用它 EXPLAIN 来查看优化器提示如何影响执行计划。 SHOW WARNINGS 之后立即使用 EXPLAIN 以查看如何使用提示。以下显示的扩展 EXPLAIN 输出 SHOW
+WARNINGS 指示使用了哪些提示。不显示忽略的提示。
+一个提示注释可以包含多个提示，但一个查询块不能包含多个提示注释。这是有效的：
+SELECT /*+ BNL(t1) BKA(t2) */ ...
+但这是无效的：
+SELECT /*+ BNL(t1) */ /* BKA(t2) */ ...
+当提示注释包含多个提示时，存在重复和冲突的可能性。以下一般准则适用。对于特定的提示类型，附加规则可能适用，如提示描述中所示。
+重复提示：对于诸如 之类的提示 /*+ MRR(idx1)
+MRR(idx1) */ ，MySQL 使用第一个提示并发出有关重复提示的警告。
+冲突提示：对于诸如 之类的提示 /*+
+MRR(idx1) NO_MRR(idx1) */ ，MySQL 使用第一个提示并发出关于第二个冲突提示的警告。
+查询块名称是标识符，并遵循关于什么名称有效以及如何引用它们的通常规则（请参阅 第 9.2 节，“模式对象名称” ）。
+提示名称、查询块名称和策略名称不区分大小写。对表和索引名称的引用遵循通常的标识符区分大小写规则（请参阅 第 9.2.3 节，“标识符区分大小写” ）。
+加入订单优化器提示
+连接顺序提示影响优化器连接表的顺序。
+提示的语法 JOIN_FIXED_ORDER ：
+hint_name ([@ query_block_name ])
+其他连接顺序提示的语法：
+hint_name ([@ query_block_name ] tbl_name [, tbl_name ] ...) hint_name ( tbl_name [@ query_block_name ] [, tbl_name [@ query_block_name ]] ...)
+语法指的是这些术语：
+hint_name ：允许使用这些提示名称：
+JOIN_FIXED_ORDER ：强制优化器使用它们在 FROM 子句中出现的顺序连接表。这与指定 SELECT
+STRAIGHT_JOIN .
+JOIN_ORDER ：指示优化器使用指定的表顺序连接表。该提示适用于命名表。优化器可能会将未命名的表放置在连接顺序中的任何位置，包括指定表之间。
+JOIN_PREFIX ：指示优化器对连接执行计划的第一个表使用指定的表顺序连接表。该提示适用于命名表。优化器将所有其他表放在命名表之后。
+JOIN_SUFFIX ：指示优化器对连接执行计划的最后一张表使用指定的表顺序连接表。该提示适用于命名表。优化器将所有其他表放在命名表之前。
+tbl_name : 语句中使用的表的名称。命名表的提示适用于它命名的所有表。该 JOIN_FIXED_ORDER 提示不命名任何表，并应用于 FROM 出现它的查询块的子句中的所有表。
+如果表有别名，提示必须引用别名，而不是表名。
+提示中的表名不能用模式名限定。
+query_block_name ：提示适用的查询块。如果提示不包含 leading
+，则提示适用于出现它的查询块。对于
+
+语法，提示适用于命名查询块中的命名表。要为查询块分配名称，请参阅 命名查询块的优化器提示 。 @ query_block_name tbl_name @ query_block_name
+例子：
+SELECT
+/*+ JOIN_PREFIX(t2, t5@subq2, t4@subq1)
+JOIN_ORDER(t4@subq1, t3)
+JOIN_SUFFIX(t1) */
+COUNT(*) FROM t1 JOIN t2 JOIN t3
+WHERE t1.f1 IN (SELECT /*+ QB_NAME(subq1) */ f1 FROM t4)
+AND t2.f1 IN (SELECT /*+ QB_NAME(subq2) */ f1 FROM t5);
+提示控制合并到外部查询块的半连接表的行为。如果子查询 subq1 和 subq2 被转换为半连接，表 t4@subq1 和 t5@subq2 被合并到外部查询块。在这种情况下，外部查询块中指定的提示控制表的 t4@subq1 行为 t5@subq2 。
+优化器根据以下原则解析连接顺序提示：
+多个提示实例
+每种类型仅应用一个 JOIN_PREFIX 和 JOIN_SUFFIX 提示。以后任何相同类型的提示都将被忽略并发出警告。 JOIN_ORDER 可以指定多次。
+例子：
+/*+ JOIN_PREFIX(t1) JOIN_PREFIX(t2) */
+第二个 JOIN_PREFIX 提示被警告忽略。
+/*+ JOIN_PREFIX(t1) JOIN_SUFFIX(t2) */
+这两个提示都适用。没有警告发生。
+/*+ JOIN_ORDER(t1, t2) JOIN_ORDER(t2, t3) */
+这两个提示都适用。没有警告发生。
+相互矛盾的提示
+在某些情况下，提示可能会发生冲突，例如 when JOIN_ORDER 和 JOIN_PREFIX have table orders 不可能同时应用：
+SELECT /*+ JOIN_ORDER(t1, t2) JOIN_PREFIX(t2, t1) */ ... FROM t1, t2;
+在这种情况下，将应用第一个指定的提示，并忽略后续的冲突提示而不发出警告。无法应用的有效提示会在没有警告的情况下被静默忽略。
+忽略的提示
+如果提示中指定的表具有循环依赖性，则忽略该提示。
+例子：
+/*+ JOIN_ORDER(t1, t2) JOIN_PREFIX(t2, t1) */
+JOIN_ORDER 提示设置表
+依赖 t2 于 t1 。 JOIN_PREFIX 提示被忽略，因为表不能 t1 依赖于 t2 。忽略的提示不会显示在扩展 EXPLAIN 输出中。
+const 与表
+
+的交互
+MySQL 优化器 const 在连接顺序中将表放在首位，表的位置 const 不受提示的影响。连接顺序提示中对表的引用将 const 被忽略，尽管该提示仍然适用。例如，这些是等价的：
+JOIN_ORDER(t1, const_tbl , t2)
+JOIN_ORDER(t1, t2)
+EXPLAIN 扩展输出
+
+中显示的已接受提示
+包括 const 指定的表格。
+与连接操作类型的交互
+MySQL 支持多种类型的连接： LEFT , RIGHT , INNER , CROSS , STRAIGHT_JOIN 。与指定连接类型冲突的提示将被忽略且不发出警告。
+例子：
+SELECT /*+ JOIN_PREFIX(t1, t2) */FROM t2 LEFT JOIN t1;
+这里在提示中请求的连接顺序与 LEFT
+JOIN . 提示被忽略，没有警告。
+表级优化器提示
+表级提示影响：
+使用块嵌套循环 (BNL) 和批处理密钥访问 (BKA) 连接处理算法（请参阅 第 8.2.1.12 节，“块嵌套循环和批处理密钥访问连接” ）。
+派生表、视图引用或公用表表达式是否应合并到外部查询块中，或使用内部临时表具体化。
+使用派生表条件下推优化（MySQL 8.0.22新增）。请参阅 第 8.2.2.5 节，“派生条件下推优化” 。
+这些提示类型适用于特定表，或查询块中的所有表。
+表级提示的语法：
+hint_name ([@ query_block_name ] [ tbl_name [, tbl_name ] ...]) hint_name ([ tbl_name @ query_block_name [, tbl_name @ query_block_name ] ...])
+语法指的是这些术语：
+hint_name ：允许使用这些提示名称：
+BKA , NO_BKA : 启用或禁用指定表的批量密钥访问。
+BNL , NO_BNL : 启用或禁用指定表的块嵌套循环。在 MySQL 8.0.18 及更高版本中，这些提示还启用和禁用散列连接优化。
+笔记
+块嵌套循环优化在 MySQL 8.0.20 及更高版本中被删除，但
+
+继续支持启用和禁用哈希连接 BNL 。 NO_BNL
+DERIVED_CONDITION_PUSHDOWN , NO_DERIVED_CONDITION_PUSHDOWN : 启用或禁用指定表的派生表条件下推（MySQL 8.0.22 新增）。有关详细信息，请参阅 第 8.2.2.5 节，“派生条件下推优化” 。
+HASH_JOIN , NO_HASH_JOIN ：仅在 MySQL 8.0.18 中，为指定表启用或禁用哈希连接。这些提示在 MySQL 8.0.19 或更高版本中无效，您应该在其中使用 BNL 或 NO_BNL 代替。
+MERGE , NO_MERGE : 对指定表、视图引用或公用表表达式启用合并；或禁用合并并改用物化。
+笔记
+要使用块嵌套循环或批处理键访问提示为外连接的任何内表启用连接缓冲，必须为外连接的所有内表启用连接缓冲。
+tbl_name : 语句中使用的表的名称。该提示适用于它命名的所有表。如果提示未命名表，则它适用于出现它的查询块的所有表。
+如果表有别名，提示必须引用别名，而不是表名。
+提示中的表名不能用模式名限定。
+query_block_name ：提示适用的查询块。如果提示不包含 leading
+，则提示适用于出现它的查询块。对于
+
+语法，提示适用于命名查询块中的命名表。要为查询块分配名称，请参阅 命名查询块的优化器提示 。 @ query_block_name tbl_name @ query_block_name
+例子：
+SELECT /*+ NO_BKA(t1, t2) */ t1.* FROM t1 INNER JOIN t2 INNER JOIN t3;
+SELECT /*+ NO_BNL() BKA(t1) */ t1.* FROM t1 INNER JOIN t2 INNER JOIN t3;
+SELECT /*+ NO_MERGE(dt) */ * FROM (SELECT * FROM t1) AS dt;
+表级提示适用于从以前的表中接收记录的表，而不适用于发送方表。考虑这个声明：
+SELECT /*+ BNL(t2) */ FROM t1, t2;
+如果优化器选择首先处理，它会在开始读取之前
+通过缓冲来自的行来 t1 应用块嵌套循环连接
+。如果优化器选择首先处理，则提示无效，因为它是一个发送方表。 t2 t1 t2 t2 t2
+对于 MERGE 和 NO_MERGE 提示，这些优先规则适用：
+提示优先于任何非技术约束的优化器启发式。（如果作为建议提供提示无效，优化器有理由忽略它。）
+提示优先于
+
+系统变量
+的 derived_merge 标志。 optimizer_switch
+对于视图引用， ALGORITHM={MERGE|TEMPTABLE} 视图定义中的子句优先于引用视图的查询中指定的提示。
+索引级优化器提示
+索引级提示会影响优化器对特定表或索引使用的索引处理策略。这些提示类型会影响索引条件下推 (ICP)、多范围读取 (MRR)、索引合并和范围优化的使用（请参阅 第 8.2.1 节，“优化 SELECT 语句” ）。
+索引级提示的语法：
+hint_name ([@ query_block_name ] tbl_name [ index_name [, index_name ] ...]) hint_name ( tbl_name @ query_block_name [ index_name [, index_name ] ...])
+语法指的是这些术语：
+hint_name ：允许使用这些提示名称：
+GROUP_INDEX , NO_GROUP_INDEX : 启用或禁用指定的一个或多个索引进行索引扫描 GROUP BY 操作。相当于索引提示 FORCE INDEX FOR GROUP BY , IGNORE INDEX FOR GROUP BY 。在 MySQL 8.0.20 及更高版本中可用。
+INDEX , NO_INDEX : 作为 JOIN_INDEX , GROUP_INDEX , 和
+的组合 ORDER_INDEX ，强制服务器对任何和所有范围使用指定的一个或多个索引，或者作为 NO_JOIN_INDEX , NO_GROUP_INDEX , 和
+的组合 NO_ORDER_INDEX ，这会导致服务器忽略任何和的指定索引所有范围。相当于 FORCE INDEX ， IGNORE
+INDEX 。从 MySQL 8.0.20 开始可用。
+INDEX_MERGE , NO_INDEX_MERGE : 启用或禁用指定表或索引的索引合并访问方法。有关此访问方法的信息，请参阅 第 8.2.1.3 节，“索引合并优化” 。这些提示适用于所有三种索引合并算法。
+该 INDEX_MERGE 提示强制优化器对使用指定索引集的指定表使用索引合并。如果没有指定索引，优化器会考虑所有可能的索引组合并选择成本最低的一个。如果索引组合不适用于给定的语句，则可以忽略该提示。
+该 NO_INDEX_MERGE 提示禁用涉及任何指定索引的索引合并组合。如果提示未指定索引，则不允许对该表进行索引合并。
+JOIN_INDEX , NO_JOIN_INDEX : 强制MySQL对任何访问方式使用或忽略指定的一个或多个索引，如 ref , range , index_merge 等。相当于 FORCE INDEX FOR
+JOIN ， IGNORE INDEX FOR
+JOIN 。在 MySQL 8.0.20 及更高版本中可用。
+MRR , NO_MRR : 为指定的表或索引启用或禁用 MRR。MRR 提示仅适用于 InnoDB 和 MyISAM 表。有关此访问方法的信息，请参阅 第 8.2.1.11 节，“多范围读取优化” 。
+NO_ICP : 禁用指定表或索引的ICP。默认情况下，ICP 是候选优化策略，因此没有启用它的提示。有关此访问方法的信息，请参阅 第 8.2.1.6 节，“索引条件下推优化” 。
+NO_RANGE_OPTIMIZATION : 禁用指定表或索引的索引范围访问。此提示还为表或索引禁用索引合并和松散索引扫描。默认情况下，范围访问是一种候选优化策略，因此没有启用它的提示。
+当范围数量可能很多并且范围优化需要很多资源时，此提示可能很有用。
+ORDER_INDEX , NO_ORDER_INDEX : 使MySQL使用或忽略指定的一个或多个索引来对行进行排序。相当于 FORCE
+INDEX FOR ORDER BY ， IGNORE INDEX
+FOR ORDER BY 。从 MySQL 8.0.20 开始可用。
+SKIP_SCAN , NO_SKIP_SCAN : 启用或禁用指定表或索引的跳过扫描访问方法。有关此访问方法的信息，请参阅 跳过扫描范围访问方法 。这些提示从 MySQL 8.0.13 开始可用。
+该 SKIP_SCAN 提示强制优化器使用指定的一组索引对指定的表使用跳过扫描。如果没有指定索引，优化器会考虑所有可能的索引并选择成本最低的一个。如果索引不适用于给定的语句，则可以忽略该提示。
+该 NO_SKIP_SCAN 提示禁用指定索引的跳过扫描。如果提示未指定索引，则不允许对该表进行跳过扫描。
+tbl_name ：提示适用的表。
+index_name : 命名表中索引的名称。该提示适用于它命名的所有索引。如果提示没有命名索引，它适用于表中的所有索引。
+要引用主键，请使用名称 PRIMARY 。要查看表的索引名称，请使用 SHOW INDEX .
+query_block_name ：提示适用的查询块。如果提示不包含 leading
+，则提示适用于出现它的查询块。对于
+
+语法，提示适用于命名查询块中的命名表。要为查询块分配名称，请参阅 命名查询块的优化器提示 。 @ query_block_name tbl_name @ query_block_name
+例子：
+SELECT /*+ INDEX_MERGE(t1 f3, PRIMARY) */ f2 FROM t1
+WHERE f1 = 'o' AND f2 = f3 AND f3 <= 4;
+SELECT /*+ MRR(t1) */ * FROM t1 WHERE f2 <= 3 AND 3 <= f3;
+SELECT /*+ NO_RANGE_OPTIMIZATION(t3 PRIMARY, f2_idx) */ f1
+FROM t3 WHERE f1 > 30 AND f1 < 33;
+INSERT INTO t3(f1, f2, f3)
+(SELECT /*+ NO_ICP(t2) */ t2.f1, t2.f2, t2.f3 FROM t1,t2
+WHERE t1.f1=t2.f1 AND t2.f2 BETWEEN t1.f1
+AND t1.f2 AND t2.f2 + 1 >= t1.f1 + 1);
+SELECT /*+ SKIP_SCAN(t1 PRIMARY) */ f1, f2
+FROM t1 WHERE f2 > 40;
+以下示例使用索引合并提示，但其他索引级提示遵循与 optimizer_switch 系统变量或索引提示相关的提示忽略和优化器提示优先级的相同原则。
+假设该表 t1 有列 a 、 b 、 c 和 d ； i_a 并且名为、 i_b 和的索引分别 i_c 存在于 a 、 b 和 c 上：
+SELECT /*+ INDEX_MERGE(t1 i_a, i_b, i_c)*/ * FROM t1
+WHERE a = 1 AND b = 2 AND c = 3 AND d = 4;
+Index Merge 用于 (i_a, i_b, i_c) 这种情况。
+SELECT /*+ INDEX_MERGE(t1 i_a, i_b, i_c)*/ * FROM t1
+WHERE b = 1 AND c = 2 AND d = 3;
+Index Merge 用于 (i_b, i_c) 这种情况。
+/*+ INDEX_MERGE(t1 i_a, i_b) NO_INDEX_MERGE(t1 i_b) */
+NO_INDEX_MERGE 被忽略，因为同一个表有一个前面的提示。
+/*+ NO_INDEX_MERGE(t1 i_a, i_b) INDEX_MERGE(t1 i_b) */
+INDEX_MERGE 被忽略，因为同一个表有一个前面的提示。
+对于 INDEX_MERGE 和 NO_INDEX_MERGE 优化器提示，这些优先规则适用：
+如果指定了优化器提示并且适用，则它优先于 optimizer_switch 系统变量的索引合并相关标志。
+SET optimizer_switch='index_merge_intersection=off';
+SELECT /*+ INDEX_MERGE(t1 i_b, i_c) */ * FROM t1
+WHERE b = 1 AND c = 2 AND d = 3;
+提示优先于 optimizer_switch 。Index Merge 用于 (i_b, i_c) 这种情况。
+SET optimizer_switch='index_merge_intersection=on';
+SELECT /*+ INDEX_MERGE(t1 i_b) */ * FROM t1
+WHERE b = 1 AND c = 2 AND d = 3;
+hint 只指定了一个索引，所以不适用， optimizer_switch flag ( on ) 适用。如果优化器评估它具有成本效益，则使用索引合并。
+SET optimizer_switch='index_merge_intersection=off';
+SELECT /*+ INDEX_MERGE(t1 i_b) */ * FROM t1
+WHERE b = 1 AND c = 2 AND d = 3;
+hint 只指定了一个索引，所以不适用， optimizer_switch flag ( off ) 适用。不使用索引合并。
+索引级优化器提示 GROUP_INDEX 、 INDEX 、 JOIN_INDEX 和 ORDER_INDEX all 优先于等效 FORCE INDEX 提示；也就是说，它们会导致 FORCE INDEX 提示被忽略。同样， NO_GROUP_INDEX 、 NO_INDEX 、 NO_JOIN_INDEX 和 NO_ORDER_INDEX 提示都优先于任何 IGNORE INDEX 等价物，也导致它们被忽略。
+索引级优化器提示 GROUP_INDEX 、 NO_GROUP_INDEX 、 INDEX 、 NO_INDEX 、 JOIN_INDEX 、 NO_JOIN_INDEX 、 ORDER_INDEX 和 NO_ORDER_INDEX 提示都优先于所有其他优化器提示，包括其他索引级优化器提示。任何其他优化器提示仅适用于这些优化器允许的索引。
+、 GROUP_INDEX 、
+和提示都等同于 INDEX ，而不等同于
+。这是因为使用这些提示中的一个或多个意味着只有在无法使用指定索引之一来查找表中的行时才使用表扫描。要使 MySQL 使用与 的给定实例相同的索引或索引集，您可以使用、
+、
+、
+或它们的某种组合。 JOIN_INDEX ORDER_INDEX FORCE INDEX USE INDEX USE
+INDEX NO_INDEX NO_JOIN_INDEX NO_GROUP_INDEX NO_ORDER_INDEX
+要复制 USE INDEX 查询中的效果 SELECT a,c FROM t1 USE INDEX FOR
+ORDER BY (i_a) ORDER BY a ，您可以使用 NO_ORDER_INDEX 优化器提示覆盖表上的所有索引，但需要的索引除外，如下所示：
+SELECT /*+ NO_ORDER_INDEX(t1 i_b,i_c) */ a,c
+FROM t1
+ORDER BY a;
+尝试将 NO_ORDER_INDEX 表作为一个整体与结合起来 USE INDEX FOR ORDER
+BY 并不能做到这一点，因为 NO_ORDER_BY 会导致 USE
+INDEX 被忽略，如下所示：
+mysql> EXPLAIN SELECT /*+ NO_ORDER_INDEX(t1) */ a,c FROM t1
+-> USE INDEX FOR ORDER BY (i_a) ORDER BY a\G
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+table: t1
+partitions: NULL
+type: ALL
+possible_keys: NULL
+key: NULL
+key_len: NULL
+ref: NULL
+rows: 256
+filtered: 100.00
+Extra: Using filesort
+、 USE INDEX 和索引提示比 FORCE
+INDEX 和优化器提示 IGNORE INDEX 具有更高的优先级 INDEX_MERGE 。 NO_INDEX_MERGE
+/*+ INDEX_MERGE(t1 i_a, i_b, i_c) */ ... IGNORE INDEX i_a
+IGNORE INDEX 优先于 INDEX_MERGE ，因此索引 i_a 被排除在索引合并的可能范围之外。
+/*+ NO_INDEX_MERGE(t1 i_a, i_b) */ ... FORCE INDEX i_a, i_b
+Index Merge is disallowed for i_a, i_b because of FORCE INDEX ，但优化器被迫使用 i_a or i_b for range or ref access。没有冲突；两个提示都适用。
+如果 IGNORE INDEX 提示命名多个索引，则这些索引不可用于索引合并。
+和提示 FORCE INDEX 仅 USE
+INDEX 使命名索引可用于索引合并。
+SELECT /*+ INDEX_MERGE(t1 i_a, i_b, i_c) */ a FROM t1
+FORCE INDEX (i_a, i_b) WHERE c = 'h' AND a = 2 AND b = 'b';
+Index Merge 交集访问算法用于 (i_a, i_b) . FORCE INDEX 改成 也是一样 USE
+INDEX 。
+子查询优化器提示
+子查询提示会影响是否使用半连接转换以及允许使用哪种半连接策略，并且在不使用半连接时，是否使用子查询实现或 IN -to- EXISTS 转换。有关这些优化的更多信息，请参阅 第 8.2.2 节，“优化子查询、派生表、视图引用和公用表表达式” 。
+影响半连接策略的提示语法：
+hint_name ([@ query_block_name ] [ strategy [, strategy ] ...])
+语法指的是这些术语：
+hint_name ：允许使用这些提示名称：
+SEMIJOIN , NO_SEMIJOIN : 启用或禁用命名的半连接策略。
+strategy ：要启用或禁用的半连接策略。这些策略名称是允许的： DUPSWEEDOUT , FIRSTMATCH , LOOSESCAN , MATERIALIZATION .
+对于 SEMIJOIN 提示，如果没有命名策略，则根据 optimizer_switch 系统变量启用的策略尽可能使用半连接。如果策略已命名但不适用于该语句， DUPSWEEDOUT 则使用。
+对于 NO_SEMIJOIN 提示，如果没有命名策略，则不使用 semijoin。如果策略被命名为排除语句的所有适用策略， DUPSWEEDOUT 则使用。
+如果一个子查询嵌套在另一个子查询中，并且都合并到外部查询的半连接中，则忽略最内层查询的任何半连接策略规范。 SEMIJOIN 和 NO_SEMIJOIN 提示仍可用于为此类嵌套子查询启用或禁用半连接转换。
+如果 DUPSWEEDOUT 被禁用，有时优化器可能会生成一个远非最佳的查询计划。这是由于贪婪搜索期间的启发式修剪而发生的，这可以通过设置来避免 optimizer_prune_level=0 。
+例子：
+SELECT /*+ NO_SEMIJOIN(@subq1 FIRSTMATCH, LOOSESCAN) */ * FROM t2
+WHERE t2.a IN (SELECT /*+ QB_NAME(subq1) */ a FROM t3);
+SELECT /*+ SEMIJOIN(@subq1 MATERIALIZATION, DUPSWEEDOUT) */ * FROM t2
+WHERE t2.a IN (SELECT /*+ QB_NAME(subq1) */ a FROM t3);
+IN 影响是否使用子查询物化或-to- EXISTS 转换
+
+的提示语法
+：
+SUBQUERY([@ query_block_name ] strategy )
+提示名称始终是 SUBQUERY 。
+对于 SUBQUERY 提示，这些 strategy 值是允许的： INTOEXISTS , MATERIALIZATION .
+例子：
+SELECT id, a IN (SELECT /*+ SUBQUERY(MATERIALIZATION) */ a FROM t1) FROM t2;
+SELECT * FROM t2 WHERE t2.a IN (SELECT /*+ SUBQUERY(INTOEXISTS) */ a FROM t1);
+对于半连接和 SUBQUERY 提示，前导
+
+指定提示适用的查询块。如果提示不包含 leading
+，则提示适用于出现它的查询块。要为查询块分配名称，请参阅 命名查询块的优化器提示 。 @ query_block_name @ query_block_name
+如果提示注释包含多个子查询提示，则使用第一个。如果后面还有其他这种类型的提示，它们会产生警告。以下其他类型的提示将被忽略。
+语句执行时间优化器提示
+该 MAX_EXECUTION_TIME 提示仅允许用于 SELECT 语句。它对 N 在服务器终止语句之前允许执行多长时间设置了限制（以毫秒为单位的超时值）：
+MAX_EXECUTION_TIME( N )
+超时为 1 秒（1000 毫秒）的示例：
+SELECT /*+ MAX_EXECUTION_TIME(1000) */ * FROM t1 INNER JOIN t2 WHERE ...
+该
+
+提示将语句执行超时设置为
+毫秒。如果此选项不存在或为 0，则应用系统变量
+建立的语句超时
+。 MAX_EXECUTION_TIME( N ) N N max_execution_time
+MAX_EXECUTION_TIME 提示适用如下
+
+：
+对于具有多个 SELECT 关键字的语句，例如联合或带有子查询的语句， MAX_EXECUTION_TIME 适用于整个语句并且必须出现在第一个 SELECT .
+它适用于只读 SELECT 语句。非只读语句是那些调用存储函数的语句，该函数作为副作用修改数据。
+它不适用于 SELECT 存储程序中的语句并被忽略。
+变量设置提示语法
+该 SET_VAR 提示临时设置系统变量的会话值（在单个语句的持续时间内）。例子：
+SELECT /*+ SET_VAR(sort_buffer_size = 16M) */ name FROM people ORDER BY name;
+INSERT /*+ SET_VAR(foreign_key_checks=OFF) */ INTO t2 VALUES(2);
+SELECT /*+ SET_VAR(optimizer_switch = 'mrr_cost_based=off') */ 1;
+提示的语法 SET_VAR ：
+SET_VAR( var_name = value )
+var_name 命名一个具有会话值的系统变量（尽管并非所有此类变量都可以命名，如后所述）。 value 是分配给变量的值；该值必须是标量。
+SET_VAR 进行临时变量更改，如以下语句所示：
+mysql> SELECT @@unique_checks;
++-----------------+
+| @@unique_checks |
++-----------------+
+| 1 |
++-----------------+
+mysql> SELECT /*+ SET_VAR(unique_checks=OFF) */ @@unique_checks;
++-----------------+
+| @@unique_checks |
++-----------------+
+| 0 |
++-----------------+
+mysql> SELECT @@unique_checks;
++-----------------+
+| @@unique_checks |
++-----------------+
+| 1 |
++-----------------+
+使用 SET_VAR ，无需保存和恢复变量值。这使您能够用单个语句替换多个语句。考虑以下语句序列：
+SET @saved_val = @@SESSION. var_name ;
+SET @@SESSION. var_name = value ;
+SELECT ...
+SET @@SESSION. var_name = @saved_val;
+这个序列可以用这个单一的语句代替：
+SELECT /*+ SET_VAR( var_name = value ) ...
+独立 SET 语句允许使用以下任何语法来命名会话变量：
+SET SESSION var_name = value ;
+SET @@SESSION. var_name = value ;
+SET @@. var_name = value ;
+因为 SET_VAR 提示仅适用于会话变量，会话范围是隐式的，并且 SESSION 、 @@SESSION. 和 @@ 既不需要也不允许。包含显式会话指示器语法会导致 SET_VAR 提示被忽略并发出警告。
+并非所有会话变量都允许与 SET_VAR . 单独的系统变量描述表明每个变量是否可提示；参见 第 5.1.8 节，“服务器系统变量” 。您还可以在运行时检查系统变量，方法是尝试将其与 SET_VAR . 如果变量不可提示，则会出现警告：
+mysql> SELECT /*+ SET_VAR(collation_server = 'utf8mb4') */ 1;
++---+
+| 1 |
++---+
+| 1 |
++---+
+1 row in set, 1 warning (0.00 sec)
+
+mysql> SHOW WARNINGS\G
+*************************** 1. row ***************************
+Level: Warning
+Code: 4537
+Message: Variable 'collation_server' cannot be set using SET_VAR hint.
+SET_VAR 语法只允许设置单个变量，但可以给出多个提示来设置多个变量：
+SELECT /*+ SET_VAR(optimizer_switch = 'mrr_cost_based=off')
+SET_VAR(max_heap_table_size = 1G) */ 1;
+如果在同一条语句中出现多个具有相同变量名的提示，则应用第一个并忽略其他提示并发出警告：
+SELECT /*+ SET_VAR(max_heap_table_size = 1G)
+SET_VAR(max_heap_table_size = 3G) */ 1;
+在这种情况下，第二个提示将被忽略，并发出它存在冲突的警告。
+如果 SET_VAR 没有系统变量具有指定名称或变量值不正确，则忽略提示并发出警告：
+SELECT /*+ SET_VAR(max_size = 1G) */ 1;
+SELECT /*+ SET_VAR(optimizer_switch = 'mrr_cost_based=yes') */ 1;
+对于第一个语句，没有 max_size 变量。对于第二个语句， mrr_cost_based 采用 on or
+的值 off ，因此尝试将其设置为 yes 是不正确的。在每种情况下，都会忽略提示并发出警告。
+SET_VAR 仅在语句级别允许提示
+。如果在子查询中使用，提示将被忽略并发出警告。
+副本忽略 SET_VAR 复制语句中的提示以避免潜在的安全问题。
+资源组提示语法
+优化器 RESOURCE_GROUP 提示用于资源组管理（请参阅 第 5.1.16 节，“资源组” ）。此提示将执行语句的线程临时分配给指定的资源组（在语句的持续时间内）。它需要 RESOURCE_GROUP_ADMIN 或 RESOURCE_GROUP_USER 特权。
+例子：
+SELECT /*+ RESOURCE_GROUP(USR_default) */ name FROM people ORDER BY name;
+INSERT /*+ RESOURCE_GROUP(Batch) */ INTO t2 VALUES(2);
+提示的语法 RESOURCE_GROUP ：
+RESOURCE_GROUP( group_name )
+group_name 指示在语句执行期间应将线程分配到的资源组。如果该组不存在，则会出现警告并忽略提示。
+提示必须出现 RESOURCE_GROUP 在初始语句关键字（ SELECT 、 INSERT 、 REPLACE 、 UPDATE 或 DELETE ）之后。
+另一种替代方法 RESOURCE_GROUP 是非 SET RESOURCE GROUP 临时地将线程分配给资源组的语句。请参阅 第 13.7.2.4 节，“SET RESOURCE GROUP 语句” 。
+命名查询块的优化器提示
+表级、索引级和子查询优化器提示允许将特定查询块命名为其参数语法的一部分。要创建这些名称，请使用 QB_NAME 提示，它会为出现它的查询块分配一个名称：
+QB_NAME( name )
+QB_NAME 提示可用于以清晰的方式明确显示其他提示适用于哪些查询块。它们还允许在单个提示注释中指定所有非查询块名称提示，以便更容易理解复杂语句。考虑以下语句：
+SELECT ...
+FROM (SELECT ...
+FROM (SELECT ... FROM ...)) ...
+QB_NAME 提示为语句中的查询块分配名称：
+SELECT /*+ QB_NAME(qb1) */ ...
+FROM (SELECT /*+ QB_NAME(qb2) */ ...
+FROM (SELECT /*+ QB_NAME(qb3) */ ... FROM ...)) ...
+然后其他提示可以使用这些名称来引用适当的查询块：
+SELECT /*+ QB_NAME(qb1) MRR(@qb1 t1) BKA(@qb2) NO_MRR(@qb3t1 idx1, id2) */ ...
+FROM (SELECT /*+ QB_NAME(qb2) */ ...
+FROM (SELECT /*+ QB_NAME(qb3) */ ... FROM ...)) ...
+产生的效果如下：
+MRR(@qb1 t1) 适用 t1 于查询块
+中的表 qb1 。
+BKA(@qb2) 适用于查询块 qb2 。
+NO_MRR(@qb3 t1 idx1,
+id2) 适用
+于查询块中的索引 idx1 和 idx2 表。 t1 qb3
+查询块名称是标识符，并遵循关于什么名称有效以及如何引用它们的通常规则（请参阅 第 9.2 节，“模式对象名称” ）。例如，包含空格的查询块名称必须用引号引起来，这可以使用反引号来完成：
+SELECT /*+ BKA(@`my hint name`) */ ...
+FROM (SELECT /*+ QB_NAME(`my hint name`) */ ...) ...
+如果 ANSI_QUOTES 启用了 SQL 模式，也可以在双引号内引用查询块名称：
+SELECT /*+ BKA(@"my hint name") */ ...
+FROM (SELECT /*+ QB_NAME("my hint name") */ ...) ...

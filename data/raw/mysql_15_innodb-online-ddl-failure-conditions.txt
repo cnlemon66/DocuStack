@@ -1,0 +1,18 @@
+15.12.7 在线 DDL 失败条件_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.12 InnoDB和在线DDL / 
+15.12.7 在线 DDL 失败条件
+15.12.7 在线 DDL 失败条件
+在线 DDL 操作失败通常是由于以下情况之一：
+ALGORITHM 子句指定与特定类型的 DDL 操作或存储引擎不兼容的算法
+
+。
+子句指定与特定类型的 DDL 操作不兼容
+
+的 LOCK 低程度锁定（ SHARED 或）。 NONE
+在等待表上的 独占锁 时发生超时，在 DDL 操作的初始和最后阶段可能会短暂需要。
+tmpdir 或 innodb_tmpdir 文件系统耗尽磁盘空间，而 MySQL 在创建索引期间将临时排序文件写入磁盘
+。有关详细信息，请参阅 第 15.12.3 节，“在线 DDL 空间要求” 。
+操作耗时较长，并发DML修改表过多，导致临时在线日志的大小超过 innodb_online_alter_log_max_size 配置选项的值。这种情况会导致 DB_ONLINE_LOG_TOO_BIG 错误。
+并发 DML 对原始表定义允许的表进行更改，但不允许使用新表定义。当 MySQL 尝试应用来自并发 DML 语句的所有更改时，操作只会在最后失败。例如，您可能会在创建唯一索引时将重复值插入列中，或者您可能会 NULL 在列上创建 主键 索引时将值插入列中。并发 DML 所做的更改优先，并且 ALTER TABLE 操作被有效地 回滚 。

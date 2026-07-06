@@ -1,0 +1,218 @@
+12.14 加密和压缩函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 
+12.14 加密和压缩函数
+12.14 加密和压缩函数
+表 12.18 加密函数
+姓名 描述
+AES_DECRYPT() 使用 AES 解密
+AES_ENCRYPT() 使用 AES 加密
+COMPRESS() 以二进制字符串形式返回结果
+MD5() 计算MD5校验和
+RANDOM_BYTES() 返回一个随机字节向量
+SHA1() , SHA() 计算 SHA-1 160 位校验和
+SHA2() 计算 SHA-2 校验和
+STATEMENT_DIGEST() 计算语句摘要哈希值
+STATEMENT_DIGEST_TEXT() 计算规范化语句摘要
+UNCOMPRESS() 解压缩压缩的字符串
+UNCOMPRESSED_LENGTH() 返回压缩前字符串的长度
+VALIDATE_PASSWORD_STRENGTH() 确定密码强度
+许多加密和压缩函数返回字符串，其结果可能包含任意字节值。如果要存储这些结果，请使用具有 VARBINARY 或 BLOB 二进制字符串数据类型的列。这避免了可能会更改数据值的尾随空格删除或字符集转换的潜在问题，例如在使用非二进制字符串数据类型 ( CHAR , VARCHAR , TEXT ) 时可能发生的问题。
+一些加密函数返回 ASCII 字符的字符串： MD5() , SHA() , SHA1() , SHA2() , STATEMENT_DIGEST() , STATEMENT_DIGEST_TEXT() 。 character_set_connection 它们的返回值是一个字符串，该字符串具有由和 collation_connection 系统变量确定的字符集和排序规则
+。这是一个非二进制字符串，除非字符集是 binary .
+如果应用程序存储来自返回十六进制数字字符串的函数的值， MD5() 则 SHA1() 可以通过将十六进制表示形式转换为二进制 UNHEX() 并将结果存储在
+
+列中来获得更有效的存储和比较。每对十六进制数字需要二进制形式的一个字节，因此 的值取决于十六进制字符串的长度。一个值是 16，一个值是 20
+。对于
+，
+范围从 28 到 32，具体取决于指定结果所需位长度的参数。 BINARY( N ) N N MD5() SHA1() SHA2() N
+将十六进制字符串存储在列中的大小损失
+至少是两倍，如果值存储在使用字符集（每个字符使用 4 个字节） CHAR 的列中，则高达八倍
+。 utf8mb4 存储字符串还会导致比较速度变慢，因为值较大并且需要考虑字符集排序规则。
+假设应用程序将 MD5() 字符串值存储在 CHAR(32) 列中：
+CREATE TABLE md5_tbl (md5_val CHAR(32), ...);
+INSERT INTO md5_tbl (md5_val, ...) VALUES(MD5('abcdef'), ...);
+要将十六进制字符串转换为更紧凑的形式，请修改应用程序以使用 UNHEX() and BINARY(16) 代替，如下所示：
+CREATE TABLE md5_tbl (md5_val BINARY(16), ...);
+INSERT INTO md5_tbl (md5_val, ...) VALUES(UNHEX(MD5('abcdef')), ...);
+应用程序应该准备好处理哈希函数为两个不同的输入值生成相同值的非常罕见的情况。使冲突可检测的一种方法是使散列列成为主键。
+笔记
+MD5 和 SHA-1 算法的漏洞已为人所知。您可能希望考虑使用本节中描述的另一种单向加密函数，例如 SHA2() .
+警告
+除非使用 SSL 连接，否则作为加密函数参数提供的密码或其他敏感值将作为明文发送到 MySQL 服务器。此外，此类值出现在写入它们的任何 MySQL 日志中。为了避免这些类型的暴露，应用程序可以在将敏感值发送到服务器之前在客户端对其进行加密。同样的考虑也适用于加密密钥。为了避免暴露这些，应用程序可以使用存储过程在服务器端加密和解密值。
+AES_DECRYPT( crypt_str , key_str [, init_vector ][, kdf_name ][, salt ][, info
+| iterations ])
+此函数使用官方 AES（高级加密标准）算法解密数据。有关详细信息，请参阅 的说明 AES_ENCRYPT() 。
+使用 AES_DECRYPT() 的语句对于基于语句的复制是不安全的。
+AES_ENCRYPT( str , key_str [, init_vector ][, kdf_name ][, salt ][, info
+| iterations ])
+AES_ENCRYPT() 并 AES_DECRYPT() 使用官方的 AES（高级加密标准）算法（以前称为 “ Rijndael”）实现数据的加密和解密。 ” AES 标准允许各种密钥长度。默认情况下，这些函数使用 128 位密钥长度实现 AES。可以使用 196 或 256 位的密钥长度，如后所述。密钥长度是性能和安全性之间的权衡。
+AES_ENCRYPT() str 使用密钥 string
+加密字符串 key_str ，并返回包含加密输出的二进制字符串。
+使用密钥 string AES_DECRYPT() 解密加密
+的字符串，并返回原始明文字符串。如果任一函数参数是
+，则函数返回
+。如果
+检测到无效数据或不正确的填充，则返回. 但是，
+如果输入数据或密钥无效
+，则有可能返回非值（可能是垃圾）。 crypt_str key_str NULL NULL AES_DECRYPT() NULL AES_DECRYPT() NULL
+从 MySQL 8.0.30 开始，这些函数支持使用密钥派生函数 (KDF) 从传入的信息创建加密强度高的密钥 key_str . 派生密钥用于加密和解密数据，它保留在 MySQL Server 实例中，用户无法访问。强烈建议使用 KDF，因为它比指定您自己的预制密钥或在您使用函数时通过更简单的方法派生它提供更好的安全性。这些函数支持 HKDF（可从 OpenSSL 1.1.0 获得），您可以为其指定一个可选的盐和特定于上下文的信息以包含在密钥材料中，以及 PBKDF2（可从 OpenSSL 1.0.2 获得），您可以为其指定一个可选盐并设置用于生成密钥的迭代次数。
+AES_ENCRYPT() 并 AES_DECRYPT() 允许控制块加密模式。系统变量控制基于块的加密算法的 block_encryption_mode 模式。它的默认值为 aes-128-ecb ，表示使用 128 位密钥长度和 ECB 模式进行加密。有关此变量的允许值的说明，请参阅 第 5.1.8 节，“服务器系统变量” 。可选 init_vector 参数用于为需要它的块加密模式提供初始化向量。
+使用
+基于语句的复制 AES_ENCRYPT() 或 AES_DECRYPT() 对基于语句的复制不安全的语句。
+如果 AES_ENCRYPT() 从 mysql 客户端中调用，则二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+AES_ENCRYPT() 和
+函数
+的参数 AES_DECRYPT() 如下：
+str
+要使用密钥字符串 AES_ENCRYPT() 加密的字符串 key_str ，或（来自 MySQL 8.0.30）由指定的 KDF 从中派生的密钥。字符串可以是任意长度。自动添加填充， str 因此它是 AES 等基于块的算法所要求的块的倍数。此填充由 AES_DECRYPT() 函数自动删除。
+crypt_str
+AES_DECRYPT() 使用密钥字符串解密
+的加密
+字符串 key_str ，或（来自 MySQL 8.0.30）由指定的 KDF 从中派生的密钥。字符串可以是任意长度。的长度 crypt_str 可以使用以下公式从原始字符串的长度计算得出：
+16 * (trunc( string_length / 16) + 1)
+key_str
+加密密钥或用作使用密钥派生函数 (KDF) 派生密钥的基础的输入密钥材料。对于相同的数据实例，使用相同的值 key_str 进行加密 AES_ENCRYPT() 和解密 AES_DECRYPT() 。
+如果您使用的是 KDF，您可以从 MySQL 8.0.30 开始， key_str 可以是任何任意信息，例如密码或口令。在该函数的更多参数中，您指定 KDF 名称，然后添加更多选项以提高 KDF 的安全性。
+key_str 当您使用 KDF 时，该函数会根据传入的信息以及您在其他参数中提供的任何加盐或附加信息
+创建加密强度高的密钥。派生密钥用于加密和解密数据，它保留在 MySQL Server 实例中，用户无法访问。强烈建议使用 KDF，因为它比指定您自己的预制密钥或在您使用函数时通过更简单的方法派生它提供更好的安全性。
+如果您不使用 KDF，对于 128 位的密钥长度，将密钥传递给 key_str 参数的最安全方法是创建一个真正随机的 128 位值并将其作为二进制值传递。例如：
+INSERT INTO t
+VALUES (1,AES_ENCRYPT('text',UNHEX('F3229A0B371ED2D9441B830D21A390C3')));
+密码可用于通过对密码进行哈希处理来生成 AES 密钥。例如：
+INSERT INTO t
+VALUES (1,AES_ENCRYPT('text', UNHEX(SHA2('My secret passphrase',512))));
+如果超过 128 位的最大密钥长度，则会返回警告。如果您不使用 KDF，请不要将密码或密码直接传递给 key_str ，首先对其进行哈希处理。本文档的早期版本建议采用前一种方法，但不再推荐，因为此处显示的示例更安全。
+init_vector
+一个初始化向量，用于需要它的块加密模式。系统 block_encryption_mode 变量控制模式。对于相同的数据实例，使用相同的值 init_vector 进行加密 AES_ENCRYPT() 和解密 AES_DECRYPT() 。
+笔记
+如果您使用的是 KDF，则必须为此参数指定初始化向量或空字符串，以便访问后面的参数来定义 KDF。
+对于需要初始化向量的模式，它必须为 16 字节或更长（超过 16 的字节将被忽略）。 init_vector 如果缺少，则会发生错误
+。对于不需要初始化向量的模式，它将被忽略并在 init_vector 指定时生成警告，除非您使用的是 KDF。
+block_encryption_mode 系统变量
+的默认值为 aes-128-ecb , 或 ECB 模式，不需要初始化向量。可选的允许块加密模式 CBC、CFB1、CFB8、CFB128 和 OFB 都需要一个初始化向量。
+用于初始化向量的随机字节串可以通过调用 RANDOM_BYTES(16) .
+kdf_name
+密钥派生函数 (KDF) 的名称，用于根据传入的输入密钥材料创建密钥 key_str ，以及适用于 KDF 的其他参数。此可选参数可从 MySQL 8.0.30 获得。
+对于相同的数据实例，使用相同的值 kdf_name 进行加密 AES_ENCRYPT() 和解密 AES_DECRYPT() 。当您指定 时 kdf_name ，您必须 init_vector 使用有效的初始化向量或空字符串指定 ，如果加密模式不需要初始化向量。
+支持以下值：
+hkdf
+HKDF，可从 OpenSSL 1.1.0 获得。HKDF 从密钥材料中提取伪随机密钥，然后将其扩展为其他密钥。使用 HKDF，您可以指定一个可选的盐 ( salt ) 和特定于上下文的信息，例如应用程序详细信息 ( info ) 以包含在密钥材料中。
+pbkdf2_hmac
+PBKDF2，可从 OpenSSL 1.0.2 获得。PBKDF2 将伪随机函数应用于密钥材料，并多次重复此过程以生成密钥。使用 PBKDF2，您可以指定一个可选的盐 ( salt ) 以包含在密钥材料中，并设置用于生成密钥 ( iterations ) 的迭代次数。
+在这个例子中，HKDF被指定为密钥推导函数，并提供了盐和上下文信息。包含初始化向量的参数，但它是空字符串：
+SELECT AES_ENCRYPT('mytext','mykeystring', '', 'hkdf', 'salt', 'info');
+在此示例中，PBKDF2 被指定为密钥派生函数，提供了盐，并且迭代次数是推荐的最小值的两倍：
+SELECT AES_ENCRYPT('mytext','mykeystring', '', 'pbkdf2_hmac','salt', '2000');
+salt
+要传递给密钥派生函数 (KDF) 的盐。此可选参数可从 MySQL 8.0.30 获得。HKDF 和 PBKDF2 都可以使用盐，建议使用它们来帮助防止基于常用密码字典或彩虹表的攻击。
+盐由随机数据组成，为了安全起见，每次加密操作都必须不同。可以通过调用生成用于盐的随机字节串 RANDOM_BYTES() 。此示例生成 64 位盐：
+SET @salt = RANDOM_BYTES(8);
+对于相同的数据实例，使用相同的值 salt 进行加密 AES_ENCRYPT() 和解密 AES_DECRYPT() 。盐可以与加密数据一起安全存储。
+info
+HKDF 要包含在密钥材料中的特定于上下文的信息，例如有关应用程序的信息。 hkdf 当您指定为 KDF 名称时，此可选参数可从 MySQL 8.0.30 获得。HKDF 将此信息添加到中指定的密钥材料 key_str 和中指定的盐 salt 以生成密钥。
+对于相同的数据实例，使用相同的值 info 进行加密 AES_ENCRYPT() 和解密 AES_DECRYPT() 。
+iterations
+PBKDF2 在生成密钥时使用的迭代计数。 pbkdf2_hmac 当您指定为 KDF 名称时，此可选参数可从 MySQL 8.0.30 获得。较高的计数对暴力攻击具有更大的抵抗力，因为它对攻击者具有更大的计算成本，但对于密钥推导过程也是如此。如果您未指定此参数，则默认值为 1000，这是 OpenSSL 标准推荐的最小值。
+对于相同的数据实例，使用相同的值 iterations 进行加密 AES_ENCRYPT() 和解密 AES_DECRYPT() 。
+mysql> SET block_encryption_mode = 'aes-256-cbc';
+mysql> SET @key_str = SHA2('My secret passphrase',512);
+mysql> SET @init_vector = RANDOM_BYTES(16);
+mysql> SET @crypt_str = AES_ENCRYPT('text',@key_str,@init_vector);
+mysql> SELECT AES_DECRYPT(@crypt_str,@key_str,@init_vector);
++-----------------------------------------------+
+| AES_DECRYPT(@crypt_str,@key_str,@init_vector) |
++-----------------------------------------------+
+| text |
++-----------------------------------------------+
+COMPRESS( string_to_compress )
+压缩字符串并将结果作为二进制字符串返回。此功能要求 MySQL 编译时带有压缩库，例如 zlib . 否则，返回值始终为 NULL 。返回值也是 NULL if string_to_compress is NULL 。压缩的字符串可以用 UNCOMPRESS() .
+mysql> SELECT LENGTH(COMPRESS(REPEAT('a',1000)));
+-> 21
+mysql> SELECT LENGTH(COMPRESS(''));
+-> 0
+mysql> SELECT LENGTH(COMPRESS('a'));
+-> 13
+mysql> SELECT LENGTH(COMPRESS(REPEAT('a',16)));
+-> 15
+压缩后的字符串内容按以下方式存储：
+空字符串存储为空字符串。
+非空字符串存储为未压缩字符串的 4 字节长度（低字节在前），然后是压缩字符串。如果字符串以空格结尾，则添加一个额外的
+字符以避免在结果存储在或
+列 . 中时出现尾空格修剪问题
+。（但是，无论如何不建议
+使用非二进制字符串数据类型（例如
+or
+来存储压缩字符串，因为可能会发生字符集转换。请改用or
+二进制字符串列。） CHAR VARCHAR CHAR VARCHAR VARBINARY BLOB
+如果 COMPRESS() 从 mysql 客户端中调用，则二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+MD5( str )
+计算字符串的 MD5 128 位校验和。该值以 32 位十六进制数字的字符串形式返回，或者 NULL 如果参数是 NULL . 例如，返回值可以用作散列键。请参阅本节开头有关有效存储哈希值的注释。
+返回值是连接字符集中的一个字符串。
+如果启用 FIPS 模式，则 MD5() 返回 NULL 。请参见 第 6.8 节 “FIPS 支持” 。
+mysql> SELECT MD5('testing');
+-> 'ae2b1fca515949e5d54fb22b8ed95575'
+这是 “ RSA Data Security, Inc. MD5 消息摘要算法。 ”
+请参阅本节开头有关 MD5 算法的注释。
+RANDOM_BYTES( len )
+此函数返回 len 使用 SSL 库的随机数生成器生成的随机字节的二进制字符串。允许的值 len 范围为 1 到 1024。对于超出该范围的值，将发生错误。返回 NULL 如果 len 是 NULL 。
+RANDOM_BYTES() 可用于为 AES_DECRYPT() 和 AES_ENCRYPT() 函数提供初始化向量。要在该上下文中使用， len 必须至少为 16。允许使用更大的值，但忽略超过 16 的字节。
+RANDOM_BYTES() 生成一个随机值，这使得它的结果不确定。因此，使用此函数的语句对于基于语句的复制是不安全的。
+如果 RANDOM_BYTES() 从 mysql 客户端中调用，则二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+SHA1( str ) , SHA( str )
+计算字符串的 SHA-1 160 位校验和，如 RFC 3174（安全哈希算法）中所述。该值以 40 个十六进制数字的字符串形式返回，或者 NULL 如果参数是 NULL . 此函数的一种可能用途是用作散列键。请参阅本节开头有关有效存储哈希值的注释。 SHA() 与 同义 SHA1() 。
+返回值是连接字符集中的一个字符串。
+mysql> SELECT SHA1('abc');
+-> 'a9993e364706816aba3e25717850c26c9cd0d89d'
+SHA1() 可以被认为是加密上更安全的等价物 MD5() 。但是，请参阅本节开头有关 MD5 和 SHA-1 算法的注释。
+SHA2( str , hash_length )
+计算 SHA-2 散列函数系列（SHA-224、SHA-256、SHA-384 和 SHA-512）。第一个参数是要散列的明文字符串。第二个参数指示结果的所需位长度，其值必须为 224、256、384、512 或 0（相当于 256）。如果任一参数是 NULL 或散列长度不是允许值之一，则返回值为 NULL 。否则，函数结果是包含所需位数的散列值。请参阅本节开头有关有效存储哈希值的注释。
+返回值是连接字符集中的一个字符串。
+mysql> SELECT SHA2('abc', 224);
+-> '23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7'
+此功能仅在 MySQL 已配置为支持 SSL 时才有效。请参阅 第 6.3 节，“使用加密连接” 。
+SHA2() 可以认为在密码学上比 MD5() 或
+更安全 SHA1() 。
+STATEMENT_DIGEST( statement )
+给定一个字符串形式的 SQL 语句，返回语句摘要哈希值作为连接字符集中的一个字符串，或者 NULL 如果参数是 NULL . 相关 STATEMENT_DIGEST_TEXT() 函数返回规范化的语句摘要。有关语句摘要的信息，请参阅 第 27.10 节，“性能模式语句摘要和采样” 。
+这两个函数都使用 MySQL 解析器来解析语句。如果解析失败，则会发生错误。仅当语句作为文字字符串提供时，错误消息才包含解析错误。
+max_digest_length 系统变量确定这些函数可用于计算规范化语句摘要的最大字节数
+
+。
+mysql> SET @stmt = 'SELECT * FROM mytable WHERE cola = 10 AND colb = 20';
+mysql> SELECT STATEMENT_DIGEST(@stmt);
++------------------------------------------------------------------+
+| STATEMENT_DIGEST(@stmt) |
++------------------------------------------------------------------+
+| 3bb95eeade896657c4526e74ff2a2862039d0a0fe8a9e7155b5fe492cbd78387 |
++------------------------------------------------------------------+
+mysql> SELECT STATEMENT_DIGEST_TEXT(@stmt);
++----------------------------------------------------------+
+| STATEMENT_DIGEST_TEXT(@stmt) |
++----------------------------------------------------------+
+| SELECT * FROM `mytable` WHERE `cola` = ? AND `colb` = ? |
++----------------------------------------------------------+
+STATEMENT_DIGEST_TEXT( statement )
+给定一个 SQL 语句作为字符串，返回规范化语句摘要作为连接字符集中的字符串，或者 NULL 如果参数是 NULL . 有关其他讨论和示例，请参阅相关 STATEMENT_DIGEST() 功能的描述。
+UNCOMPRESS( string_to_uncompress )
+解压缩由 COMPRESS() 函数压缩的字符串。如果参数不是压缩值，则结果为 NULL ；如果 string_to_uncompress 是 NULL ，则结果也是 NULL 。此功能要求 MySQL 编译时带有压缩库，例如 zlib . 否则，返回值始终为 NULL 。
+mysql> SELECT UNCOMPRESS(COMPRESS('any string'));
+-> 'any string'
+mysql> SELECT UNCOMPRESS('any string');
+-> NULL
+UNCOMPRESSED_LENGTH( compressed_string )
+返回压缩字符串在压缩前的长度。返回 NULL 如果 compressed_string 是 NULL 。
+mysql> SELECT UNCOMPRESSED_LENGTH(COMPRESS(REPEAT('a',30)));
+-> 30
+VALIDATE_PASSWORD_STRENGTH( str )
+给定一个表示明文密码的参数，此函数返回一个整数以指示密码的强度，或者 NULL 参数是否为 NULL . 返回值范围从 0（弱）到 100（强）。
+密码评估由
+组件 VALIDATE_PASSWORD_STRENGTH() 完成 validate_password 。如果未安装该组件，该函数始终返回 0。有关安装的信息 validate_password ，请参阅 第 6.4.3 节“密码验证组件” 。要检查或配置影响密码测试的参数，请检查或设置由 实现的系统变量 validate_password 。请参阅 第 6.4.3.2 节，“密码验证选项和变量” 。
+密码受到越来越严格的测试，返回值反映满足哪些测试，如下表所示。另外，如果 validate_password.check_user_name 启用了系统变量且密码与用户名匹配， VALIDATE_PASSWORD_STRENGTH() 无论其他 validate_password 系统变量如何设置，都返回0。
+密码测试 返回值
+长度 < 4 0
+长度 ≥ 4 且 < validate_password.length 25
+满足政策 1 ( LOW ) 50
+满足策略 2 ( MEDIUM ) 75
+满足政策 3 ( STRONG ) 100

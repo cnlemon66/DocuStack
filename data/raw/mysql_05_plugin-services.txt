@@ -1,0 +1,8 @@
+5.6.9 MySQL 插件服务_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.6 MySQL 服务器插件 / 
+5.6.9 MySQL 插件服务
+5.6.9 MySQL 插件服务
+5.6.9.1 锁定服务 5.6.9.2 密钥环服务
+MySQL 服务器插件可以访问服务器 “ 插件服务”。 ” 插件服务接口通过公开插件可以调用的服务器功能来补充插件 API。有关编写插件服务的开发人员信息，请参阅插件 的 MySQL 服务 。以下部分描述了在 SQL 和 C 语言级别可用的插件服务。

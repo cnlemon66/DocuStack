@@ -1,0 +1,25 @@
+8.14.7 复制连接线程状态_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.14 查看服务器线程（进程）信息 / 
+8.14.7 复制连接线程状态
+8.14.7 复制连接线程状态
+这些线程状态发生在副本服务器上，但与连接线程相关联，而不是与 I/O 或 SQL 线程相关联。
+在 MySQL 8.0.26 中，对仪器名称进行了不兼容的更改，包括线程阶段的名称，其中包含术语 “ master ” 更改为 “ source ” ， “ slave ” 更改为 “ replica ” ，以及 “ mts ” （代表 “ 多线程从 机” ），改为 “ mta ” （代表 “ 多线程应用 程序” ). 使用这些工具名称的监视工具可能会受到影响。如果不兼容的更改对您有影响，请将 terminology_use_previous 系统变量设置为 BEFORE_8_0_26 以使 MySQL 服务器使用先前列表中指定的对象的旧版本名称。这使得依赖旧名称的监视工具能够继续工作，直到它们可以更新为使用新名称。
+将 terminology_use_previous 具有会话范围的系统变量设置为支持单个函数，或将全局范围设置为所有新会话的默认值。使用全局范围时，慢速查询日志包含名称的旧版本。
+Changing master
+从 MySQL 8.0.26 开始： Changing replication
+source
+线程正在处理一个 CHANGE
+REPLICATION SOURCE TO 语句（来自 MySQL 8.0.23）或 CHANGE MASTER TO 语句（MySQL 8.0.23 之前）。
+Killing slave
+线程正在处理一条 STOP REPLICA 语句。
+Opening master dump table
+此状态发生在 之后 Creating table from master
+dump 。
+Reading master dump table data
+此状态发生在 之后 Opening master dump
+table 。
+Rebuilding the index on master dump table
+此状态发生在 之后 Reading master dump table
+data 。

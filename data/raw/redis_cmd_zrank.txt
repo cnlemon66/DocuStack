@@ -1,0 +1,80 @@
+Redis ZRANK 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis ZRANK 命令
+ZRANK 返回有序集合中指定成员的排名（按分数升序，排名从 0 开始）。
+* 语法
+ZRANK key member [WITHSCORE]
+* 参数说明
+参数 类型 必填 说明
+key String 是 有序集合键名
+member String 是 要查询的成员
+WITHSCORE Flag 否 同时返回分数（Redis 7.2+）
+* 返回值
+Integer ：成员的排名（0 为最低分）
+Array （带 WITHSCORE）： [rank, score]
+Nil ：成员不存在或 key 不存在
+* 时间复杂度
+O(log(N))，N 为有序集合的基数。
+* 示例
+* 基本排名查询
+> ZADD myzset 10 "a" 20 "b" 30 "c" 40 "d"
+(integer) 4
+> ZRANK myzset "c"
+(integer) 2
+> ZRANK myzset "a"
+(integer) 0
+* 带分数返回
+> ZRANK myzset "b" WITHSCORE
+1) (integer) 1
+2) "20"
+* 不存在的成员
+> ZRANK myzset "notexist"
+(nil)
+* 常见错误
+错误 原因 解决
+WRONGTYPE key 不是有序集合 检查 key 类型
+* 最佳实践
+场景：排行榜名次查询、用户排名展示、比赛排名
+配合 ZREVRANK 获取反向排名（如第 1 名对应 ZREVRANK 的 0）
+配合 ZMSCORE 获取完整信息：排名 + 分数
+频繁查询热点 key 可考虑本地缓存排名信息
+注意：排名从 0 开始，展示给用户时通常 +1
+* FAQ
+Q1: ZRANK 和 ZREVRANK 的区别？ A: ZRANK 按分数升序排名（0 = 最低分）； ZREVRANK 按降序排名（0 = 最高分）。
+Q2: 分数相同的成员怎么排名？ A: 按成员字典序升序排列。
+Q3: WITHSCORE 在哪个版本引入？ A: Redis 7.2.0。低版本会报语法错误。
+相关命令
+BZPOPMAX
+BZPOPMIN
+ZADD
+ZCARD
+ZCOUNT
+ZINCRBY
+ZINTER
+ZINTERSTORE
+ZLEXCOUNT
+ZMSCORE
+ZPOPMAX
+ZPOPMIN
+ZRANGE
+ZRANGEBYLEX
+ZRANGEBYSCORE
+ZRANK
+ZREM
+ZREMRANGEBYLEX
+ZREMRANGEBYRANK
+ZREMRANGEBYSCORE
+ZREVRANGE
+ZREVRANGEBYLEX
+ZREVRANGEBYSCORE
+ZREVRANK
+ZSCAN
+ZSCORE
+ZUNION
+ZUNIONSTORE

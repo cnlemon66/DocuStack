@@ -1,0 +1,38 @@
+7.3 示例备份和恢复策略_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 
+7.3 示例备份和恢复策略
+7.3 示例备份和恢复策略
+7.3.1 建立备份策略 7.3.2 使用备份进行恢复 7.3.3 备份策略总结
+本节讨论执行备份的过程，使您能够在几种类型的崩溃后恢复数据：
+操作系统崩溃
+电源（检测）失败
+文件系统崩溃
+硬件问题（硬盘驱动器、主板等）
+示例命令不包括诸如 --user 和 --password 用于 mysqldump 和 mysql 客户端程序的选项。您应该包括使客户端程序能够连接到 MySQL 服务器所需的选项。
+假设数据存储在 InnoDB 存储引擎中，它支持事务和自动崩溃恢复。还假设 MySQL 服务器在崩溃时处于负载状态。如果不是，则永远不需要恢复。
+对于操作系统崩溃或电源故障的情况，我们可以假设重启后 MySQL 的磁盘数据可用。由于 InnoDB 崩溃，数据文件可能不包含一致的数据，但 InnoDB 会读取其日志并在其中找到尚未刷新到数据文件的待处理已提交和未提交事务的列表。 InnoDB 自动回滚那些未提交的事务，并将那些已提交的事务刷新到其数据文件。有关此恢复过程的信息通过 MySQL 错误日志传达给用户。以下是示例日志摘录：
+InnoDB: Database was not shut down normally.
+InnoDB: Starting recovery from log files...
+InnoDB: Starting log scan based on checkpoint at
+InnoDB: log sequence number 0 13674004
+InnoDB: Doing recovery: scanned up to log sequence number 0 13739520
+InnoDB: Doing recovery: scanned up to log sequence number 0 13805056
+InnoDB: Doing recovery: scanned up to log sequence number 0 13870592
+InnoDB: Doing recovery: scanned up to log sequence number 0 13936128
+...
+InnoDB: Doing recovery: scanned up to log sequence number 0 20555264
+InnoDB: Doing recovery: scanned up to log sequence number 0 20620800
+InnoDB: Doing recovery: scanned up to log sequence number 0 20664692
+InnoDB: 1 uncommitted transaction(s) which must be rolled back
+InnoDB: Starting rollback of uncommitted transactions
+InnoDB: Rolling back trx no 16745
+InnoDB: Rolling back of trx no 16745 completed
+InnoDB: Rollback of uncommitted transactions completed
+InnoDB: Starting an apply batch of log records to the database...
+InnoDB: Apply batch completed
+InnoDB: Started
+mysqld: ready for connections
+对于文件系统崩溃或硬件问题的情况，我们可以假设
+重启后MySQL磁盘数据 不可用。 这意味着 MySQL 无法成功启动，因为某些磁盘数据块不再可读。在这种情况下，有必要重新格式化磁盘、安装新磁盘或以其他方式更正根本问题。然后需要从备份中恢复我们的 MySQL 数据，这意味着必须已经进行了备份。为确保是这种情况，请设计并实施备份策略。

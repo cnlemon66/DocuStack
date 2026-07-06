@@ -1,0 +1,83 @@
+Redis KEYS 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis KEYS 命令
+查找所有匹配给定 pattern 的 key。
+* 语法
+KEYS pattern
+* 参数说明
+参数 类型 必填 说明
+pattern String 是 匹配模式， ? 匹配单个字符， * 匹配任意字符， [] 匹配字符集
+* 返回值
+条件 返回值
+匹配成功 返回所有匹配 key 的数组
+无匹配 空数组 []
+* 时间复杂度
+O(N)，N 为数据库中 key 的总数。
+⚠️ 生产环境严禁使用 ：KEYS 会遍历整个 keyspace，在大实例上可能阻塞 Redis 数秒到数十秒，造成服务不可用。请使用 SCAN 替代。
+* 示例
+> SET hello1 a
+> SET hello2 b
+> SET hallo c
+
+> KEYS hello*
+1) "hello1"
+2) "hello2"
+
+> KEYS h?llo
+1) "hallo"
+2) "hello1"
+
+> KEYS *
+# 返回所有 key — 生产环境禁用！
+* 常见错误
+生产事故 ： KEYS * 或 KEYS prefix* 在千万级 key 实例上执行，导致 Redis 完全阻塞，应用超时雪崩。
+误删 key ： KEYS 配合 DEL 使用，如 redis-cli KEYS "pattern*" | xargs redis-cli DEL ，风险极高。
+* 最佳实践
+生产环境禁用 KEYS ：配置 rename-command 将 KEYS 重命名或禁用： rename-command KEYS "" 。
+使用 SCAN 替代 ： SCAN 0 MATCH pattern COUNT 1000 分批遍历，不阻塞主线程。
+调试测试环境可用 ：开发测试环境数据量小，可用 KEYS 快速查找。
+* FAQ
+Q: KEYS 和 SCAN 有什么区别？ A: KEYS 一次性遍历全部 key，可能长时间阻塞； SCAN 分批返回，每次只扫描少量 key，不阻塞。生产环境必须用 SCAN 。
+Q: KEYS 支持正则表达式吗？ A: 不支持完整正则，只支持 glob 风格： ? 、 * 、 [] 、 \x 转义。
+Q: 为什么 KEYS 比 SCAN 快，但生产禁用？ A: KEYS 单次执行更快（无游标开销），但会阻塞所有其他命令。 SCAN 稍慢但保证服务可用性。生产环境优先可用性。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

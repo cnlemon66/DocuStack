@@ -1,0 +1,133 @@
+13.2.2 删除语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 
+13.2.2 删除语句
+13.2.2 删除语句
+DELETE 是从表中删除行的 DML 语句。
+DELETE 语句可以以子句开头，
+
+以 WITH 定义可在 DELETE . 请参阅 第 13.2.15 节，“WITH（公用表表达式）” 。
+单表语法
+DELETE [LOW_PRIORITY] [QUICK] [IGNORE] FROM tbl_name [[AS] tbl_alias ]
+[PARTITION ( partition_name [, partition_name ] ...)]
+[WHERE where_condition ]
+[ORDER BY ...]
+[LIMIT row_count ]
+该 DELETE 语句从中删除行 tbl_name 并返回删除的行数。要检查删除的行数，请调用 第 12.16 节，“信息函数” ROW_COUNT() 中描述的
+函数。
+主要条款
+可选 WHERE 子句中的条件标识要删除的行。如果没有 WHERE 子句，所有行都将被删除。
+where_condition 是一个表达式，对于要删除的每一行计算结果为真。它是按照 第 13.2.10 节，“SELECT 语句” 中的描述指定的。
+如果指定了该 ORDER BY 子句，则按照指定的顺序删除行。该 LIMIT 子句限制了可以删除的行数。这些子句适用于单表删除，但不适用于多表删除。
+多表语法
+DELETE [LOW_PRIORITY] [QUICK] [IGNORE] tbl_name [.*] [, tbl_name [.*]] ...
+FROM table_references [WHERE where_condition ]
+
+DELETE [LOW_PRIORITY] [QUICK] [IGNORE]
+FROM tbl_name [.*] [, tbl_name [.*]] ...
+USING table_references [WHERE where_condition ]
+特权
+您需要 DELETE 表的权限才能从中删除行。您只需要 SELECT 对任何只读的列（例如 WHERE 子句中指定的列）的特权。
+表现
+当您不需要知道删除的行数时，该
+语句是一种比不带
+子句 TRUNCATE TABLE 的语句更快的清空表的方法
+。与 不同
+，
+不能在事务中使用，或者如果您对表有锁定。请参阅 第 13.1.37 节，“TRUNCATE TABLE 语句” 和 第 13.3.6 节，“LOCK TABLES 和 UNLOCK TABLES 语句” 。 DELETE WHERE DELETE TRUNCATE TABLE
+删除操作的速度也可能受到 第 8.2.5.3 节“优化 DELETE 语句” 中讨论的因素的影响。
+为确保给定的 DELETE 语句不会花费太多时间，MySQL 特定的
+
+子句指定要删除的最大行数。如果要删除的行数大于限制，则重复该
+语句，直到受影响的行数小于该值。 LIMIT row_count DELETE DELETE LIMIT
+子查询
+您不能从表中删除并从子查询中的同一个表中选择。
+分区表支持
+DELETE 支持使用子句的显式分区选择，该 PARTITION 子句采用一个或多个分区或子分区（或两者）的逗号分隔名称列表，从中选择要删除的行。不包括在列表中的分区将被忽略。给定一个分区表 t ，其分区名为 p0 ，执行语句 DELETE
+FROM t PARTITION (p0) 对表的影响与执行 ALTER
+TABLE t TRUNCATE PARTITION (p0) ;相同。在这两种情况下，分区中的所有行都将 p0 被删除。
+PARTITION 可以与 WHERE 条件一起使用，在这种情况下，仅对列出的分区中的行测试条件。例如， DELETE FROM t PARTITION (p0) WHERE c < 5 仅从 p0 条件 c < 5 为真的分区中删除行；不检查任何其他分区中的行，因此不受 DELETE .
+该 PARTITION 子句也可用于多表 DELETE 语句。对于在选项中命名的每个表，您最多可以使用一个这样的 FROM 选项。
+有关更多信息和示例，请参阅 第 24.5 节，“分区选择” 。
+自动递增列
+如果您删除包含列最大值的行 AUTO_INCREMENT ，则该值不会重新用于 MyISAM 或 InnoDB 表。如果您删除表中带有（不带
+子句）
+模式的所有行，则序列将从除和之外的所有存储引擎重新开始
+。
+表
+的这种行为有一些例外，如 第 15.6.1.6 节，“InnoDB 中的 AUTO_INCREMENT 处理”中 所讨论的。 DELETE
+FROM tbl_name WHERE autocommit InnoDB MyISAM InnoDB
+对于表，您可以在多列键中 MyISAM 指定
+辅助列。 AUTO_INCREMENT 在这种情况下，即使对于 MyISAM 表，也会重复使用从序列顶部删除的值。请参阅 第 3.6.9 节，“使用 AUTO_INCREMENT” 。
+修饰符
+该 DELETE 语句支持以下修饰符：
+如果指定 LOW_PRIORITY 修饰符，服务器将延迟执行 DELETE 直到没有其他客户端从表中读取。这只会影响仅使用表级锁定的存储引擎（例如 MyISAM 、 MEMORY 和 MERGE ）。
+对于 MyISAM 表，如果使用 QUICK 修饰符，存储引擎在删除时不会合并索引叶子，这可能会加快某些类型的删除操作。
+该 IGNORE 修饰符使 MySQL 在删除行的过程中忽略可忽略的错误。（在解析阶段遇到的错误以通常的方式处理。）由于使用 忽略的错误将 IGNORE 作为警告返回。有关详细信息，请参阅 IGNORE 对语句执行的影响 。
+删除顺序
+如果该 DELETE 语句包含一个 ORDER BY 子句，则按照该子句指定的顺序删除行。这主要与 LIMIT . 例如，以下语句查找与 WHERE 子句匹配的行，按 对它们进行排序 timestamp_column ，并删除第一个（最旧的）行：
+DELETE FROM somelog WHERE user = 'jcole'
+ORDER BY timestamp_column LIMIT 1;
+ORDER BY 还有助于按要求的顺序删除行以避免引用完整性违规。
+InnoDB 表
+如果您从一个大表中删除许多行，您可能会超过表的锁定表大小 InnoDB 。为了避免这个问题，或者只是为了最小化表保持锁定的时间，以下策略（根本不使用 DELETE ）可能会有所帮助：
+选择 不 删除的行到一个与原表结构相同的空表中：
+INSERT INTO t_copy SELECT * FROM t WHERE ... ;
+用于 RENAME TABLE 以原子方式将原始表移开并将副本重命名为原始名称：
+RENAME TABLE t TO t_old, t_copy TO t;
+删除原始表：
+DROP TABLE t_old;
+执行时没有其他会话可以访问涉及的表 RENAME TABLE ，因此重命名操作不受并发问题的影响。请参阅 第 13.1.36 节，“RENAME TABLE 语句” 。
+MyISAM 表
+在 MyISAM 表中，已删除的行在链表中维护，后续 INSERT 操作会重用旧行位置。要回收未使用的空间并减小文件大小，请使用 OPTIMIZE TABLE 语句或 myisamchk 实用程序重新组织表。 OPTIMIZE TABLE 更容易使用，但 myisamchk 更快。请参阅 第 13.7.3.4 节，“OPTIMIZE TABLE 语句” 和 第 4.6.4 节，“myisamchk - MyISAM 表维护实用程序” 。
+QUICK 修饰符影响是否合并索引叶以进行删除操作
+。 DELETE QUICK 对于已删除行的索引值被稍后插入的行的类似索引值替换的应用程序最有用。在这种情况下，删除值留下的空洞将被重新使用。
+DELETE QUICK 当删除的值导致未填充的索引块跨越一定范围的索引值而新插入再次发生时，它是没有用的。在这种情况下，使用 QUICK 可能会导致索引中未回收的空间被浪费。这是这种情况的示例：
+创建一个包含索引 AUTO_INCREMENT 列的表。
+向表中插入许多行。每个插入都会产生一个索引值，该值被添加到索引的高端。
+使用删除列范围低端的行块 DELETE QUICK 。
+在这种情况下，与删除的索引值关联的索引块变得未满，但由于使用 QUICK . 当新的插入发生时，它们仍然未填充，因为新行在删除的范围内没有索引值。此外，即使您稍后使用 DELETE without
+，它们仍保持未填充 QUICK 状态，除非某些已删除的索引值恰好位于未填充块内或与未填充块相邻的索引块中。要在这些情况下回收未使用的索引空间，请使用 OPTIMIZE TABLE .
+如果您要从表中删除很多行，使用 DELETE QUICK 后跟
+可能会更快 OPTIMIZE TABLE 。这会重建索引而不是执行许多索引块合并操作。
+多表删除
+您可以在一条语句中指定多个表，以 DELETE 根据 WHERE 子句中的条件从一个或多个表中删除行。您不能在多表中
+使用 ORDER
+BY or 。该
+子句列出了连接中涉及的表，如 第 13.2.10.2 节“JOIN 子句” 中所述。 LIMIT DELETE table_references
+对于第一个多表语法，仅 FROM 删除子句之前列出的表中的匹配行。对于第二个多表语法，仅删除子句中列出的表中的匹配行 FROM （子句之前）。 USING 效果是您可以同时从许多表中删除行，并拥有仅用于搜索的附加表：
+DELETE t1, t2 FROM t1 INNER JOIN t2 INNER JOIN t3
+WHERE t1.id=t2.id AND t2.id=t3.id;
+或者：
+DELETE FROM t1, t2 USING t1 INNER JOIN t2 INNER JOIN t3
+WHERE t1.id=t2.id AND t2.id=t3.id;
+这些语句在搜索要删除的行时使用所有三个表，但仅从表 t1 和中删除匹配的行 t2 。
+前面的示例使用 INNER JOIN ，但多表 DELETE 语句可以使用语句中允许的其他类型的连接 SELECT ，例如 LEFT JOIN 。例如，要删除存在于中但在 t1 中没有匹配项的
+行 t2 ，请使用 LEFT JOIN ：
+DELETE t1 FROM t1 LEFT JOIN t2 ON t1.id=t2.id WHERE t2.id IS NULL;
+.* 每个
+
+语法都允许与 Access tbl_name 兼容
+。
+如果您使用涉及具有外键约束的
+表的多表 DELETE 语句，则 MySQL 优化器可能会以与其父/子关系不同的顺序处理表。 InnoDB 在这种情况下，语句失败并回滚。相反，您应该从单个表中删除并依赖提供的 ON DELETE 功能 InnoDB 来导致其他表进行相应的修改。
+笔记
+如果为表声明别名，则在引用表时必须使用别名：
+DELETE t1 FROM test AS t1, test2 WHERE ...
+多表中的表别名 DELETE 应仅在 table_references 语句部分声明。在其他地方，允许使用别名引用，但不允许使用别名声明。
+正确的：
+DELETE a1, a2 FROM t1 AS a1 INNER JOIN t2 AS a2
+WHERE a1.id=a2.id;
+
+DELETE FROM a1, a2 USING t1 AS a1 INNER JOIN t2 AS a2
+WHERE a1.id=a2.id;
+不正确：
+DELETE t1 AS a1, t2 AS a2 FROM t1 INNER JOIN t2
+WHERE a1.id=a2.id;
+
+DELETE FROM t1 AS a1, t2 AS a2 USING t1 INNER JOIN t2
+WHERE a1.id=a2.id;
+DELETE MySQL 8.0.16开始
+的单表语句也支持表别名
+。（漏洞 #89410，漏洞 #27455809）

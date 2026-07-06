@@ -1,0 +1,308 @@
+12.20.2 GROUP BY 修饰符_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.20聚合函数 / 
+12.20.2 GROUP BY 修饰符
+12.20.2 GROUP BY 修饰符
+该 GROUP BY 子句允许一个 WITH
+ROLLUP 修饰符，该修饰符会导致摘要输出包含表示更高级别（即超级聚合）摘要操作的额外行。 ROLLUP 因此，您可以使用单个查询在多个分析级别回答问题。例如， ROLLUP 可用于为 OLAP（联机分析处理）操作提供支持。
+假设一个 sales 表有 year 、 country 、 product 和 profit 列用于记录销售利润率：
+CREATE TABLE sales
+(
+year INT,
+country VARCHAR(20),
+product VARCHAR(32),
+profit INT
+);
+要总结每年的表格内容，请使用如下简单的方法 GROUP BY ：
+mysql> SELECT year, SUM(profit) AS profit
+FROM sales
+GROUP BY year;
++------+--------+
+| year | profit |
++------+--------+
+| 2000 | 4525 |
+| 2001 | 3010 |
++------+--------+
+输出显示每年的总（合计）利润。要同时确定所有年份的总利润总和，您必须自己将各个值相加或运行额外的查询。或者您可以使用 ROLLUP ，它通过单个查询提供两个级别的分析。向子句添加 WITH ROLLUP 修饰符 GROUP
+BY 会导致查询生成另一个（超级聚合）行，显示所有年份值的总计：
+mysql> SELECT year, SUM(profit) AS profit
+FROM sales
+GROUP BY year WITH ROLLUP;
++------+--------+
+| year | profit |
++------+--------+
+| 2000 | 4525 |
+| 2001 | 3010 |
+| NULL | 7535 |
++------+--------+
+列中的 NULL 值 year 标识总计超级聚合行。
+ROLLUP 当有多个 GROUP BY 列时，效果会更复杂。在这种情况下，每次除了最后一个分组列中的值发生变化时，查询都会生成一个额外的超级聚合摘要行。
+例如，在没有的情况下，基于 、 和 的表的
+摘要 ROLLUP 可能
+如下所示，其中输出仅指示年/国家/产品分析级别的摘要值： sales year country product
+mysql> SELECT year, country, product, SUM(profit) AS profit
+FROM sales
+GROUP BY year, country, product;
++------+---------+------------+--------+
+| year | country | product | profit |
++------+---------+------------+--------+
+| 2000 | Finland | Computer | 1500 |
+| 2000 | Finland | Phone | 100 |
+| 2000 | India | Calculator | 150 |
+| 2000 | India | Computer | 1200 |
+| 2000 | USA | Calculator | 75 |
+| 2000 | USA | Computer | 1500 |
+| 2001 | Finland | Phone | 10 |
+| 2001 | USA | Calculator | 50 |
+| 2001 | USA | Computer | 2700 |
+| 2001 | USA | TV | 250 |
++------+---------+------------+--------+
+添加后， ROLLUP 查询会产生几个额外的行：
+mysql> SELECT year, country, product, SUM(profit) AS profit
+FROM sales
+GROUP BY year, country, product WITH ROLLUP;
++------+---------+------------+--------+
+| year | country | product | profit |
++------+---------+------------+--------+
+| 2000 | Finland | Computer | 1500 |
+| 2000 | Finland | Phone | 100 |
+| 2000 | Finland | NULL | 1600 |
+| 2000 | India | Calculator | 150 |
+| 2000 | India | Computer | 1200 |
+| 2000 | India | NULL | 1350 |
+| 2000 | USA | Calculator | 75 |
+| 2000 | USA | Computer | 1500 |
+| 2000 | USA | NULL | 1575 |
+| 2000 | NULL | NULL | 4525 |
+| 2001 | Finland | Phone | 10 |
+| 2001 | Finland | NULL | 10 |
+| 2001 | USA | Calculator | 50 |
+| 2001 | USA | Computer | 2700 |
+| 2001 | USA | TV | 250 |
+| 2001 | USA | NULL | 3000 |
+| 2001 | NULL | NULL | 3010 |
+| NULL | NULL | NULL | 7535 |
++------+---------+------------+--------+
+现在输出包括四个分析级别的摘要信息，而不仅仅是一个：
+在给定年份和国家/地区的每组产品行之后，会出现一个额外的超级聚合摘要行，显示所有产品的总数。这些行的 product 列设置为 NULL 。
+在给定年份的每组行之后，会出现一个额外的超级聚合摘要行，显示所有国家和产品的总数。这些行的 country 和 products 列设置为 NULL 。
+最后，在所有其他行之后，会出现一个额外的超级聚合摘要行，显示所有年份、国家和产品的总计。此行的 year 、 country 和 products 列设置为 NULL 。
+每个超级聚合行中的 NULL 指标是在将行发送到客户端时生成的。服务器查看 GROUP BY 最​​左边已更改值的子句中命名的列。对于名称与这些名称中的任何一个匹配的结果集中的任何列，其值都设置为 NULL 。（如果您指定按列位置对列进行分组，服务器会识别要按 NULL 位置设置的列。）
+因为 NULL 超级聚合行中的值是在查询处理的后期放入结果集中的，所以您 NULL 只能在选择列表或 HAVING 子句中将它们作为值进行测试。您不能将它们作为 NULL 连接条件或 WHERE 子句中的值进行测试以确定要选择哪些行。例如，您不能添加 WHERE product IS
+NULL 到查询以从输出中消除除超级聚合行之外的所有行。
+这些 NULL 值确实出现 NULL 在客户端，并且可以使用任何 MySQL 客户端编程接口进行测试。但是此时，你无法区分a NULL 代表的是常规分组值还是超聚合值。要测试区别，请使用 GROUPING() 稍后描述的函数。
+以前，MySQL 不允许在
+具有选项的查询中使用 DISTINCT 或。此限制在 MySQL 8.0.12 及更高版本中取消。（错误#87450、错误#86311、错误#26640100、错误#26073513） ORDER BY WITH ROLLUP
+对于 GROUP BY ... WITH ROLLUP 查询，要测试 NULL 结果中的值是否表示超级聚合值，该 GROUPING() 函数可用于选择列表、 HAVING 子句和（从 MySQL 8.0.12 开始） ORDER BY 子句。例如，当
+列出现在超级聚合行中时返回 1，否则返回 GROUPING(year) 0 。类似地，分别为 和列
+
+中
+的超级聚合值
+返回 1： NULL year GROUPING(country) GROUPING(product) NULL country product
+mysql> SELECT
+year, country, product, SUM(profit) AS profit,
+GROUPING(year) AS grp_year,
+GROUPING(country) AS grp_country,
+GROUPING(product) AS grp_product
+FROM sales
+GROUP BY year, country, product WITH ROLLUP;
++------+---------+------------+--------+----------+-------------+-------------+
+| year | country | product | profit | grp_year | grp_country | grp_product |
++------+---------+------------+--------+----------+-------------+-------------+
+| 2000 | Finland | Computer | 1500 | 0 | 0 | 0 |
+| 2000 | Finland | Phone | 100 | 0 | 0 | 0 |
+| 2000 | Finland | NULL | 1600 | 0 | 0 | 1 |
+| 2000 | India | Calculator | 150 | 0 | 0 | 0 |
+| 2000 | India | Computer | 1200 | 0 | 0 | 0 |
+| 2000 | India | NULL | 1350 | 0 | 0 | 1 |
+| 2000 | USA | Calculator | 75 | 0 | 0 | 0 |
+| 2000 | USA | Computer | 1500 | 0 | 0 | 0 |
+| 2000 | USA | NULL | 1575 | 0 | 0 | 1 |
+| 2000 | NULL | NULL | 4525 | 0 | 1 | 1 |
+| 2001 | Finland | Phone | 10 | 0 | 0 | 0 |
+| 2001 | Finland | NULL | 10 | 0 | 0 | 1 |
+| 2001 | USA | Calculator | 50 | 0 | 0 | 0 |
+| 2001 | USA | Computer | 2700 | 0 | 0 | 0 |
+| 2001 | USA | TV | 250 | 0 | 0 | 0 |
+| 2001 | USA | NULL | 3000 | 0 | 0 | 1 |
+| 2001 | NULL | NULL | 3010 | 0 | 1 | 1 |
+| NULL | NULL | NULL | 7535 | 1 | 1 | 1 |
++------+---------+------------+--------+----------+-------------+-------------+
+GROUPING() 您可以使用 GROUPING() 标签代替超级聚合 NULL 值
+，而不是直接
+显示
+结果：
+mysql> SELECT
+IF(GROUPING(year), 'All years', year) AS year,
+IF(GROUPING(country), 'All countries', country) AS country,
+IF(GROUPING(product), 'All products', product) AS product,
+SUM(profit) AS profit
+FROM sales
+GROUP BY year, country, product WITH ROLLUP;
++-----------+---------------+--------------+--------+
+| year | country | product | profit |
++-----------+---------------+--------------+--------+
+| 2000 | Finland | Computer | 1500 |
+| 2000 | Finland | Phone | 100 |
+| 2000 | Finland | All products | 1600 |
+| 2000 | India | Calculator | 150 |
+| 2000 | India | Computer | 1200 |
+| 2000 | India | All products | 1350 |
+| 2000 | USA | Calculator | 75 |
+| 2000 | USA | Computer | 1500 |
+| 2000 | USA | All products | 1575 |
+| 2000 | All countries | All products | 4525 |
+| 2001 | Finland | Phone | 10 |
+| 2001 | Finland | All products | 10 |
+| 2001 | USA | Calculator | 50 |
+| 2001 | USA | Computer | 2700 |
+| 2001 | USA | TV | 250 |
+| 2001 | USA | All products | 3000 |
+| 2001 | All countries | All products | 3010 |
+| All years | All countries | All products | 7535 |
++-----------+---------------+--------------+--------+
+对于多个表达式参数， GROUPING() 返回一个表示位掩码的结果，该位掩码组合了每个表达式的结果，最低位对应于最右边表达式的结果。例如， GROUPING(year, country, product) 评估如下：
+result for GROUPING( product )
++ result for GROUPING( country ) << 1
++ result for GROUPING( year ) << 2
+GROUPING() 如果任何表达式表示超级聚合，则
+这样的结果为非零 NULL ，因此您可以仅返回超级聚合行并像这样过滤掉常规分组行：
+mysql> SELECT year, country, product, SUM(profit) AS profit
+FROM sales
+GROUP BY year, country, product WITH ROLLUP
+HAVING GROUPING(year, country, product) <> 0;
++------+---------+---------+--------+
+| year | country | product | profit |
++------+---------+---------+--------+
+| 2000 | Finland | NULL | 1600 |
+| 2000 | India | NULL | 1350 |
+| 2000 | USA | NULL | 1575 |
+| 2000 | NULL | NULL | 4525 |
+| 2001 | Finland | NULL | 10 |
+| 2001 | USA | NULL | 3000 |
+| 2001 | NULL | NULL | 3010 |
+| NULL | NULL | NULL | 7535 |
++------+---------+---------+--------+
+该 sales 表不包含任何 NULL 值，因此结果中的所有 NULL 值都 ROLLUP 表示超级聚合值。当数据集包含 NULL 值时， ROLLUP 摘要 NULL 不仅可以在超级聚合行中包含值，还可以在常规分组行中包含值。 GROUPING() 使这些能够被区分。假设该表 t1 包含一个简单的数据集，其中包含一组数量值的两个分组因子，其中 NULL 表示类似 “ 其他 ” 或 “ 未知 ” 的内容：
+mysql> SELECT * FROM t1;
++------+-------+----------+
+| name | size | quantity |
++------+-------+----------+
+| ball | small | 10 |
+| ball | large | 20 |
+| ball | NULL | 5 |
+| hoop | small | 15 |
+| hoop | large | 5 |
+| hoop | NULL | 3 |
++------+-------+----------+
+一个简单的操作就产生了这些结果，在这些结果中，将超级聚合行中的
+值与常规分组行中
+的值 ROLLUP 区分开来并不容易
+： NULL NULL
+mysql> SELECT name, size, SUM(quantity) AS quantity
+FROM t1
+GROUP BY name, size WITH ROLLUP;
++------+-------+----------+
+| name | size | quantity |
++------+-------+----------+
+| ball | NULL | 5 |
+| ball | large | 20 |
+| ball | small | 10 |
+| ball | NULL | 35 |
+| hoop | NULL | 3 |
+| hoop | large | 5 |
+| hoop | small | 15 |
+| hoop | NULL | 23 |
+| NULL | NULL | 58 |
++------+-------+----------+
+使用 GROUPING() 将标签替换为超级聚合 NULL 值使结果更易于解释：
+mysql> SELECT
+IF(GROUPING(name) = 1, 'All items', name) AS name,
+IF(GROUPING(size) = 1, 'All sizes', size) AS size,
+SUM(quantity) AS quantity
+FROM t1
+GROUP BY name, size WITH ROLLUP;
++-----------+-----------+----------+
+| name | size | quantity |
++-----------+-----------+----------+
+| ball | NULL | 5 |
+| ball | large | 20 |
+| ball | small | 10 |
+| ball | All sizes | 35 |
+| hoop | NULL | 3 |
+| hoop | large | 5 |
+| hoop | small | 15 |
+| hoop | All sizes | 23 |
+| All items | All sizes | 58 |
++-----------+-----------+----------+
+使用 ROLLUP 时的其他注意事项
+下面的讨论列出了一些特定于 MySQL 实现的行为 ROLLUP 。
+在 MySQL 8.0.12 之前，当您使用 时 ROLLUP ，您不能同时使用 ORDER BY 子句对结果进行排序。换句话说， ROLLUP 和 ORDER BY 在 MySQL 中是互斥的。但是，您仍然可以控制排序顺序。要解决阻止使用 ROLLUP with的限制 ORDER BY 并实现分组结果的特定排序顺序，请将分组结果集生成为派生表并应用于 ORDER
+BY 它。例如：
+mysql> SELECT * FROM
+(SELECT year, SUM(profit) AS profit
+FROM sales GROUP BY year WITH ROLLUP) AS dt
+ORDER BY year DESC;
++------+--------+
+| year | profit |
++------+--------+
+| 2001 | 3010 |
+| 2000 | 4525 |
+| NULL | 7535 |
++------+--------+
+从 MySQL 8.0.12 开始， ORDER BY 和 ROLLUP 可以一起使用，这使得可以使用 ORDER BY 和 GROUPING() 来实现分组结果的特定排序顺序。例如：
+mysql> SELECT year, SUM(profit) AS profit
+FROM sales
+GROUP BY year WITH ROLLUP
+ORDER BY GROUPING(year) DESC;
++------+--------+
+| year | profit |
++------+--------+
+| NULL | 7535 |
+| 2000 | 4525 |
+| 2001 | 3010 |
++------+--------+
+在这两种情况下，超级聚合摘要行都按照计算它们的行进行排序，它们的位置取决于排序顺序（升序排序在末尾，降序排序在开头）。
+LIMIT 可用于限制返回给客户端的行数。 LIMIT 在之后应用 ROLLUP ，因此该限制适用于由添加的额外行 ROLLUP 。例如：
+mysql> SELECT year, country, product, SUM(profit) AS profit
+FROM sales
+GROUP BY year, country, product WITH ROLLUP
+LIMIT 5;
++------+---------+------------+--------+
+| year | country | product | profit |
++------+---------+------------+--------+
+| 2000 | Finland | Computer | 1500 |
+| 2000 | Finland | Phone | 100 |
+| 2000 | Finland | NULL | 1600 |
+| 2000 | India | Calculator | 150 |
+| 2000 | India | Computer | 1200 |
++------+---------+------------+--------+
+使用 LIMIT with ROLLUP 可能会产生更难以解释的结果，因为用于理解超级聚合行的上下文较少。
+MySQL 扩展允许未出现在 GROUP BY 列表中的列在选择列表中被命名。（有关非聚合列和 的信息 GROUP BY ，请参阅 第 12.20.3 节，“MySQL 对 GROUP BY 的处理” 。）在这种情况下，服务器可以自由地从摘要行中的这个非聚合列中选择任何值，这包括添加的额外行通过 WITH ROLLUP 。例如，在以下查询中， country 是一个未出现在 GROUP BY 列表中的非聚合列，并且为此列选择的值是不确定的：
+mysql> SELECT year, country, SUM(profit) AS profit
+FROM sales
+GROUP BY year WITH ROLLUP;
++------+---------+--------+
+| year | country | profit |
++------+---------+--------+
+| 2000 | India | 4525 |
+| 2001 | USA | 3010 |
+| NULL | USA | 7535 |
++------+---------+--------+
+ONLY_FULL_GROUP_BY 当未启用 SQL 模式
+时，此行为是允许的
+。如果启用该模式，服务器将拒绝查询为非法，因为 country 未在 GROUP BY 子句中列出。 ONLY_FULL_GROUP_BY 启用后，您仍然可以使用非确定性值列的函数来执行
+查询 ANY_VALUE() ：
+mysql> SELECT year, ANY_VALUE(country) AS country, SUM(profit) AS profit
+FROM sales
+GROUP BY year WITH ROLLUP;
++------+---------+--------+
+| year | country | profit |
++------+---------+--------+
+| 2000 | India | 4525 |
+| 2001 | USA | 3010 |
+| NULL | USA | 7535 |
++------+---------+--------+
+MATCH() 在 MySQL 8.0.28 及更高版本中，除非在 WHERE 子句中调用，否则
+汇总列不能用作（并因错误而被拒绝）的参数。有关更多信息，请参阅 第 12.10 节，“全文搜索功能” 。

@@ -1,0 +1,8 @@
+5.6.8 密钥环代理桥插件_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.6 MySQL 服务器插件 / 
+5.6.8 密钥环代理桥插件
+5.6.8 密钥环代理桥插件
+MySQL Keyring 最初使用服务器插件实现密钥库功能，但开始过渡到使用 MySQL 8.0.24 中的组件基础结构。过渡包括修改密钥环插件的底层实现以使用组件基础设施。使用 named 插件可以促进这一点，该插件 daemon_keyring_proxy_plugin 充当插件和组件服务 API 之间的桥梁，并使密钥环插件能够继续使用，而不会改变用户可见的特征。
+daemon_keyring_proxy_plugin 是内置的，无需安装或启用它。

@@ -1,0 +1,70 @@
+11.2.1 日期和时间数据类型语法_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.2 日期和时间数据类型 / 
+11.2.1 日期和时间数据类型语法
+11.2.1 日期和时间数据类型语法
+表示时间值的日期和时间数据类型有 DATE 、 TIME 、 DATETIME 、 TIMESTAMP 和 YEAR 。
+对于范围描述， DATE “ 支持 ” 意味着 尽管早期的值可能有效，但不能保证。 DATETIME
+MySQL 允许
+、 和
+值的小数秒 TIME ，
+精度可达微秒（6 位）。要定义包含小数秒部分的列，请使用语法
+，其中is
+、
+或
+，并且
+是小数秒精度。例如： DATETIME TIMESTAMP type_name ( fsp ) type_name TIME DATETIME TIMESTAMP fsp
+CREATE TABLE t1 (t TIME(3), dt DATETIME(6), ts TIMESTAMP(0));
+该 fsp 值（如果给定）必须在 0 到 6 的范围内。值 0 表示没有小数部分。如果省略，则默认精度为 0。（这与标准 SQL 默认值 6 不同，以与以前的 MySQL 版本兼容。）
+表中的任何 TIMESTAMP 或 DATETIME 列都可以具有自动初始化和更新属性；参见 第 11.2.5 节，“TIMESTAMP 和 DATETIME 的自动初始化和更新” 。
+DATE
+一个约会。支持的范围是 '1000-01-01' 到 '9999-12-31' . MySQL DATE 以格式显示值
+，但允许使用字符串或数字
+
+将值分配给
+列。 ' YYYY-MM-DD ' DATE
+DATETIME[( fsp )]
+日期和时间组合。支持的范围是 '1000-01-01 00:00:00.000000' 到 '9999-12-31 23:59:59.999999' . MySQL DATETIME 以格式显示值
+，但允许使用字符串或数字
+
+将值分配给
+列。 ' YYYY-MM-DD
+hh:mm:ss [. fraction ]' DATETIME
+可以给出 0 到 6 范围内的可选 fsp 值以指定小数秒精度。值为 0 表示没有小数部分。如果省略，则默认精度为 0。
+DATETIME 可以使用 DEFAULT 和
+列定义子句指定列
+的自动初始化和更新到当前日期和时间 ON UPDATE ，如 第 11.2.5 节“TIMESTAMP 和 DATETIME 的自动初始化和更新” 中所述。
+TIMESTAMP[( fsp )]
+一个时间戳。范围是 '1970-01-01
+00:00:01.000000' UTC 到 '2038-01-19
+03:14:07.999999' UTC。
+值存储为自纪元（ UTC） TIMESTAMP 以来的秒数。 '1970-01-01 00:00:00' A TIMESTAMP 不能表示该值 '1970-01-01 00:00:00' ，因为它相当于从纪元开始的 0 秒，而值 0 保留用于表示 “ '0000-00-00
+00:00:00' 零 ” 值 TIMESTAMP 。
+可以给出 0 到 6 范围内的可选 fsp 值以指定小数秒精度。值为 0 表示没有小数部分。如果省略，则默认精度为 0。
+服务器处理 TIMESTAMP 定义的方式取决于 explicit_defaults_for_timestamp 系统变量的值（请参阅 第 5.1.8 节，“服务器系统变量” ）。
+如果 explicit_defaults_for_timestamp 启用，则不会自动将 DEFAULT CURRENT_TIMESTAMP 或 ON
+UPDATE CURRENT_TIMESTAMP 属性分配给任何 TIMESTAMP 列。它们必须显式包含在列定义中。此外，任何 TIMESTAMP 未明确声明为 NOT NULL 允许 NULL 值。
+如果 explicit_defaults_for_timestamp 禁用，服务器处理 TIMESTAMP 如下：
+除非另有说明，否则表中的第一 TIMESTAMP 列被定义为自动设置为最近修改的日期和时间（如果未明确分配值）。这 TIMESTAMP 对于记录 INSERT or UPDATE 操作的时间戳很有用。您还可以 TIMESTAMP 通过为其分配一个值来将任何列设置为当前日期和时间 NULL ，除非它已被定义 NULL 为允许 NULL 值的属性。
+可以使用列定义子句指定自动初始化 DEFAULT
+CURRENT_TIMESTAMP 和更新到当前日期和时间。 ON UPDATE
+CURRENT_TIMESTAMP 默认情况下，第一 TIMESTAMP 列具有这些属性，如前所述。但是， TIMESTAMP 表中的任何列都可以定义为具有这些属性。
+TIME[( fsp )]
+一个时间。范围 '-838:59:59.000000' 是 '838:59:59.000000' . MySQL TIME 以格式显示值
+，但允许使用字符串或数字
+
+将值分配给
+列。 ' hh:mm:ss [. fraction ]' TIME
+可以给出 0 到 6 范围内的可选 fsp 值以指定小数秒精度。值为 0 表示没有小数部分。如果省略，则默认精度为 0。
+YEAR[(4)]
+4 位数格式的年份。MySQL YEAR 以格式显示值
+，但允许
+使用字符串或数字 YYYY 将值分配给列。 YEAR 值显示为 1901 , 2155 或 0000 。
+有关 YEAR 显示格式和输入值解释的其他信息，请参阅 第 11.2.4 节，“YEAR 类型” 。
+笔记
+从 MySQL 8.0.19 开始， YEAR(4) 不推荐使用具有显式显示宽度的数据类型；你应该期望在未来版本的 MySQL 中删除对它的支持。相反，使用 YEAR 不带显示宽度，这具有相同的含义。
+MySQL 8.0 不支持 YEAR(2) 旧版本 MySQL 中允许的 2 位数据类型。有关转换为 4-digit 的说明 YEAR ，请参阅 MySQL 5.7 Reference Manual 中 的 2-Digit YEAR(2) Limitations and Migrating to 4-Digit YEAR 。
+和聚合函数 SUM() 不适 AVG() 用于时间值。（他们将值转换为数字，在第一个非数字字符之后丢失所有内容。）要解决此问题，请转换为数字单位，执行聚合操作，然后转换回时间值。例子：
+SELECT SEC_TO_TIME(SUM(TIME_TO_SEC( time_col ))) FROM tbl_name ;
+SELECT FROM_DAYS(SUM(TO_DAYS( date_col ))) FROM tbl_name ;

@@ -1,0 +1,19 @@
+5.5.1 安装和卸载组件_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.5 MySQL组件 / 
+5.5.1 安装和卸载组件
+5.5.1 安装和卸载组件
+组件必须先加载到服务器才能使用。MySQL 支持在运行时手动加载组件和在服务器启动时自动加载。
+加载组件时，有关它的信息可用，如 第 5.5.2 节“获取组件信息” 中所述。
+和SQL 语句启用组件加载和卸载 INSTALL COMPONENT 。 UNINSTALL COMPONENT 例如：
+INSTALL COMPONENT 'file://component_validate_password';
+UNINSTALL COMPONENT 'file://component_validate_password';
+加载器服务处理组件的加载和卸载，并在 mysql.component 系统表中注册加载的组件。
+组件操作的SQL语句影响服务器运行和 mysql.component 系统表如下：
+INSTALL COMPONENT 将组件加载到服务器中。组件立即激活。加载程序服务还在 mysql.component 系统表中注册加载的组件。对于后续的服务器重新启动，加载程序服务会加载 mysql.component 在启动序列中列出的任何组件。即使服务器以该 --skip-grant-tables 选项启动，也会发生这种情况。
+UNINSTALL COMPONENT 停用组件并从服务器卸载它们。加载程序服务还从 mysql.component 系统表中取消注册组件，以便服务器在其启动序列期间不再加载它们以进行后续重新启动。
+与 INSTALL
+PLUGIN 服务器插件的相应声明
+相比 INSTALL COMPONENT ，组件声明提供了显着的优势，即无需知道任何特定于平台的文件名后缀即可命名组件。这意味着给定的 INSTALL COMPONENT 语句可以跨平台统一执行。
+组件在安装时也可能会自动安装相关的可加载功能。如果是这样，组件在卸载时也会自动卸载这些功能。

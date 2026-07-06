@@ -1,0 +1,16 @@
+15.12.3 在线 DDL 空间要求_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.12 InnoDB和在线DDL / 
+15.12.3 在线 DDL 空间要求
+15.12.3 在线 DDL 空间要求
+下面概述了联机 DDL 操作的磁盘空间要求。这些要求不适用于立即执行的操作。
+临时日志文件：
+当在线 DDL 操作创建索引或更改表时，临时日志文件会记录并发 DML。临时日志文件根据需要扩展 innodb_sort_buffer_size 到由 指定的最大值 innodb_online_alter_log_max_size 。如果操作耗时较长，并发 DML 对表的修改过多，导致临时日志文件的大小超过 的值 innodb_online_alter_log_max_size ，则在线 DDL 操作失败并 DB_ONLINE_LOG_TOO_BIG 报错，未提交的并发 DML 操作将回滚。一个大的 innodb_online_alter_log_max_size 设置允许在线 DDL 操作期间有更多 DML，但它也会延长 DDL 操作结束时表被锁定以应用记录的 DML 的时间段。
+该 innodb_sort_buffer_size 变量还定义了临时日志文件读取缓冲区和写入缓冲区的大小。
+临时排序文件：
+重建表的在线 DDL 操作将临时排序文件写入 MySQL 临时目录（ $TMPDIR 在 Unix 上， %TEMP% 在 Windows 上，或由 --tmpdir ) 在索引创建期间。临时排序文件不会在包含原始表的目录中创建。每个临时排序文件都足够大以容纳一列数据，并且每个排序文件在其数据合并到最终表或索引中时被删除。涉及临时排序文件的操作可能需要等于表中数据量加上索引的临时空间。如果联机 DDL 操作使用了数据目录所在文件系统上的所有可用磁盘空间，则会报告错误。
+如果 MySQL 临时目录不足以容纳排序文件，请设置 tmpdir 为不同的目录。或者，使用 为在线 DDL 操作定义一个单独的临时目录 innodb_tmpdir 。引入此选项是为了帮助避免由于大型临时排序文件而可能发生的临时目录溢出。
+中间表文件：
+一些重建表的在线 DDL 操作会在与原始表相同的目录中创建一个临时中间表文件。中间表文件可能需要与原始表大小相等的空间。中间表文件名以前缀开头， #sql-ib 只在在线DDL操作中短暂出现。
+该 innodb_tmpdir 选项不适用于中间表文件。

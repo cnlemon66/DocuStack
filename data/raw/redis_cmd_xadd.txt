@@ -1,0 +1,85 @@
+Redis XADD 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis XADD 命令
+向 Stream 中添加一条消息。若 Stream 不存在则自动创建。
+* 语法
+XADD key [NOMKSTREAM] [MAXLEN | MINID [= | ~] threshold [LIMIT count]] *|ID field value [field value ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 Stream 的键名
+NOMKSTREAM 标志 否 key 不存在时不创建（Redis 6.2+）
+MAXLEN Integer 否 限制 Stream 最大长度，~ 表示近似
+MINID String 否 限制最小 ID，删除旧消息（Redis 6.2+）
+* 标志 否 让 Redis 自动生成 ID（毫秒-序列号）
+ID String 否 手动指定 ID，格式 毫秒时间戳-序列号
+field String 是 消息字段名
+value String 是 字段值
+* 返回值
+条件 返回值
+添加成功 返回消息 ID（String）
+* 时间复杂度
+O(1)
+*
+* 示例
+# 自动生成 ID
+> XADD mystream * sensor_id 1234 temperature 19.8
+"1717000000000-0"
+
+# 手动指定 ID（需递增）
+> XADD mystream 1717000000000-1 sensor_id 1234 temperature 20.1
+"1717000000000-1"
+
+# 限制长度（近似截断）
+> XADD mystream MAXLEN ~ 1000 * event "click"
+"1717000000000-2"
+
+# 最小 ID（Redis 6.2+）
+> XADD mystream MINID ~ 1716990000000 * event "pageview"
+"1717000000000-3"
+* 常见错误
+ID 不递增 ：手动指定 ID 必须比 Stream 中最大 ID 大，否则报错。
+* 最佳实践
+消息队列/日志流 ：XADD 是实现 Redis Stream 消息队列的核心命令。
+长度控制 ：用 MAXLEN 或 MINID 限制 Stream 大小，防止内存无限增长。
+近似截断 ： MAXLEN ~ 1000 性能更好，但可能略超限制。
+* FAQ
+Q: XADD 的 ID 格式是什么？ A: 毫秒时间戳-序列号 。序列号保证同一毫秒内的多条消息有序。
+Q: XADD 和 LPUSH 有什么区别？ A: XADD 是 Stream 专用，支持 ID 排序、消费者组、消息确认； LPUSH 是简单 List。
+Q: MAXLEN 精确和近似有什么区别？ A: MAXLEN 1000 精确截断到 1000 条（可能阻塞）； MAXLEN ~ 1000 近似截断（更快，可能略超）。
+相关命令
+XACK
+XACKDEL
+XADD
+XAUTOCLAIM
+XCFGSET
+XCLAIM
+XDEL
+XDELEX
+XGROUP
+XGROUP CREATE
+XGROUP CREATECONSUMER
+XGROUP DELCONSUMER
+XGROUP DESTROY
+XGROUP HELP
+XGROUP SETID
+XIDMPRECORD
+XINFO
+XINFO CONSUMERS
+XINFO GROUPS
+XINFO HELP
+XINFO STREAM
+XLEN
+XNACK
+XPENDING
+XRANGE
+XREAD
+XREADGROUP
+XREVRANGE
+XSETID
+XTRIM

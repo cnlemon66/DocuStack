@@ -1,0 +1,24 @@
+15.8.10 为 InnoDB 配置优化器统计信息_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.10 为 InnoDB 配置优化器统计信息
+15.8.10 为 InnoDB 配置优化器统计信息
+15.8.10.1 配置持久优化器统计参数 15.8.10.2 配置非持久优化器统计参数 15.8.10.3 估计 InnoDB 表的 ANALYZE TABLE 复杂性
+本节介绍如何为表配置持久性和非持久性优化器统计信息 InnoDB 。
+持久优化器统计信息在服务器重新启动时保持不变，从而实现更高的 计划稳定性 和更一致的查询性能。持久优化器统计信息还提供控制和灵活性以及这些额外的好处：
+您可以使用 innodb_stats_auto_recalc 配置选项来控制是否在对表进行大量更改后自动更新统计信息。
+您可以将 STATS_PERSISTENT 、 STATS_AUTO_RECALC 和 STATS_SAMPLE_PAGES 子句与 CREATE TABLE and ALTER TABLE 语句一起使用来为单个表配置优化器统计信息。
+mysql.innodb_table_stats 您可以在和 mysql.innodb_index_stats 表
+
+中查询优化器统计数据
+。
+您可以查看和
+表的 last_update 列
+以了解上次更新统计信息的时间。 mysql.innodb_table_stats mysql.innodb_index_stats
+您可以手动修改 mysql.innodb_table_stats 和 mysql.innodb_index_stats 表以强制执行特定的查询优化计划或在不修改数据库的情况下测试替代计划。
+默认情况下启用持久优化器统计功能 ( innodb_stats_persistent=ON )。
+非持久性优化器统计信息在每次服务器重新启动时和其他一些操作后被清除，并在下一次表访问时重新计算。因此，在重新计算统计信息时可能会产生不同的估计，从而导致执行计划的不同选择和查询性能的变化。
+本节还提供有关估计
+复杂性的信息，这在尝试在准确的统计信息和
+执行时间 ANALYZE TABLE 之间取得平衡时可能很有用。 ANALYZE TABLE

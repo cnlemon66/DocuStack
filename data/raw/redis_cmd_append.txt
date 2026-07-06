@@ -1,0 +1,76 @@
+Redis APPEND 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis APPEND 命令
+在 String 类型的 key 的 value 末尾追加内容。若 key 不存在，则创建新 key。
+* 语法
+APPEND key value
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+value String 是 追加的内容
+* 返回值
+条件 返回值
+追加成功 返回追加后 value 的总长度（Integer）
+key 不存在 创建 key 并设为 value，返回 value 长度
+key 非 String WRONGTYPE 错误
+* 时间复杂度
+O(1) 均摊。当现有 value 较小（<1MB）时直接追加；较大时可能触发重新分配。
+* 示例
+> SET mykey "Hello"
+OK
+> APPEND mykey " World"
+(integer) 11
+> GET mykey
+"Hello World"
+
+# key 不存在
+> APPEND newkey "test"
+(integer) 4
+* 常见错误
+对非 String 使用 ：返回 WRONGTYPE。
+* 最佳实践
+日志/流式数据追加 ：实时追加日志片段，定期读取并清理。
+注意 value 大小 ：String 最大 512MB，但频繁追加大 value 会导致内存重新分配开销。
+* FAQ
+Q: APPEND 是原子操作吗？ A: 是。Redis 单线程保证原子性。
+Q: 频繁 APPEND 小数据性能如何？ A: 对 SDS（Simple Dynamic String）是 O(1) 均摊，因为 Redis 预分配额外空间。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

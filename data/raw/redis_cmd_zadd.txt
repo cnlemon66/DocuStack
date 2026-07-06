@@ -1,0 +1,90 @@
+Redis ZADD 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis ZADD 命令
+向 Sorted Set 中添加一个或多个成员，或更新已有成员的 score。
+* 语法
+ZADD key [NX | XX] [GT | LT] [CH] [INCR] score member [score member ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 Sorted Set 的键名
+score Double 是 排序分数，可包含小数
+member String 是 成员值
+NX 标志 否 仅新增，不更新已有 member（Redis 3.0.2+）
+XX 标志 否 仅更新已有 member，不新增
+GT 标志 否 仅当新 score > 当前 score 时更新（Redis 6.2+）
+LT 标志 否 仅当新 score < 当前 score 时更新（Redis 6.2+）
+CH 标志 否 返回修改的 member 数量（默认只返回新增）
+INCR 标志 否 对 score 做增量添加（类似 ZINCRBY）
+* 返回值
+条件 返回值
+默认 新增 member 数量
+带 CH 新增 + 修改 score 的 member 总数
+带 INCR 返回更新后的 score（String）
+* 时间复杂度
+O(log(N))（单个 member），N 为 Sorted Set 成员数量。
+* 示例
+# 基本用法
+> ZADD leaderboard 100 "player1"
+(integer) 1
+
+> ZADD leaderboard 200 "player2" 150 "player3"
+(integer) 2
+
+# 更新 score
+> ZADD leaderboard 250 "player1"
+(integer) 0
+
+# CH 返回修改数
+> ZADD leaderboard CH 300 "player1" 400 "player4"
+(integer) 2
+
+# INCR 增量
+> ZADD leaderboard INCR 50 "player1"
+"350"
+* 常见错误
+score 不是数字 ：返回错误。
+参数不成对 ：ZADD 的 score 和 member 必须成对出现。
+* 最佳实践
+排行榜/热点排序 ：score 为时间戳、分数、热度值，member 为 ID。
+时间序列 ：score 为 Unix 时间戳，member 为事件数据，实现按时间排序。
+范围查询 ：用 ZRANGEBYSCORE 按 score 范围查询，比 List 的 LRANGE 更灵活。
+分页 ： ZREVRANGE key start stop 支持按排名分页。
+* FAQ
+Q: ZADD 和 SADD 有什么区别？ A: SADD 是无序 Set，去重；ZADD 是 Sorted Set，每个 member 带 score，按 score 排序，member 唯一但 score 可重复。
+Q: score 相同怎么排序？ A: score 相同时按 member 的字典序排序。
+Q: 如何实现滑动窗口排行榜？ A: 用时间戳做 score，只保留近期数据：先 ZREMRANGEBYSCORE key 0 (now-window) 清理旧数据，再 ZADD 新数据。
+相关命令
+BZPOPMAX
+BZPOPMIN
+ZADD
+ZCARD
+ZCOUNT
+ZINCRBY
+ZINTER
+ZINTERSTORE
+ZLEXCOUNT
+ZMSCORE
+ZPOPMAX
+ZPOPMIN
+ZRANGE
+ZRANGEBYLEX
+ZRANGEBYSCORE
+ZRANK
+ZREM
+ZREMRANGEBYLEX
+ZREMRANGEBYRANK
+ZREMRANGEBYSCORE
+ZREVRANGE
+ZREVRANGEBYLEX
+ZREVRANGEBYSCORE
+ZREVRANK
+ZSCAN
+ZSCORE
+ZUNION
+ZUNIONSTORE

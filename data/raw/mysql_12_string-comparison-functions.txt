@@ -1,0 +1,158 @@
+12.8.1 字符串比较函数和运算符_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.8 字符串函数和运算符 / 
+12.8.1 字符串比较函数和运算符
+12.8.1 字符串比较函数和运算符
+表 12.13 字符串比较函数和运算符
+姓名 描述
+LIKE 简单模式匹配
+NOT LIKE 简单模式匹配的否定
+STRCMP() 比较两个字符串
+如果给字符串函数一个二进制字符串作为参数，则生成的字符串也是一个二进制字符串。转换为字符串的数字被视为二进制字符串。这仅影响比较。
+通常，如果字符串比较中的任何表达式区分大小写，则比较以区分大小写的方式执行。
+如果从 mysql 客户端中调用字符串函数，二进制字符串将使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+expr LIKE pat [ESCAPE
+' escape_char ']
+使用 SQL 模式的模式匹配。返回 1 ( TRUE ) 或 0 ( FALSE )。如果 expr 或 pat 是 NULL ，则结果是 NULL 。
+模式不必是文字字符串。例如，它可以指定为字符串表达式或表列。在后一种情况下，该列必须定义为 MySQL 字符串类型之一（请参阅 第 11.3 节，“字符串数据类型” ）。
+根据 SQL 标准， LIKE 在每个字符的基础上执行匹配，因此它可以产生与 = 比较运算符不同的结果：
+mysql> SELECT 'ä' LIKE 'ae' COLLATE latin1_german2_ci;
++-----------------------------------------+
+| 'ä' LIKE 'ae' COLLATE latin1_german2_ci |
++-----------------------------------------+
+| 0 |
++-----------------------------------------+
+mysql> SELECT 'ä' = 'ae' COLLATE latin1_german2_ci;
++--------------------------------------+
+| 'ä' = 'ae' COLLATE latin1_german2_ci |
++--------------------------------------+
+| 1 |
++--------------------------------------+
+特别是，尾随空格始终很重要。这不同于使用运算符执行的比较
+，对于后者，非二进制字符串（ 、
+和值） = 中尾随空格的重要性
+取决于用于比较的排序规则的 pad 属性。有关详细信息，请参阅 比较中的尾随空格处理 。 CHAR VARCHAR TEXT
+您可以在 LIKE 模式中使用以下两个通配符：
+% 匹配任意数量的字符，甚至零个字符。
+_ 恰好匹配一个字符。
+mysql> SELECT 'David!' LIKE 'David_';
+-> 1
+mysql> SELECT 'David!' LIKE '%D%v%';
+-> 1
+要测试通配符的文字实例，请在其前面加上转义字符。如果不指定 ESCAPE 字符， \ 则假定为，除非 NO_BACKSLASH_ESCAPES 启用了 SQL 模式。在这种情况下，不使用转义字符。
+\% 匹配一个 % 字符。
+\_ 匹配一个 _ 字符。
+mysql> SELECT 'David!' LIKE 'David\_';
+-> 0
+mysql> SELECT 'David_' LIKE 'David\_';
+-> 1
+要指定不同的转义字符，请使用 ESCAPE 子句：
+mysql> SELECT 'David_' LIKE 'David|_' ESCAPE '|';
+-> 1
+转义序列应为一个字符长以指定转义字符，或为空以指定不使用转义字符。表达式必须在执行时计算为常量。如果 NO_BACKSLASH_ESCAPES 开启了SQL模式，序列不能为空。
+以下两个语句说明字符串比较不区分大小写，除非其中一个操作数区分大小写（使用区分大小写的排序规则或者是二进制字符串）：
+mysql> SELECT 'abc' LIKE 'ABC';
+-> 1
+mysql> SELECT 'abc' LIKE _utf8mb4 'ABC' COLLATE utf8mb4_0900_as_cs;
+-> 0
+mysql> SELECT 'abc' LIKE _utf8mb4 'ABC' COLLATE utf8mb4_bin;
+-> 0
+mysql> SELECT 'abc' LIKE BINARY 'ABC';
+-> 0
+作为标准 SQL 的扩展，MySQL 允许 LIKE 使用数字表达式。
+mysql> SELECT 10 LIKE '1%';
+-> 1
+笔记
+MySQL 在字符串中使用 C 转义语法（例如， \n 表示换行符）。如果你想让一个 LIKE 字符串包含一个文字 \ ，你必须将它加倍。（除非 NO_BACKSLASH_ESCAPES 启用了 SQL 模式，在这种情况下不使用转义字符。）例如，要搜索 \n ，请将其指定为 \\n 。要搜索 \ ，请将其指定为 \\\\ ；这是因为反斜杠被解析器剥离一次，并在进行模式匹配时再次剥离，留下一个反斜杠进行匹配。
+例外：在模式字符串的末尾，反斜杠可以指定为 \\ . 在字符串的末尾，反斜杠代表它自己，因为后面没有要转义的内容。假设一个表包含以下值：
+mysql> SELECT filename FROM t1;
++--------------+
+| filename |
++--------------+
+| C: |
+| C:\ |
+| C:\Programs |
+| C:\Programs\ |
++--------------+
+要测试以反斜杠结尾的值，您可以使用以下任一模式匹配这些值：
+mysql> SELECT filename, filename LIKE '%\\' FROM t1;
++--------------+---------------------+
+| filename | filename LIKE '%\\' |
++--------------+---------------------+
+| C: | 0 |
+| C:\ | 1 |
+| C:\Programs | 0 |
+| C:\Programs\ | 1 |
++--------------+---------------------+
+
+mysql> SELECT filename, filename LIKE '%\\\\' FROM t1;
++--------------+-----------------------+
+| filename | filename LIKE '%\\\\' |
++--------------+-----------------------+
+| C: | 0 |
+| C:\ | 1 |
+| C:\Programs | 0 |
+| C:\Programs\ | 1 |
++--------------+-----------------------+
+expr NOT LIKE pat [ESCAPE
+' escape_char ']
+这与. NOT
+( expr LIKE pat [ESCAPE
+' escape_char '])
+笔记
+NOT
+LIKE 涉及与包含的列进行比较的
+
+聚合查询 NULL 可能会产生意外结果。例如，考虑下表和数据：
+CREATE TABLE foo (bar VARCHAR(10));
+
+INSERT INTO foo VALUES (NULL), (NULL);
+查询 SELECT COUNT(*) FROM foo WHERE bar LIKE
+'%baz%'; 返回 0 。您可能会认为那 SELECT COUNT(*) FROM foo WHERE bar
+NOT LIKE '%baz%'; 会返回 2 。然而，情况并非如此：第二个查询返回 0 。这是因为
+总是返回
+，而不管 的值如何
+。对于涉及使用
+or进行比较的聚合查询也是如此。在这种情况下，您必须明确测试使用
+（而不是
+），如下所示： NULL NOT LIKE expr NULL expr NULL NOT
+RLIKE NOT
+REGEXP NOT NULL OR AND
+SELECT COUNT(*) FROM foo WHERE bar NOT LIKE '%baz%' OR bar IS NULL;
+STRCMP( expr1 , expr2 )
+STRCMP() 0 如果字符串相同， -1 如果根据当前排序顺序第一个参数小于第二个参数，并且 NULL 任一参数为
+，则返回 NULL 。 1 否则
+返回。
+mysql> SELECT STRCMP('text', 'text2');
+-> -1
+mysql> SELECT STRCMP('text2', 'text');
+-> 1
+mysql> SELECT STRCMP('text', 'text');
+-> 0
+STRCMP() 使用参数的排序规则执行比较。
+mysql> SET @s1 = _utf8mb4 'x' COLLATE utf8mb4_0900_ai_ci;
+mysql> SET @s2 = _utf8mb4 'X' COLLATE utf8mb4_0900_ai_ci;
+mysql> SET @s3 = _utf8mb4 'x' COLLATE utf8mb4_0900_as_cs;
+mysql> SET @s4 = _utf8mb4 'X' COLLATE utf8mb4_0900_as_cs;
+mysql> SELECT STRCMP(@s1, @s2), STRCMP(@s3, @s4);
++------------------+------------------+
+| STRCMP(@s1, @s2) | STRCMP(@s3, @s4) |
++------------------+------------------+
+| 0 | -1 |
++------------------+------------------+
+如果排序规则不兼容，则必须将其中一个参数转换为与另一个兼容。请参阅 第 10.8.4 节，“表达式中的整理强制性” 。
+mysql> SET @s1 = _utf8mb4 'x' COLLATE utf8mb4_0900_ai_ci;
+mysql> SET @s2 = _utf8mb4 'X' COLLATE utf8mb4_0900_ai_ci;
+mysql> SET @s3 = _utf8mb4 'x' COLLATE utf8mb4_0900_as_cs;
+mysql> SET @s4 = _utf8mb4 'X' COLLATE utf8mb4_0900_as_cs;
+-->
+mysql> SELECT STRCMP(@s1, @s3);
+ERROR 1267 (HY000): Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT)
+and (utf8mb4_0900_as_cs,IMPLICIT) for operation 'strcmp'
+mysql> SELECT STRCMP(@s1, @s3 COLLATE utf8mb4_0900_ai_ci);
++---------------------------------------------+
+| STRCMP(@s1, @s3 COLLATE utf8mb4_0900_ai_ci) |
++---------------------------------------------+
+| 0 |
++---------------------------------------------+

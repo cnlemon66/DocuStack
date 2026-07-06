@@ -1,0 +1,75 @@
+Redis SELECT 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SELECT 命令
+切换到指定索引的数据库。
+* 语法
+SELECT index
+* 参数说明
+参数 类型 必填 说明
+index Integer 是 数据库索引，默认 0-15（由 databases 配置决定）
+* 返回值
+条件 返回值
+切换成功 OK
+索引无效 错误 ERR DB index is out of range
+* 时间复杂度
+O(1)
+*
+* 示例
+> SELECT 0
+OK
+> SET key1 value1
+OK
+
+> SELECT 1
+OK
+> SET key1 value_in_db1
+OK
+
+> SELECT 0
+OK
+> GET key1
+"value1"
+* 常见错误
+索引超出范围 ：默认 databases=16，SELECT 16 报错。
+集群模式不支持 SELECT ：Redis Cluster 只有 DB 0，SELECT 其他索引报错。
+* 最佳实践
+命名空间隔离 ：不同业务用不同 DB 隔离，如 DB0 缓存、DB1 会话、DB2 队列。
+集群环境 ：Cluster 模式只有 DB0，用 key 前缀（如 cache:user:1001 ）隔离命名空间。
+避免频繁切换 ：连接池按 DB 分池，不要在同一连接频繁 SELECT。
+* FAQ
+Q: SELECT 后之前的 key 还能访问吗？ A: 不能。SELECT 切换当前连接的数据库上下文，只影响当前连接。
+Q: 不同 DB 的 key 会互相影响吗？ A: 不会。 FLUSHDB 只清空当前 DB， FLUSHALL 清空所有 DB。
+Q: Redis 有多少个 DB？ A: 默认 16 个（0-15），由 redis.conf 的 databases 配置，可修改。
+相关命令
+AUTH
+CLIENT
+CLIENT CACHING
+CLIENT GETNAME
+CLIENT GETREDIR
+CLIENT HELP
+CLIENT ID
+CLIENT INFO
+CLIENT KILL
+CLIENT LIST
+CLIENT NO-EVICT
+CLIENT NO-TOUCH
+CLIENT PAUSE
+CLIENT REPLY
+CLIENT SETINFO
+CLIENT SETNAME
+CLIENT TRACKING
+CLIENT TRACKINGINFO
+CLIENT UNBLOCK
+CLIENT UNPAUSE
+ECHO
+HELLO
+PING
+QUIT
+RESET
+SELECT

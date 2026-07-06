@@ -1,0 +1,21 @@
+8.11.3 并发插入_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.11 优化锁定操作 / 
+8.11.3 并发插入
+8.11.3 并发插入
+MyISAM 存储引擎支持并发插入以减少给定表的读写器之间的争用：如果
+表 MyISAM 在数据文件中没有空洞（中间删除行）， INSERT 则可以执行一条语句将行添加到表的末尾同时， SELECT 语句正在从表中读取行。如果有多个 INSERT 语句，它们将与 SELECT 语句同时排队并按顺序执行。并发的结果 INSERT 可能不会立即可见。
+concurrent_insert 可以设置系统变量来修改并发插入处理
+。默认情况下，该变量设置为 AUTO （或 1），并发插入如前所述进行处理。如果 concurrent_insert 设置为 NEVER （或 0），并发插入将被禁用。如果该变量设置为 ALWAYS （或 2），则即使对于已删除行的表，也允许在表末尾进行并发插入。另见 concurrent_insert 系统变量的说明。
+如果您使用的是二进制日志，则并发插入将转换为 CREATE ...
+SELECT or INSERT ...
+SELECT 语句的普通插入。这样做是为了确保您可以通过在备份操作期间应用日志来重新创建表的精确副本。请参阅 第 5.4.4 节，“二进制日志” 。此外，对于那些语句，读锁被放置在 selected-from 表上，从而阻止插入到该表中。结果是该表的并发插入也必须等待。
+有了 LOAD DATA ，如果你指定 CONCURRENT 一个 MyISAM 满足并发插入条件的表（即中间没有空闲块），其他会话可以在 LOAD
+DATA 执行时从表中检索数据。使用该 CONCURRENT 选项会 LOAD DATA 稍微影响性能，即使没有其他会话同时使用该表也是如此。
+如果您指定 HIGH_PRIORITY ，如果服务器是使用该选项启动的，它将覆盖该选项的效果 --low-priority-updates 。它还会导致不使用并发插入。
+对于，和 LOCK
+TABLE 之间的区别在于，
+允许
+在持有锁的同时执行非冲突语句（并发插入）。但是，如果您打算在持有锁的同时使用服务器外部的进程来操作数据库，则不能使用此方法。 READ
+LOCAL READ READ LOCAL INSERT

@@ -1,0 +1,13 @@
+15.11.5 使用 TRUNCATE TABLE 回收磁盘空间_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.11 InnoDB磁盘I/O和文件空间管理 / 
+15.11.5 使用 TRUNCATE TABLE 回收磁盘空间
+15.11.5 使用 TRUNCATE TABLE 回收磁盘空间
+要在截断 表
+时回收操作系统磁盘空间
+， InnoDB 表必须存储在其自己的 .ibd 文件中。对于要存储在其自己的 .ibd 文件中 innodb_file_per_table 的表，必须在创建表时启用。另外，被截断的表和其他表之间
+不能有 外键 TRUNCATE TABLE 约束，否则操作失败。但是，允许在同一个表中的两列之间使用外键约束。
+当表被截断时，它会被删除并在新文件中重新创建， .ibd 释放的空间会返回给操作系统。这与 InnoDB 存储在 InnoDB 系统表空间 中的截断表
+（创建的表 innodb_file_per_table=OFF ）和存储在共享 通用表空间 中的表形成对比，后者只能 InnoDB 在表被截断后使用释放的空间。
+截断表并将磁盘空间返回给操作系统的能力还意味着 物理备份 可以更小。截断存储在系统表空间（创建时创建的表 innodb_file_per_table=OFF ）或通用表空间中的表会在表空间中留下未使用的空间块。

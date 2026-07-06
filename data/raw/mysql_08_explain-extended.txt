@@ -1,0 +1,100 @@
+8.8.3 扩展的 EXPLAIN 输出格式_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.8 了解查询执行计划 / 
+8.8.3 扩展的 EXPLAIN 输出格式
+8.8.3 扩展的 EXPLAIN 输出格式
+该 EXPLAIN 语句产生额外的（ “ 扩展 的” ）信息，这些信息不是 EXPLAIN 输出的一部分，但可以通过发出 SHOW WARNINGS 后面的语句来查看 EXPLAIN 。从 MySQL 8.0.12 开始，扩展信息可用于 SELECT 、 DELETE 、 INSERT 、 REPLACE 和 UPDATE 语句。在 8.0.12 之前，扩展信息仅适用于 SELECT 语句。
+输出中的 Message 值 SHOW WARNINGS 显示优化器如何限定 SELECT 语句
+中的表名和列名， SELECT 应用重写和优化规则后的样子，以及可能的关于优化过程的其他注释。
+SHOW WARNINGS 可在语句后
+
+显示的扩展信息 EXPLAIN 仅针对 SELECT 语句生成。 SHOW WARNINGS 显示其他可解释语句（ DELETE 、 INSERT 、 REPLACE 和 UPDATE ）的空结果。
+以下是扩展 EXPLAIN 输出的示例：
+mysql> EXPLAIN
+SELECT t1.a, t1.a IN (SELECT t2.a FROM t2) FROM t1\G
+*************************** 1. row ***************************
+id: 1
+select_type: PRIMARY
+table: t1
+type: index
+possible_keys: NULL
+key: PRIMARY
+key_len: 4
+ref: NULL
+rows: 4
+filtered: 100.00
+Extra: Using index
+*************************** 2. row ***************************
+id: 2
+select_type: SUBQUERY
+table: t2
+type: index
+possible_keys: a
+key: a
+key_len: 5
+ref: NULL
+rows: 3
+filtered: 100.00
+Extra: Using index
+2 rows in set, 1 warning (0.00 sec)
+
+mysql> SHOW WARNINGS\G
+*************************** 1. row ***************************
+Level: Note
+Code: 1003
+Message: /* select#1 */ select `test`.`t1`.`a` AS `a`,
+<in_optimizer>(`test`.`t1`.`a`,`test`.`t1`.`a` in
+( <materialize> (/* select#2 */ select `test`.`t2`.`a`
+from `test`.`t2` where 1 having 1 ),
+<primary_index_lookup>(`test`.`t1`.`a` in
+<temporary table> on <auto_key>
+where ((`test`.`t1`.`a` = `materialized-subquery`.`a`))))) AS `t1.a
+IN (SELECT t2.a FROM t2)` from `test`.`t1`
+1 row in set (0.00 sec)
+因为显示的语句 SHOW
+WARNINGS 可能包含特殊标记以提供有关查询重写或优化器操作的信息，所以该语句不一定是有效的 SQL 并且不打算执行。输出还可能包括具有值的行，这些 Message 值提供有关优化器采取的操作的额外非 SQL 解释性说明。
+以下列表描述了可以出现在由 显示的扩展输出中的特殊标记 SHOW
+WARNINGS ：
+<auto_key>
+为临时表自动生成的键。
+<cache>( expr )
+表达式（例如标量子查询）执行一次，结果值保存在内存中供以后使用。对于包含多个值的结果，可能会创建并 <temporary
+table> 显示一个临时表。
+<exists>( query
+fragment )
+子查询谓词转换为 EXISTS 谓词，子查询转换为可以与 EXISTS 谓词一起使用。
+<in_optimizer>( query
+fragment )
+这是一个没有用户意义的内部优化器对象。
+<index_lookup>( query
+fragment )
+使用索引查找来处理查询片段以查找符合条件的行。
+<if>( condition , expr1 , expr2 )
+如果条件为真，则求值为 expr1 ，否则
+为 expr2 。
+<is_not_null_test>( expr )
+验证表达式不计算为 的测试 NULL 。
+<materialize>( query
+fragment )
+使用子查询实现。
+`materialized-subquery`. col_name
+col_name 对内部临时表中
+
+列的引用具体
+化以保存评估子查询的结果。
+<primary_index_lookup>( query
+fragment )
+使用主键查找来处理查询片段以查找符合条件的行。
+<ref_null_helper>( expr )
+这是一个没有用户意义的内部优化器对象。
+/* select# N */ select_stmt
+SELECT 与非扩展 EXPLAIN 输出中 id 值为
+
+的行关联 N 。
+outer_tables semi join
+( inner_tables )
+半连接操作。 inner_tables 显示未拉出的表。请参阅 第 8.2.2.1 节，“使用半连接转换优化 IN 和 EXISTS 子查询谓词” 。
+<temporary table>
+这表示为缓存中间结果而创建的内部临时表。
+当某些表属于 const 或 system 类型时，涉及这些表中的列的表达式会由优化器及早评估，而不是显示语句的一部分。但是，对于 FORMAT=JSON ，某些 const 表访问显示为 ref 使用 const 值的访问。

@@ -1,0 +1,25 @@
+15.8.4 为 InnoDB 配置线程并发_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.4 为 InnoDB 配置线程并发
+15.8.4 为 InnoDB 配置线程并发
+InnoDB 使用操作系统 线程 来处理来自用户事务的请求。（事务可能会在提交或回滚之前发出许多请求 InnoDB 。）在具有多核处理器的现代操作系统和服务器上，上下文切换效率很高，大多数工作负载运行良好，对并发线程数没有任何限制。
+在有助于最小化线程之间的上下文切换的情况下， InnoDB 可以使用多种技术来限制并发执行的操作系统线程的数量（从而限制在任何时候处理的请求的数量）。当 InnoDB 从用户会话接收到新请求时，如果并发执行的线程数达到预定义的限制，则新请求会在再次尝试之前休眠一小段时间。睡眠后不能重新调度的请求被放入先进先出队列，最终被处理。等待锁的线程不计入并发执行线程数。
+您可以通过设置配置参数来限制并发线程数 innodb_thread_concurrency 。 innodb_thread_sleep_delay 一旦执行线程的数量达到此限制，其他线程将在被放入队列之前
+休眠数微秒，时间由配置参数
+设置。
+您可以将配置选项设置为 innodb_adaptive_max_sleep_delay 允许的最高值 innodb_thread_sleep_delay ，并
+根据当前线程调度活动 InnoDB 自动向上或向下调整
+。 innodb_thread_sleep_delay 这种动态调整有助于线程调度机制在系统负载较轻和接近满负荷运行时平稳工作。
+在 innodb_thread_concurrency MySQL 和 InnoDB . 默认值为
+， innodb_thread_concurrency 因此 0 默认情况下并发执行线程数没有限制。
+InnoDB 仅当并发线程数有限时才导致线程休眠。当线程数没有限制时，所有线程都平等地竞争被调度。也就是说，如果 innodb_thread_concurrency 是 0 ， innodb_thread_sleep_delay 则忽略值。
+当对线程数有限制时（当 innodb_thread_concurrency is > 0 时），通过允许在执行 单个 SQL 语句 InnoDB 期间发出的多个请求
+进入
+而不遵守 . 设置的限制
+来减少上下文切换开销。由于 SQL 语句（例如连接）可能包含多个行操作，
+因此分配指定数量的 “ 票 ” ，允许线程以最小的开销重复调度。 InnoDB innodb_thread_concurrency InnoDB InnoDB
+当一个新的 SQL 语句开始时，一个线程没有票，它必须观察 innodb_thread_concurrency 。一旦线程有权进入 InnoDB ，它就会被分配一些票，它可以用于随后进入 InnoDB 以执行行操作。如果票用完，则线程被逐出，并 innodb_thread_concurrency 再次被观察，这可能会将线程放回等待线程的先进/先出队列。当线程再次有权进入 InnoDB 时，将再次分配票证。分配的工单数量由全局选项指定， innodb_concurrency_tickets 默认为 5000。一旦锁可用，等待锁的线程将获得一张票。
+这些变量的正确值取决于您的环境和工作负载。尝试一系列不同的值以确定适合您的应用程序的值。在限制并发执行线程的数量之前，请查看可以提高 InnoDB 多核和多处理器计算机性能的配置选项，例如 innodb_adaptive_hash_index .
+有关 MySQL 线程处理的一般性能信息，请参阅 第 5.1.12.1 节，“连接接口” 。

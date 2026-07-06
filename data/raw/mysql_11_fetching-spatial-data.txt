@@ -1,0 +1,16 @@
+11.4.8 获取空间数据_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.4 空间数据类型 / 
+11.4.8 获取空间数据
+11.4.8 获取空间数据
+存储在表中的几何值可以内部格式获取。您还可以将它们转换为 WKT 或 WKB 格式。
+以内部格式获取空间数据：
+使用内部格式获取几何值在表到表传输中很有用：
+CREATE TABLE geom2 (g GEOMETRY) SELECT g FROM geom;
+获取 WKT 格式的空间数据：
+该 ST_AsText() 函数将几何图形从内部格式转换为 WKT 字符串。
+SELECT ST_AsText(g) FROM geom;
+获取 WKB 格式的空间数据：
+该 ST_AsBinary() 函数将几何图形从内部格式转换为 BLOB 包含 WKB 值的格式。
+SELECT ST_AsBinary(g) FROM geom;

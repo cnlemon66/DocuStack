@@ -1,0 +1,21 @@
+15.15.2 InnoDB INFORMATION_SCHEMA 事务和锁定信息_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.15 InnoDB INFORMATION_SCHEMA 表 / 
+15.15.2 InnoDB INFORMATION_SCHEMA 事务和锁定信息
+15.15.2 InnoDB INFORMATION_SCHEMA 事务和锁定信息
+15.15.2.1 使用 InnoDB 事务和锁定信息 15.15.2.2 InnoDB 锁定和锁定等待信息 15.15.2.3 InnoDB事务和锁定信息的持久化和一致性
+笔记
+本节描述了性能模式 data_locks 和 data_lock_waits 表公开的锁定信息，它们取代了MySQL 8.0 中的 INFORMATION_SCHEMA INNODB_LOCKS 和 INNODB_LOCK_WAITS 表。有关根据旧 INFORMATION_SCHEMA 表编写的类似讨论，请参阅 MySQL 5.7 参考手册 中的 InnoDB INFORMATION_SCHEMA 事务和锁定信息 。
+一个 INFORMATION_SCHEMA 表和两个 Performance Schema 表使您能够监控 InnoDB 事务并诊断潜在的锁定问题：
+INNODB_TRX ：该 INFORMATION_SCHEMA 表提供了当前在其中执行的每个事务的信息 InnoDB ，包括事务状态（例如，它是在运行还是在等待锁）、事务何时开始以及事务正在执行的特定 SQL 语句。
+data_locks ：此 Performance Schema 表包含每个持有锁的行和每个被阻止等待释放持有的锁的锁请求：
+INNODB_TRX.TRX_STATE 无论持有锁的事务处于什么状态（是 RUNNING 、或
+） LOCK WAIT ，
+
+每个持有的锁都有一行。 ROLLING BACK COMMITTING
+InnoDB 中等待另一个事务释放锁的每个事务 ( INNODB_TRX.TRX_STATE is LOCK
+WAIT ) 都被恰好一个阻塞锁请求阻塞。该阻塞锁请求是针对另一个事务在不兼容模式下持有的行或表锁。锁定请求的模式始终与阻止请求的持有锁的模式不兼容（读与写，共享与独占）。
+在另一个事务提交或回滚，从而释放请求的锁之前，被阻塞的事务无法继续。对于每个阻塞的事务， data_locks 包含一行描述事务请求的每个锁，以及它正在等待的锁。
+data_lock_waits ：此性能模式表指示哪些事务正在等待给定的锁，或者给定的事务正在等待哪个锁。该表包含每个阻塞事务的一行或多行，指示它已请求的锁以及阻塞该请求的任何锁。该 REQUESTING_ENGINE_LOCK_ID 值是指一个事务请求的锁，该 BLOCKING_ENGINE_LOCK_ID 值是指阻止第一个事务继续进行的锁（由另一个事务持有）。对于任何给定的阻塞事务，中的所有行都 data_lock_waits 具有相同的值 REQUESTING_ENGINE_LOCK_ID 和不同的值 BLOCKING_ENGINE_LOCK_ID 。
+有关前面表的更多信息，请参阅 第 26.4.28 节，“INFORMATION_SCHEMA INNODB_TRX 表” ， 第 27.12.13.1 节，“data_locks 表” 和 第 27.12.13.2 节，“data_lock_waits 表” 。

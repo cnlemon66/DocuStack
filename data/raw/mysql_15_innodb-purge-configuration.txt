@@ -1,0 +1,55 @@
+15.8.9 清除配置_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.9 清除配置
+15.8.9 清除配置
+InnoDB 当您使用 SQL 语句删除行时，它不会立即从数据库中物理删除行。 InnoDB 只有在丢弃为删除而写的撤销日志记录时，一行及其索引记录才会被物理
+删除。此删除操作仅在多版本并发控制 (MVCC) 或回滚不再需要该行之后发生，称为清除。
+清除按定期计划运行。它从历史列表中解析和处理撤消日志页，历史列表是 InnoDB 事务系统维护的已提交事务的撤消日志页列表。Purge 在处理完撤消日志页面后将其从历史列表中释放。
+配置清除线程
+清除操作由一个或多个清除线程在后台执行。清除线程的数量由 innodb_purge_threads 变量控制。默认值为 4。
+如果 DML 操作集中在单个表上，则表的清除操作由单个清除线程执行，如果 DML 操作涉及大对象值，这可能会导致清除操作变慢、清除滞后增加以及表空间文件大小增加。从 MySQL 8.0.26 开始，如果 innodb_max_purge_lag 超过设置，清除工作会自动在可用的清除线程之间重新分配。在这种情况下，过多的活动清除线程会导致与用户线程争用，因此请 innodb_purge_threads 相应地管理设置。该 innodb_max_purge_lag 变量默认设置为 0，这意味着默认情况下没有最大清除滞后。
+如果 DML 操作集中在几个表上，请保持 innodb_purge_threads 较低的设置，以便线程不会相互竞争以访问繁忙的表。如果 DML 操作分布在许多表中，请考虑更高的 innodb_purge_threads 设置。最大清除线程数为 32。
+该 innodb_purge_threads 设置是允许的最大清除线程数。清除系统自动调整使用的清除线程数。
+配置清除批量大小
+该 innodb_purge_batch_size 变量定义了从历史列表中清除一批解析和处理的撤消日志页数。默认值为 300。在多线程清除配置中，协调器清除线程除以 innodb_purge_batch_size 该 innodb_purge_threads 页数并将其分配给每个清除线程。
+清除系统还释放不再需要的撤消日志页面。它通过撤消日志每 128 次迭代执行一次。除了定义批量解析和处理的撤消日志页数之外，该 innodb_purge_batch_size 变量还定义了通过撤消日志每 128 次迭代清除释放的撤消日志页数。
+该 innodb_purge_batch_size 变量用于高级性能调整和实验。大多数用户不需要更改 innodb_purge_batch_size 其默认值。
+配置最大清除滞后
+该 innodb_max_purge_lag 变量定义了所需的最大清除滞后。当清除滞后超过阈值时，将对、
+和
+操作 innodb_max_purge_lag 施加延迟
+，以便清除操作有时间赶上。默认值为 0，这意味着没有最大清除滞后且没有延迟。 INSERT UPDATE DELETE
+事务系统维护一个事务列表，这些 InnoDB 事务具有由 UPDATE 或 DELETE 操作标记为删除的索引记录。列表的长度是清除滞后。在 MySQL 8.0.14 之前，清除滞后延迟是通过以下公式计算的，其结果是最小延迟为 5000 微秒：
+(purge lag/innodb_max_purge_lag - 0.5) * 10000
+从 MySQL 8.0.14 开始，清除滞后延迟通过以下修改后的公式计算，将最小延迟减少到 5 微秒。5 微秒的延迟更适合现代系统。
+(purge_lag/innodb_max_purge_lag - 0.9995) * 10000
+延迟是在清除批次开始时计算的。
+有问题的工作负载的典型 innodb_max_purge_lag 设置可能是 1000000（一百万），假设事务很小，大小只有 100 字节，并且允许有 100MB 的未清除表行。
+清除滞后显示为输出
+
+部分中的 History list
+length 值。 TRANSACTIONS SHOW
+ENGINE INNODB STATUS
+mysql> SHOW ENGINE INNODB STATUS;
+...
+------------
+TRANSACTIONS
+------------
+Trx id counter 0 290328385
+Purge done for trx's n:o < 0 290315608 undo n:o < 0 17
+History list length 20
+该 History list length 值通常较低，通常小于几千，但写入繁重的工作负载或长时间运行的事务可能会导致它增加，即使对于只读事务也是如此。长时间运行的事务可能导致 History list
+length 增加的原因是，在一致的读取事务隔离级别（例如 ）下 REPEATABLE READ ，事务必须返回与创建该事务的读取视图时相同的结果。因此， InnoDB 多版本并发控制 (MVCC) 系统必须在撤消日志中保留数据的副本，直到依赖于该数据的所有事务都已完成。以下是可能导致 History list length 增加的长时间运行事务的示例：
+在存在大量并发 DML 时
+使用该
+选项
+的 mysqldump操作。 --single-transaction
+SELECT 禁用后
+运行查询 autocommit ，忘记发出显式 COMMIT 或 ROLLBACK 。
+为了防止在清除延迟变得巨大的极端情况下出现过度延迟，您可以通过设置 innodb_max_purge_lag_delay 变量来限制延迟。该
+变量指定超过阈值 innodb_max_purge_lag_delay 时施加的延迟的最大延迟（以微秒为单位
+）。 innodb_max_purge_lag 指定 innodb_max_purge_lag_delay 值是通过公式计算的延迟时间的上限 innodb_max_purge_lag 。
+清除和撤消表空间截断
+清除系统还负责截断撤消表空间。您可以配置该 innodb_purge_rseg_truncate_frequency 变量来控制清除系统查找要截断的撤消表空间的频率。有关详细信息，请参阅 截断撤消表空间 。

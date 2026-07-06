@@ -1,0 +1,51 @@
+Redis配置详解
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis配置详解
+Redis 可以在没有配置文件的情况下，使用内置的默认配置直接启动。这种设置仅推荐用于测试和开发目的。
+配置 Redis 的正确方法是提供一个 Redis 配置文件，该文件通常命名为 redis.conf 。从 Redis 开源版的 Redis 8 开始，提供了两个配置文件：
+redis.conf —— 仅包含 Redis 服务器（server）的配置设置。
+redis-full.conf —— 包含 Redis 服务器以及所有可用组件的配置设置，这些组件包括：Redis Search、Redis time series（时序数据库）以及 Redis probabilistic（概率数据结构）。该文件的第一行是 include redis.conf ，用于在启动时加载 Redis 服务器的配置设置。当你想要启用所有可用组件时，请使用 redis-full.conf 。该文件包含四个 loadmodule 指令（每个组件对应一个），同时也会加载 Redis JSON（尽管 JSON 组件没有配置参数）。
+如果你是从源码编译 Redis，并且选择不包含这些可用组件，则可以使用 redis.conf 作为你的配置文件。
+每个配置文件都包含若干条指令，它们具有非常简单的格式：
+keyword argument1 argument2 ... argumentN
+以下是配置指令的一个示例：
+replicaof 127.0.0.1 6380
+如果参数中包含空格，可以使用双引号或单引号将其括起来，如下例所示：
+requirepass "hello world"
+单引号字符串可以包含通过反斜杠转义的字符，而双引号字符串还可以额外包含使用反斜杠十六进制表示法 "\xff" 编码的任何 ASCII 符号。
+配置指令列表以及描述其含义和预期用途的注释，可以在 Redis 发行版附带的自文档化示例文件 redis.conf 和 redis-full.conf 中找到。
+Redis 8.6 配置文件： redis-full.conf 和 redis.conf 。
+Redis 8.4 配置文件： redis-full.conf 和 redis.conf 。
+Redis 8.2 配置文件： redis-full.conf 和 redis.conf 。
+Redis 8.0 配置文件： redis-full.conf 和 redis.conf 。
+Redis 7.4 配置文件： redis.conf 。
+Redis 7.2 配置文件： redis.conf 。
+Redis 7.0 配置文件： redis.conf 。
+Redis 6.2 配置文件： redis.conf 。
+* 通过命令行传递参数
+你也可以直接通过命令行传递 Redis 配置参数。这在测试时非常有用。
+以下是一个示例，它启动了一个新的 Redis 实例，使用 6380 端口，并作为运行在 127.0.0.1:6379 实例的从节点（replica）。
+./redis-server --port 6380 --replicaof 127.0.0.1 6379
+通过命令行传递的参数格式与 redis.conf 文件中所使用的完全相同，唯一的区别是关键字前面需要加上 -- 前缀。
+请注意，在 Redis 内部，这会生成一个内存中的临时配置文件（如果用户传了配置文件，可能会将其与用户的文件进行拼接），其中的参数会被转换为 redis.conf 的格式。
+* 在服务器运行时更改 Redis 配置
+你可以在不停止和重启服务的情况下，在线动态重新配置 Redis，或者使用特殊的 CONFIG SET 和 CONFIG GET 命令以编程方式查询当前配置。
+并非所有的配置指令都支持这种方式，但绝大多数指令都能如预期般支持。
+欲了解更多信息，请参阅 CONFIG SET 和 CONFIG GET 的页面。
+需要注意的是，动态修改配置不会影响 redis.conf 和 redis-full.conf 文件，因此在 Redis 下次重启时，仍会使用旧的配置。
+请务必根据你使用 CONFIG SET 设置的配置，同步修改配置文件。
+你可以手动修改，也可以使用 CONFIG REWRITE 命令，该命令会自动扫描你的配置文件，并更新那些与当前运行值不匹配的字段。
+设置为默认值的字段不会被添加。配置文件内部的注释将会被保留。
+* 将 Redis 配置为缓存
+如果你打算将 Redis 用作缓存，并且每个键（key）都会设置过期时间，你可以考虑使用以下配置（这里以 2MB 的最大内存限制为例）：
+maxmemory 2mb
+maxmemory-policy allkeys-lru
+在这种配置下，应用程序不需要使用 EXPIRE 命令（或同等命令）来为键设置生存时间（TTL），因为只要达到 2MB 的内存限制，所有的键都会通过近似 LRU 算法被淘汰。
+基本上，在这种配置下，Redis 的行为类似于 memcached。
+关于将 Redis 用作 LRU 缓存的更详细文档，可以参见 此处 。

@@ -1,0 +1,14 @@
+11.1.2 整数类型（精确值）——INTEGER、INT、SMALLINT、TINYINT、MEDIUMINT、BIGINT_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.1 数值数据类型 / 
+11.1.2 整数类型（精确值）——INTEGER、INT、SMALLINT、TINYINT、MEDIUMINT、BIGINT
+11.1.2 整数类型（精确值）——INTEGER、INT、SMALLINT、TINYINT、MEDIUMINT、BIGINT
+MySQL 支持 SQL 标准整数类型 INTEGER （或 INT ）和 SMALLINT . 作为标准的扩展，MySQL 还支持整数类型 TINYINT 、 MEDIUMINT 和 BIGINT 。下表显示了每种整数类型所需的存储空间和范围。
+表 11.1 MySQL 支持的整数类型所需的存储和范围
+类型 存储（字节） 有符号最小值 最小值无符号 有符号最大值 最大值无符号
+TINYINT 1个 -128 0 127 255
+SMALLINT 2个 -32768 0 32767 65535
+MEDIUMINT 3个 -8388608 0 8388607 16777215
+INT 4个 -2147483648 0 2147483647 4294967295
+BIGINT 8个 -2 63 0 2 63 -1 2 64 -1

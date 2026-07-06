@@ -1,0 +1,252 @@
+15.15.3 InnoDB INFORMATION_SCHEMA 模式对象表_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.15 InnoDB INFORMATION_SCHEMA 表 / 
+15.15.3 InnoDB INFORMATION_SCHEMA 模式对象表
+15.15.3 InnoDB INFORMATION_SCHEMA 模式对象表
+您可以提取有关 InnoDB 使用 InnoDB INFORMATION_SCHEMA 表管理的模式对象的元数据。此信息来自数据字典。 传统上，您会使用第 15.17 节“InnoDB 监视器” 中的技术获得此类信息
+，设置 InnoDB 监视器并解析 SHOW ENGINE INNODB
+STATUS 语句的输出。表 InnoDB INFORMATION_SCHEMA 界面允许您使用 SQL 查询此数据。
+InnoDB INFORMATION_SCHEMA 模式对象表包括下面列出的表。
+INNODB_DATAFILES
+INNODB_TABLESTATS
+INNODB_FOREIGN
+INNODB_COLUMNS
+INNODB_INDEXES
+INNODB_FIELDS
+INNODB_TABLESPACES
+INNODB_TABLESPACES_BRIEF
+INNODB_FOREIGN_COLS
+INNODB_TABLES
+表名指示所提供数据的类型：
+INNODB_TABLES 提供有关 InnoDB 表的元数据。
+INNODB_COLUMNS 提供有关 InnoDB 表列的元数据。
+INNODB_INDEXES 提供有关 InnoDB 索引的元数据。
+INNODB_FIELDS 提供有关 InnoDB 索引的键列（字段）的元数据。
+INNODB_TABLESTATS InnoDB 提供有关从内存数据结构派生的表
+的低级状态信息的视图
+。
+INNODB_DATAFILES InnoDB 为file-per-table 和通用表空间
+提供数据文件路径信息。
+INNODB_TABLESPACES 提供有关 InnoDB file-per-table、general 和 undo 表空间的元数据。
+INNODB_TABLESPACES_BRIEF 提供关于 InnoDB 表空间的元数据子集。
+INNODB_FOREIGN InnoDB 提供有关在表
+上定义的外键的元数据。
+INNODB_FOREIGN_COLS 提供有关在表上定义的外键列的元数据 InnoDB 。
+InnoDB INFORMATION_SCHEMA 模式对象表可以通过 、 和 等字段连接在一起 TABLE_ID ， INDEX_ID 使 SPACE 您可以轻松检索要研究或监控的对象的所有可用数据。
+有关每个表的列的信息，请参阅 InnoDB INFORMATION_SCHEMA 文档。
+示例 15.2 InnoDB INFORMATION_SCHEMA 模式对象表
+t1 此示例使用带有单个索引 ( )
+的简单表 ( i1 ) 来演示在 InnoDB INFORMATION_SCHEMA 架构对象表中找到的元数据类型。
+创建一个测试数据库和表 t1 ：
+mysql> CREATE DATABASE test;
+
+mysql> USE test;
+
+mysql> CREATE TABLE t1 (
+col1 INT,
+col2 CHAR(10),
+col3 VARCHAR(10))
+ENGINE = InnoDB;
+
+mysql> CREATE INDEX i1 ON t1(col1);
+创建表后 t1 ，查询 INNODB_TABLES 以查找元数据 test/t1 ：
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_TABLES WHERE NAME='test/t1' \G
+*************************** 1. row ***************************
+TABLE_ID: 71
+NAME: test/t1
+FLAG: 1
+N_COLS: 6
+SPACE: 57
+ROW_FORMAT: Compact
+ZIP_PAGE_SIZE: 0
+INSTANT_COLS: 0
+表 t1 的 a TABLE_ID 为 71。该 FLAG 字段提供有关表格式和存储特性的位级信息。有六列，其中三列是由 InnoDB ( DB_ROW_ID 、 DB_TRX_ID 和 DB_ROLL_PTR ) 创建的隐藏列。表的 ID SPACE 为 57（值为 0 表示该表驻留在系统表空间中）。 ROW_FORMAT 是紧凑
+的
+。 ZIP_PAGE_SIZE 仅适用于具有 Compressed 行格式的表。
+显示在使用with INSTANT_COLS 添加第一个即时列之前表中的列数
+。 ALTER TABLE ... ADD
+COLUMN ALGORITHM=INSTANT
+使用 TABLE_ID 来自 的信息 INNODB_TABLES 查询 INNODB_COLUMNS 表以获取有关表列的信息。
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_COLUMNS where TABLE_ID = 71\G
+*************************** 1. row ***************************
+TABLE_ID: 71
+NAME: col1
+POS: 0
+MTYPE: 6
+PRTYPE: 1027
+LEN: 4
+HAS_DEFAULT: 0
+DEFAULT_VALUE: NULL
+*************************** 2. row ***************************
+TABLE_ID: 71
+NAME: col2
+POS: 1
+MTYPE: 2
+PRTYPE: 524542
+LEN: 10
+HAS_DEFAULT: 0
+DEFAULT_VALUE: NULL
+*************************** 3. row ***************************
+TABLE_ID: 71
+NAME: col3
+POS: 2
+MTYPE: 1
+PRTYPE: 524303
+LEN: 10
+HAS_DEFAULT: 0
+DEFAULT_VALUE: NULL
+除了 TABLE_ID 和列
+之外 NAME ， INNODB_COLUMNS 还提供了每一列的序号位置（ POS 从0开始依次递增），列 MTYPE 或者 “ 主要类型 ” （6=INT，2=CHAR，1=VARCHAR）， PRTYPE 或者 “ 精确type ” （一个二进制值，带有表示 MySQL 数据类型、字符集代码和可空性的位）和列长度 ( LEN )。 HAS_DEFAULT 和 DEFAULT_VALUE 列仅适用于使用 ALTER TABLE ... ADD
+COLUMN with立即添加的列 ALGORITHM=INSTANT 。
+再次
+
+使用 TABLE_ID 来自的信息
+，查询与表关联的索引的信息
+。 INNODB_TABLES INNODB_INDEXES t1
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_INDEXES WHERE TABLE_ID = 71 \G
+*************************** 1. row ***************************
+INDEX_ID: 111
+NAME: GEN_CLUST_INDEX
+TABLE_ID: 71
+TYPE: 1
+N_FIELDS: 0
+PAGE_NO: 3
+SPACE: 57
+MERGE_THRESHOLD: 50
+*************************** 2. row ***************************
+INDEX_ID: 112
+NAME: i1
+TABLE_ID: 71
+TYPE: 0
+N_FIELDS: 1
+PAGE_NO: 4
+SPACE: 57
+MERGE_THRESHOLD: 50
+INNODB_INDEXES 返回两个索引的数据。第一个索引是
+，如果表没有用户定义的聚集索引 GEN_CLUST_INDEX ，它是创建的聚集索引。 InnoDB 第二个索引 ( i1 ) 是用户定义的二级索引。
+是索引的 INDEX_ID 标识符，在一个实例中的所有数据库中是唯一的。 TABLE_ID 标识与索引关联的表。索引 TYPE 值指示索引的类型（1 = 聚集索引，0 = 二级索引）。该 N_FILEDS 值是组成索引的字段数。 PAGE_NO 是索引B树的根页码， SPACE 是索引所在表空间的ID。非零值表示索引不驻留在系统表空间中。 MERGE_THRESHOLD 定义索引页中数据量的百分比阈值。如果在删除一行或更新操作缩短了一行时索引页中的数据量低于此值（默认值为 50%），则 InnoDB 尝试将索引页与相邻索引页合并。
+使用 INDEX_ID 来自的信息 INNODB_INDEXES ，查询 INNODB_FIELDS 有关索引字段的信息 i1 。
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_FIELDS where INDEX_ID = 112 \G
+*************************** 1. row ***************************
+INDEX_ID: 112
+NAME: col1
+POS: 0
+INNODB_FIELDS 提供 NAME 索引字段及其在索引中的序号位置。如果索引 (i1) 已在多个字段上定义， INNODB_FIELDS 将为每个索引字段提供元数据。
+使用 SPACE 来自 的信息 INNODB_TABLES ，查询 INNODB_TABLESPACES 表以获取有关表的表空间的信息。
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_TABLESPACES WHERE SPACE = 57 \G
+*************************** 1. row ***************************
+SPACE: 57
+NAME: test/t1
+FLAG: 16417
+ROW_FORMAT: Dynamic
+PAGE_SIZE: 16384
+ZIP_PAGE_SIZE: 0
+SPACE_TYPE: Single
+FS_BLOCK_SIZE: 4096
+FILE_SIZE: 114688
+ALLOCATED_SIZE: 98304
+AUTOEXTEND_SIZE: 0
+SERVER_VERSION: 8.0.23
+SPACE_VERSION: 1
+ENCRYPTION: N
+STATE: normal
+除了表空间的 SPACE ID 和 NAME 关联表的 ID 外， INNODB_TABLESPACES 还提供表空间 FLAG 数据，即有关表空间格式和存储特性的位级信息。还提供了表空间 ROW_FORMAT 、 PAGE_SIZE 和其他几个表空间元数据项。
+再次
+
+使用 SPACE 来自的信息
+，查询表空间数据文件的位置。 INNODB_TABLES INNODB_DATAFILES
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_DATAFILES WHERE SPACE = 57 \G
+*************************** 1. row ***************************
+SPACE: 57
+PATH: ./test/t1.ibd
+数据文件位于 test MySQL 目录下的 data 目录中。如果
+使用该语句的子句
+在 MySQL 数据目录之外的位置创建了 file-per-table 表 空间
+，则该表空间将是完全限定的目录路径。 DATA DIRECTORY CREATE TABLE PATH
+t1 最后一步，向表( )
+中插入一行 TABLE_ID = 71 并查看 INNODB_TABLESTATS 表中的数据。MySQL 优化器使用此表中的数据来计算查询 InnoDB 表时使用哪个索引。此信息源自内存中的数据结构。
+mysql> INSERT INTO t1 VALUES(5, 'abc', 'def');
+Query OK, 1 row affected (0.06 sec)
+
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_TABLESTATS where TABLE_ID = 71 \G
+*************************** 1. row ***************************
+TABLE_ID: 71
+NAME: test/t1
+STATS_INITIALIZED: Initialized
+NUM_ROWS: 1
+CLUST_INDEX_SIZE: 1
+OTHER_INDEX_SIZE: 0
+MODIFIED_COUNTER: 1
+AUTOINC: 0
+REF_COUNT: 1
+该 STATS_INITIALIZED 字段指示是否已为表收集统计信息。 NUM_ROWS 是表中当前估计的行数。 CLUST_INDEX_SIZE 和
+字段分别报告磁盘上存储表的聚簇索引和二级索引的 OTHER_INDEX_SIZE 页数。该 MODIFIED_COUNTER 值显示由外键的 DML 操作和级联操作修改的行数。该 AUTOINC 值是为任何基于自动增量的操作发出的下一个数字。table 上没有定义自动增量列 t1 ，因此值为 0。 REF_COUNT 值是一个计数器。当计数器达到 0 时，表示表元数据可以从表缓存中逐出。
+示例 15.3 外键 INFORMATION_SCHEMA 模式对象表
+INNODB_FOREIGN 和 INNODB_FOREIGN_COLS 表提供有关外键关系的数据
+。本示例使用具有外键关系的父表和子表来演示在 INNODB_FOREIGN 和 INNODB_FOREIGN_COLS 表中找到的数据。
+使用父表和子表创建测试数据库：
+mysql> CREATE DATABASE test;
+
+mysql> USE test;
+
+mysql> CREATE TABLE parent (id INT NOT NULL,
+PRIMARY KEY (id)) ENGINE=INNODB;
+
+mysql> CREATE TABLE child (id INT, parent_id INT,
+INDEX par_ind (parent_id),
+CONSTRAINT fk1
+FOREIGN KEY (parent_id) REFERENCES parent(id)
+ON DELETE CASCADE) ENGINE=INNODB;
+父子表创建完成后，查询 INNODB_FOREIGN 定位 test/child and test/parent 外键关系的外键数据：
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_FOREIGN \G
+*************************** 1. row ***************************
+ID: test/fk1
+FOR_NAME: test/child
+REF_NAME: test/parent
+N_COLS: 1
+TYPE: 1
+元数据包括外键 ID ( fk1 )，它以 CONSTRAINT 在子表上定义的 命名。 FOR_NAME 是定义外键的子表的名称
+。 REF_NAME 是父表（ “ 引用 ” 表）的名称。 N_COLS 是外键索引中的列数。 TYPE 是一个数值，表示提供有关外键列的附加信息的位标志。在本例中， TYPE 值为 1，表示 ON DELETE CASCADE 为外键指定了选项。有关值的更多信息，请参阅 INNODB_FOREIGN 表定义 TYPE 。
+使用外键 ID 查询 INNODB_FOREIGN_COLS 查看外键列的数据。
+mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_FOREIGN_COLS WHERE ID = 'test/fk1' \G
+*************************** 1. row ***************************
+ID: test/fk1
+FOR_COL_NAME: parent_id
+REF_COL_NAME: id
+POS: 0
+FOR_COL_NAME 是子表中外键列 REF_COL_NAME 的名称，是父表中引用列的名称。该 POS 值是外键索引中键字段的序号位置，从零开始。
+示例 15.4 连接 InnoDB INFORMATION_SCHEMA 模式对象表
+此示例演示连接三个 InnoDB INFORMATION_SCHEMA 模式对象表（ INNODB_TABLES 、 INNODB_TABLESPACES 和 INNODB_TABLESTATS ）以收集有关员工示例数据库中的表的文件格式、行格式、页面大小和索引大小信息。
+以下表名别名用于缩短查询字符串：
+INFORMATION_SCHEMA.INNODB_TABLES ： 一个
+INFORMATION_SCHEMA.INNODB_TABLESPACES : 乙
+INFORMATION_SCHEMA.INNODB_TABLESTATS ： C
+IF() 控制流函数用于解释压缩表
+。如果表被压缩，索引大小是使用 ZIP_PAGE_SIZE 而不是
+计算的 PAGE_SIZE 。 CLUST_INDEX_SIZE 和 OTHER_INDEX_SIZE 以字节为单位报告，除以 1024*1024 以提供以兆字节 (MB) 为单位的索引大小。 ROUND() 使用该函数
+将 MB 值四舍五入为零小数位。
+mysql> SELECT a.NAME, a.ROW_FORMAT,
+@page_size :=
+IF(a.ROW_FORMAT='Compressed',
+b.ZIP_PAGE_SIZE, b.PAGE_SIZE)
+AS page_size,
+ROUND((@page_size * c.CLUST_INDEX_SIZE)
+/(1024*1024)) AS pk_mb,
+ROUND((@page_size * c.OTHER_INDEX_SIZE)
+/(1024*1024)) AS secidx_mb
+FROM INFORMATION_SCHEMA.INNODB_TABLES a
+INNER JOIN INFORMATION_SCHEMA.INNODB_TABLESPACES b on a.NAME = b.NAME
+INNER JOIN INFORMATION_SCHEMA.INNODB_TABLESTATS c on b.NAME = c.NAME
+WHERE a.NAME LIKE 'employees/%'
+ORDER BY a.NAME DESC;
++------------------------+------------+-----------+-------+-----------+
+| NAME | ROW_FORMAT | page_size | pk_mb | secidx_mb |
++------------------------+------------+-----------+-------+-----------+
+| employees/titles | Dynamic | 16384 | 20 | 11 |
+| employees/salaries | Dynamic | 16384 | 93 | 34 |
+| employees/employees | Dynamic | 16384 | 15 | 0 |
+| employees/dept_manager | Dynamic | 16384 | 0 | 0 |
+| employees/dept_emp | Dynamic | 16384 | 12 | 10 |
+| employees/departments | Dynamic | 16384 | 0 | 0 |
++------------------------+------------+-----------+-------+-----------+

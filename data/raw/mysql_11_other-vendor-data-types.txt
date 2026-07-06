@@ -1,0 +1,40 @@
+11.9 使用来自其他数据库引擎的数据类型_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 
+11.9 使用来自其他数据库引擎的数据类型
+11.9 使用来自其他数据库引擎的数据类型
+为了便于使用为其他供应商的 SQL 实现编写的代码，MySQL 映射数据类型，如下表所示。这些映射使得将表定义从其他数据库系统导入 MySQL 变得更加容易。
+其他供应商类型 MySQL类型
+BOOL TINYINT
+BOOLEAN TINYINT
+CHARACTER VARYING( M ) VARCHAR( M )
+FIXED DECIMAL
+FLOAT4 FLOAT
+FLOAT8 DOUBLE
+INT1 TINYINT
+INT2 SMALLINT
+INT3 MEDIUMINT
+INT4 INT
+INT8 BIGINT
+LONG VARBINARY MEDIUMBLOB
+LONG VARCHAR MEDIUMTEXT
+LONG MEDIUMTEXT
+MIDDLEINT MEDIUMINT
+NUMERIC DECIMAL
+数据类型映射发生在表创建时，之后原始类型规范将被丢弃。如果您使用其他供应商使用的类型创建表，然后发出
+
+语句，MySQL 会使用等效的 MySQL 类型报告表结构。例如： DESCRIBE tbl_name
+mysql> CREATE TABLE t (a BOOL, b FLOAT8, c LONG VARCHAR, d NUMERIC);
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> DESCRIBE t;
++-------+---------------+------+-----+---------+-------+
+| Field | Type | Null | Key | Default | Extra |
++-------+---------------+------+-----+---------+-------+
+| a | tinyint(1) | YES | | NULL | |
+| b | double | YES | | NULL | |
+| c | mediumtext | YES | | NULL | |
+| d | decimal(10,0) | YES | | NULL | |
++-------+---------------+------+-----+---------+-------+
+4 rows in set (0.01 sec)

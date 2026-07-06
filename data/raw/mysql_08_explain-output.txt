@@ -1,0 +1,417 @@
+8.8.2 EXPLAIN 输出格式_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.8 了解查询执行计划 / 
+8.8.2 EXPLAIN 输出格式
+8.8.2 EXPLAIN 输出格式
+该 EXPLAIN 语句提供有关 MySQL 如何执行语句的信息。 EXPLAIN 适用于 SELECT , DELETE , INSERT , REPLACE , 和 UPDATE 语句。
+EXPLAIN SELECT 为语句中使用的每个表返回一行信息
+。它按照 MySQL 在处理语句时读取它们的顺序列出输出中的表。这意味着 MySQL 从第一个表中读取一行，然后在第二个表中找到匹配的行，然后在第三个表中，依此类推。当所有的表都被处理完后，MySQL 将选择的列输出，并在表列表中回溯，直到找到一个有更多匹配行的表。从此表中读取下一行，然后继续处理下一个表。
+笔记
+MySQL Workbench 具有 Visual Explain 功能，可提供 EXPLAIN 输出的可视化表示。请参阅 教程：使用 Explain 提高查询性能 。
+EXPLAIN 输出列
+解释连接类型
+解释额外信息
+EXPLAIN 输出解释
+EXPLAIN 输出列
+本节介绍 生成的输出列 EXPLAIN 。后面的部分提供了有关 type 和 Extra 列的附加信息。
+每个输出行都 EXPLAIN 提供有关一个表的信息。每行包含 表 8.1“EXPLAIN 输出列” 中汇总的值，并在表后进行了更详细的描述。列名显示在表的第一列中；第二列提供了 FORMAT=JSON 使用时输出中显示的等效属性名称。
+表 8.1 EXPLAIN 输出列
+柱子 JSON 名称 意义
+id select_id SELECT 标识符_
+select_type 没有任何 SELECT 类型_
+table table_name 输出行的表
+partitions partitions 匹配的分区
+type access_type 连接类型
+possible_keys possible_keys 可供选择的指标
+key key 实际选择的指标
+key_len key_length 所选密钥的长度
+ref ref 与索引相比的列
+rows rows 估计要检查的行
+filtered filtered 按表条件过滤的行的百分比
+Extra 没有任何 附加信息
+笔记
+NULL 不显示在 JSON 格式 EXPLAIN 输出
+中的
+JSON 属性。
+id （JSON 名称 select_id ：）
+SELECT 标识符
+。这是查询中的序号 SELECT 。 NULL 如果该行引用其他行的并集结果，则该值可以是。在这种情况下，该 table 列显示一个值 like
+
+表示该行引用具有值 和 的行的
+并
+集。 <union M , N > id M N
+select_type （JSON 名称：无）
+的类型 SELECT ，可以是下表中显示的任何一种。JSON 格式将类型 EXPLAIN 公开 SELECT 为 a 的属性 query_block ，除非它是 SIMPLE or PRIMARY 。JSON 名称（如果适用）也显示在表中。
+select_type 价值 JSON 名称 意义
+SIMPLE 没有任何 简单 SELECT （不使用 UNION 或子查询）
+PRIMARY 没有任何 最外层 SELECT
+UNION 没有任何 中的第二个或后面 SELECT 的语句 UNION
+DEPENDENT UNION dependent ( true ) a 中的第二个或后面 SELECT 的语句 UNION ，取决于外部查询
+UNION RESULT union_result 的结果 UNION 。
+SUBQUERY 没有任何 SELECT 子查询中的第一个
+DEPENDENT SUBQUERY dependent ( true ) 首先 SELECT 在子查询中，依赖于外部查询
+DERIVED 没有任何 派生表
+DEPENDENT DERIVED dependent ( true ) 派生表依赖于另一个表
+MATERIALIZED materialized_from_subquery 物化子查询
+UNCACHEABLE SUBQUERY cacheable ( false ) 无法缓存结果且必须为外部查询的每一行重新评估的子查询
+UNCACHEABLE UNION cacheable ( false ) UNION 属于不可缓存子查询
+的第二个或后面的选择（参见 UNCACHEABLE SUBQUERY ）
+DEPENDENT 通常表示使用相关子查询。请参阅 第 13.2.11.7 节，“相关子查询” 。
+DEPENDENT SUBQUERY 评价不同于 UNCACHEABLE SUBQUERY 评价。对于 DEPENDENT SUBQUERY ，子查询仅针对来自其外部上下文的每组不同变量值重新评估一次。对于 UNCACHEABLE SUBQUERY ，为外部上下文的每一行重新评估子查询。
+当您指定 FORMAT=JSON with EXPLAIN 时，输出没有直接等同于 的单个属性 select_type ；该 query_block 属性对应于给定的 SELECT . 与刚刚显示的大多数子查询类型等效的属性 SELECT 可用（例如 materialized_from_subquery for MATERIALIZED ），并在适当的时候显示。 SIMPLE 或没有 JSON 等价物 PRIMARY 。
+select_type 非语句
+的值 SELECT 显示受影响表的语句类型。例如， select_type is DELETE for DELETE 语句。
+table （JSON 名称 table_name ：）
+输出行所引用的表的名称。这也可以是以下值之一：
+<union M , N > : 该行是指具有 和 id 值
+的行的 M 并
+集 N 。
+<derived N > ：该行引用值为 的行的派生表 id 结果 N 。例如，派生表可能来自 FROM 子句中的子查询。
+<subquery N > ：该行引用值为 的行的具体化子查询的 id 结果 N 。请参阅 第 8.2.2.2 节，“使用物化优化子查询” 。
+partitions （JSON 名称 partitions ：）
+查询将匹配记录的分区。该值适用 NULL 于非分区表。请参阅 第 24.3.5 节，“获取有关分区的信息” 。
+type （JSON 名称 access_type ：）
+连接类型。有关不同类型的说明，请参阅 EXPLAIN 联接类型 。
+possible_keys （JSON 名称 possible_keys ：）
+该 possible_keys 列指示 MySQL 可以从中选择的索引来查找该表中的行。请注意，此列完全独立于 的输出中显示的表的顺序 EXPLAIN 。这意味着 中的某些键在 possible_keys 实践中可能无法用于生成的表顺序。
+如果此列是 NULL （或在 JSON 格式的输出中未定义），则没有相关索引。在这种情况下，您可以通过检查 WHERE 子句来检查它是否引用适合索引的某个或多个列来提高查询的性能。如果是这样，请创建一个适当的索引并 EXPLAIN 再次检查查询。请参阅 第 13.1.9 节，“ALTER TABLE 语句” 。
+要查看表有哪些索引，请使用. SHOW INDEX
+FROM tbl_name
+key （JSON 名称 key ：）
+该 key 列表示 MySQL 实际决定使用的键（索引）。如果 MySQL 决定使用其中一个 possible_keys 索引来查找行，则该索引将作为键值列出。
+可能 key 会命名一个值中不存在的索引 possible_keys 。如果没有 possible_keys 索引适合查找行，但查询选择的所有列都是某个其他索引的列，则可能会发生这种情况。也就是说，命名索引覆盖了选定的列，因此虽然它不用于确定检索哪些行，但索引扫描比数据行扫描更有效。
+对于 InnoDB ，即使查询还选择了主键，二级索引也可能覆盖选定的列，因为 InnoDB 将主键值存储在每个二级索引中。如果 key 是 NULL ，则 MySQL 找不到可用于更有效地执行查询的索引。
+要强制 MySQL 使用或忽略列中列出的索引
+，请在查询中 possible_keys 使用 FORCE INDEX 、 USE
+INDEX 或 IGNORE INDEX 。请参阅 第 8.9.4 节，“索引提示” 。
+对于 MyISAM 表，运行 ANALYZE TABLE 有助于优化器选择更好的索引。对于 MyISAM 表， myisamchk --analyze 做同样的事情。请参阅 第 13.7.3.1 节，“ANALYZE TABLE 语句” 和 第 7.6 节，“MyISAM 表维护和崩溃恢复” 。
+key_len （JSON 名称 key_length ：）
+该 key_len 列指示 MySQL 决定使用的密钥的长度。的值 key_len 使您能够确定 MySQL 实际使用多部分键的多少部分。如果 key 专栏说 NULL ， key_len 专栏也说 NULL 。
+由于密钥存储格式的原因，列的密钥长度可以 NULL 比​​列的密钥长度大一个 NOT NULL 。
+ref （JSON 名称 ref ：）
+该 ref 列显示将哪些列或常量与列中指定的索引进行比较以 key 从表中选择行。
+如果值为 func ，则使用的值是某个函数的结果。要查看哪个函数，请使用 SHOW WARNINGS 以下 EXPLAIN 命令查看扩展 EXPLAIN 输出。该函数实际上可能是一个运算符，例如算术运算符。
+rows （JSON 名称 rows ：）
+该 rows 列指示 MySQL 认为它必须检查以执行查询的行数。
+对于 InnoDB 表格，此数字是一个估计值，可能并不总是准确的。
+filtered （JSON 名称 filtered ：）
+该 filtered 列指示按表条件过滤的表行的估计百分比。最大值为 100，这意味着没有发生行过滤。值从 100 开始减少表示过滤量增加。 rows 显示检查的估计行数， rows × filtered 显示与下表连接的行数。例如，如果 rows 是 1000 并且 filtered 是 50.00（50%），则与下表连接的行数为 1000 × 50% = 500。
+Extra （JSON 名称：无）
+此列包含有关 MySQL 如何解析查询的附加信息。有关不同值的说明，请参阅 EXPLAIN 额外信息 。
+没有对应于该 Extra 列的单个 JSON 属性；但是，此列中可能出现的值作为 JSON 属性或属性文本公开 message 。
+解释连接类型
+输出列描述 type 了 EXPLAIN 表是如何连接的。在 JSON 格式的输出中，这些作为 access_type 属性的值被发现。下面的列表描述了连接类型，从最好的类型到最差的排序：
+system
+该表只有一行（=系统表）。 const 这是连接类型
+的一个特例
+。
+const
+该表最多有一个匹配行，在查询开始时读取。因为只有一行，所以优化器的其余部分可以将这一行中列的值视为常量。 const 表非常快，因为它们只读一次。
+const PRIMARY KEY 当您将 a或 UNIQUE 索引的所有部分与常量值进行比较时使用。在以下查询中， tbl_name 可以用作 const 表：
+SELECT * FROM tbl_name WHERE primary_key =1;
+
+SELECT * FROM tbl_name WHERE primary_key_part1 =1 AND primary_key_part2 =2;
+eq_ref
+对于先前表中行的每个组合，从该表中读取一行。除了 system and const 类型，这是最好的连接类型。当连接使用索引的所有部分并且索引是 PRIMARY KEY or UNIQUE NOT
+NULL 索引时使用它。
+eq_ref 可用于使用 = 运算符进行比较的索引列。比较值可以是常量或表达式，它使用在此表之前读取的表中的列。在以下示例中，MySQL 可以使用 eq_ref 连接来处理 ref_table ：
+SELECT * FROM ref_table , other_table WHERE ref_table . key_column = other_table . column ;
+
+SELECT * FROM ref_table , other_table WHERE ref_table . key_column_part1 = other_table . column AND ref_table . key_column_part2 =1;
+ref
+对于先前表中行的每个组合，从该表中读取具有匹配索引值的所有行。 ref 如果连接仅使用键的最左边前缀，或者如果键不是 PRIMARY KEY or UNIQUE 索引（换句话说，如果连接不能根据键值选择单个行），则使用。如果使用的键只匹配几行，这是一个很好的连接类型。
+ref 可用于使用 = or <=> 运算符进行比较的索引列。在以下示例中，MySQL 可以使用 ref 连接来处理 ref_table ：
+SELECT * FROM ref_table WHERE key_column = expr ;
+
+SELECT * FROM ref_table , other_table WHERE ref_table . key_column = other_table . column ;
+
+SELECT * FROM ref_table , other_table WHERE ref_table . key_column_part1 = other_table . column AND ref_table . key_column_part2 =1;
+fulltext
+连接是使用 FULLTEXT 索引执行的。
+ref_or_null
+这种连接类型类似于
+，但 MySQL 对包含值 ref 的行进行了额外的搜索。 NULL 这种连接类型优化最常用于解析子查询。在以下示例中，MySQL 可以使用 ref_or_null 连接来处理 ref_table ：
+SELECT * FROM ref_table WHERE key_column = expr OR key_column IS NULL;
+请参阅 第 8.2.1.15 节，“IS NULL 优化” 。
+index_merge
+此连接类型表示使用索引合并优化。在这种情况下， key 输出行中的列包含使用的索引列表，并 key_len 包含使用的索引的最长键部分列表。有关详细信息，请参阅 第 8.2.1.3 节，“索引合并优化” 。
+unique_subquery
+此类型替换
+以下形式 eq_ref 的某些 IN 子查询：
+value IN (SELECT primary_key FROM single_table WHERE some_expr )
+unique_subquery 只是一个索引查找函数，它完全取代了子查询以提高效率。
+index_subquery
+此联接类型类似于 unique_subquery 。它取代了 IN 子查询，但它适用于以下形式的子查询中的非唯一索引：
+value IN (SELECT key_column FROM single_table WHERE some_expr )
+range
+仅检索给定范围内的行，使用索引来选择行。输出行中的 key 列指示使用了哪个索引。 key_len 包含使用过的最长的密钥部分。该 ref 列 NULL 适用于此类型。
+range 可以在使用 = , <> , > , >= , < , <= , IS NULL , <=> , BETWEEN , LIKE , 或 IN() 运算符将键列与常量进行比较时使用：
+SELECT * FROM tbl_name WHERE key_column = 10;
+
+SELECT * FROM tbl_name WHERE key_column BETWEEN 10 and 20;
+
+SELECT * FROM tbl_name WHERE key_column IN (10,20,30);
+
+SELECT * FROM tbl_name WHERE key_part1 = 10 AND key_part2 IN (10,20,30);
+index
+连接类型与 index 相同 ALL ，只是扫描了索引树。这有两种情况：
+如果索引是查询的覆盖索引，可以用来满足表中所有需要的数据，则只扫描索引树。在这种情况下，该 Extra 列
+显示 Using index 。仅索引扫描通常比索引扫描更快， ALL 因为索引的大小通常小于表数据。
+使用从索引读取以按索引顺序查找数据行来执行全表扫描。 Uses index 不会出现在 Extra 列中。
+当查询仅使用属于单个索引的列时，MySQL 可以使用此连接类型。
+ALL
+对先前表中的每个行组合进行全表扫描。如果表是第一个未标记的表
+，这通常不好，在所有其他情况下 const 通常 非常糟糕。 通常，您可以 ALL 通过添加索引来避免，这些索引允许根据常量值或早期表中的列值从表中检索行。
+解释额外信息
+输出列 Extra 包含 EXPLAIN 有关 MySQL 如何解析查询的附加信息。以下列表解释了可以出现在该列中的值。每个项目还为 JSON 格式的输出指示哪个属性显示 Extra 值。对于其中一些，有一个特定的属性。其他显示为 message 属性的文本。
+如果您想尽可能快地进行查询，请注意 和 的 Extra 列值 Using
+filesort ， Using temporary 或者在 JSON 格式的 EXPLAIN 输出中，
+注意 using_filesort 和 using_temporary_table 等于 的属性 true 。
+Backward index scan （JSON backward_index_scan ：）
+优化器能够在表上使用降序索引 InnoDB 。与一起显示 Using index 。有关详细信息，请参阅 第 8.3.13 节，“降序索引” 。
+Child of ' table '
+pushed join@1 （JSON： message 文本）
+该表被引用为 table 可以向下推送到 NDB 内核的连接中的子表。仅在启用下推连接时适用于 NDB Cluster。 ndb_join_pushdown 有关更多信息和示例，
+请参阅服务器系统变量的描述
+。
+const row not found （JSON 属性 const_row_not_found ：）
+对于诸如 之类的查询，表是空的。 SELECT ... FROM tbl_name
+Deleting all rows （JSON 属性 message ：）
+对于 DELETE ，一些存储引擎（例如 MyISAM ）支持一种处理程序方法，该方法可以简单快速地删除所有表行。 Extra 如果引擎使用此优化，则会显示
+此值。
+Distinct （JSON 属性 distinct ：）
+MySQL 正在寻找不同的值，因此它在找到第一个匹配行后停止为当前行组合搜索更多行。
+FirstMatch( tbl_name ) （JSON 属性 first_match ：）
+semijoin FirstMatch 连接快捷策略用于 tbl_name .
+Full scan on NULL key （JSON 属性 message ：）
+当优化器不能使用索引查找访问方法时，子查询优化会作为后备策略发生这种情况。
+Impossible HAVING （JSON 属性 message ：）
+该 HAVING 子句始终为 false，并且不能选择任何行。
+Impossible WHERE （JSON 属性 message ：）
+该 WHERE 子句始终为 false，并且不能选择任何行。
+Impossible WHERE noticed after reading const
+tables （JSON 属性 message ：）
+MySQL 已读取所有 const （和 system ）表并注意到该 WHERE 子句始终为假。
+LooseScan( m .. n ) （JSON 属性 message ：）
+使用半连接 LooseScan 策略。 m 并且 n 是关键部件号。
+No matching min/max row （JSON 属性 message ：）
+没有行满足查询条件，例如
+。 SELECT MIN(...) FROM ... WHERE condition
+no matching row in const table （JSON 属性 message ：）
+对于带有连接的查询，有一个空表或没有满足唯一索引条件的行的表。
+No matching rows after partition
+pruning （JSON 属性 message ：）
+对于 DELETE 或 UPDATE ，优化器在分区修剪后没有发现要删除或更新的内容。它的含义类似于 Impossible WHERE for SELECT 语句。
+No tables used （JSON 属性 message ：）
+查询没有 FROM 子句，或有 FROM DUAL 子句。
+对于 INSERT or REPLACE 语句， EXPLAIN 当没有 SELECT 部分时显示此值。例如，它出现是 EXPLAIN INSERT
+INTO t VALUES(10) 因为它等同于 EXPLAIN INSERT INTO t SELECT 10 FROM
+DUAL 。
+Not exists （JSON 属性 message ：）
+MySQL 能够对 LEFT JOIN 查询进行优化，并且在找到与条件匹配的行后，不会检查此表中的更多行以查找先前的行组合 LEFT
+JOIN 。以下是可以通过这种方式优化的查询类型的示例：
+SELECT * FROM t1 LEFT JOIN t2 ON t1.id=t2.id
+WHERE t2.id IS NULL;
+假设 t2.id 定义为 NOT NULL 。在这种情况下，MySQL
+使用 的值
+扫描 t1 并查找行
+。如果 MySQL 在中找到匹配的行
+，它知道
+永远不可能
+，并且不会扫描具有相同值的其余行。换句话说，对于 中的每一行，MySQL 只需要在 中进行一次查找，而不管 中有多少行实际匹配。 t2 t1.id t2 t2.id NULL t2 id t1 t2 t2
+在 MySQL 8.0.17 及更高版本中，这也可以表示
+or WHERE 形式的条件
+已在内部转换为反连接。这将删除子查询并将其表带入最顶层查询的计划中，从而提供改进的成本计划。通过合并半连接和反连接，优化器可以更自由地对执行计划中的表进行重新排序，在某些情况下会产生更快的计划。 NOT IN
+( subquery ) NOT EXISTS
+( subquery )
+您可以通过检查以下执行
+的 Message 列或 的输出中
+的列
+来查看何时对给定查询执行反连接转换
+。 SHOW
+WARNINGS EXPLAIN EXPLAIN FORMAT=TREE
+笔记
+反连接是半连接的补充
+。反连接返回所有行
+，其中 没有 匹配
+的行
+。 table_a JOIN table_b ON condition table_a table_b condition
+Plan isn't ready yet （JSON 属性：无）
+EXPLAIN FOR
+CONNECTION 当优化器尚未完成为在命名连接中执行的语句创建执行计划时，
+会出现此值。如果执行计划输出包含多行，则其中任何一行或所有行都可能具有此 Extra 值，具体取决于优化程序确定完整执行计划的进度。
+Range checked for each record (index map: N ) （JSON 属性 message ：）
+MySQL 没有找到好的索引可以使用，但发现在知道前面表的列值后，可能会使用某些索引。对于前面表中的每个行组合，MySQL 检查是否可以使用 range 或 index_merge 访问方法来检索行。这不是很快，但比执行完全没有索引的连接要快。适用性标准如 第 8.2.1.2 节“范围优化” 和 第 8.2.1.3 节“索引合并优化”中所述 ，除了上表的所有列值都是已知的并被视为常量。
+索引从 1 开始编号，顺序与表中显示的顺序相同 SHOW INDEX 。索引映射值 N 是一个位掩码值，指示哪些索引是候选索引。例如，值 0x19 （二进制 11001）表示考虑索引 1、4 和 5。
+Recursive （JSON 属性 recursive ：）
+这表明该行适用于 SELECT 递归公用表表达式的递归部分。请参阅 第 13.2.15 节，“WITH（公用表表达式）” 。
+Rematerialize （JSON 属性 rematerialize ：）
+Rematerialize (X,...) 显示在 EXPLAIN 表的行中 T ，其中是在读取 X 新行时触发重新实现的任何横向派生表。 T 例如：
+SELECT
+...
+FROM
+t,
+LATERAL ( derived table that refers to t ) AS dt
+...
+t 每次顶级查询处理
+
+新行时，都会重新具体化派生表的内容以使其更新
+。
+Scanned N databases （JSON 属性 message ：）
+这表示服务器在处理 INFORMATION_SCHEMA 表查询时执行的目录扫描次数，如 第 8.2.3 节“优化 INFORMATION_SCHEMA 查询” 中所述。的值 N 可以是 0、1 或 all 。
+Select tables optimized away （JSON 属性 message ：）
+优化器确定 1) 最多应返回一行，以及 2) 要生成该行，必须读取一组确定的行。当要读取的行可以在优化阶段读取时（例如，通过读取索引行），在查询执行期间不需要读取任何表。
+当查询被隐式分组（包含聚合函数但没有 GROUP BY 子句）时，第一个条件得到满足。当对每个使用的索引执行一行查找时，第二个条件就满足了。读取的索引数决定了要读取的行数。
+考虑以下隐式分组查询：
+SELECT MIN(c1), MIN(c2) FROM t1;
+假设 MIN(c1) 可以通过读取一个索引行 MIN(c2) 来检索并且可以通过从不同索引读取一行来检索。也就是说，对于每一列 c1 和 c2 ，都存在一个索引，其中该列是索引的第一列。在这种情况下，返回一行，通过读取两个确定性行生成。
+Extra 如果要读取的行不确定，则不会出现
+此值。考虑这个查询：
+SELECT MIN(c2) FROM t1 WHERE c1 <= 10;
+假设这 (c1, c2) 是一个覆盖索引。使用此索引， c1 <=
+10 必须扫描所有行以找到最小值 c2 。相比之下，请考虑以下查询：
+SELECT MIN(c2) FROM t1 WHERE c1 = 10;
+在这种情况下，第一个索引行 c1 =
+10 包含最小值 c2 。只需读取一行即可生成返回的行。
+对于维护每个表的精确行计数的存储引擎（例如 MyISAM ，但不是 InnoDB ），对于缺少子句或始终为真且没有子句的查询， Extra 可能会出现此值
+。（这是一个隐式分组查询的实例，其中存储引擎会影响是否可以读取确定数量的行。） COUNT(*) WHERE GROUP BY
+Skip_open_table , Open_frm_only , Open_full_table (JSON 属性: message )
+这些值表示适用于 INFORMATION_SCHEMA 表查询的文件打开优化。
+Skip_open_table ：表文件不需要打开。这些信息已经可以从数据字典中获得。
+Open_frm_only ：表信息只需要读取数据字典即可。
+Open_full_table : 未优化的信息查找。表信息必须从数据字典中读取，通过读取表文件来读取。
+Start temporary , End
+temporary (JSON 属性: message )
+这表明临时表用于 semijoin Duplicate Weedout 策略。
+unique row not found （JSON 属性 message ：）
+对于诸如 之类的查询，没有行满足
+索引或表的条件。 SELECT ... FROM tbl_name UNIQUE PRIMARY KEY
+Using filesort （JSON 属性 using_filesort ：）
+MySQL 必须执行额外的传递以找出如何按排序顺序检索行。排序是通过根据连接类型遍历所有行并存储排序键和指向与 WHERE 子句匹配的所有行的行的指针来完成的。然后对键进行排序，并按排序顺序检索行。请参阅 第 8.2.1.16 节，“ORDER BY 优化” 。
+Using index （JSON 属性 using_index ：）
+仅使用索引树中的信息从表中检索列信息，而无需执行额外的查找操作来读取实际行。当查询仅使用属于单个索引的列时，可以使用此策略。
+对于 InnoDB 具有用户定义聚集索引的表，即使列 Using index 中不存在
+该索引也可以使用 Extra 。如果 type is index 和 key is就是这种情况 PRIMARY 。
+关于使用的任何覆盖索引的信息显示为 EXPLAIN FORMAT=TRADITIONAL 和 EXPLAIN FORMAT=JSON 。从 MySQL 8.0.27 开始，它也显示为 EXPLAIN
+FORMAT=TREE .
+Using index condition （JSON 属性 using_index_condition ：）
+通过访问索引元组并首先测试它们以确定是否读取完整的表行来读取表。这样，除非有必要，否则索引信息用于延迟（ “ 下推 ” ）读取全表行。 请参阅 第 8.2.1.6 节，“索引条件下推优化” 。
+Using index for group-by （JSON 属性 using_index_for_group_by ：）
+类似于 Using index 表访问方法， Using index for group-by 表示 MySQL 找到了一个索引，该索引可用于检索 GROUP BY or DISTINCT 查询的所有列，而无需对实际表进行任何额外的磁盘访问。此外，索引以最有效的方式使用，因此对于每个组，只读取几个索引条目。有关详细信息，请参阅 第 8.2.1.17 节，“GROUP BY 优化” 。
+Using index for skip scan （JSON 属性 using_index_for_skip_scan ：）
+指示使用跳过扫描访问方法。请参阅 跳过扫描范围访问方法 。
+Using join buffer (Block Nested Loop) , Using join buffer (Batched Key Access) , Using join buffer (hash join) (JSON 属性: using_join_buffer )
+来自早期连接的表被部分读入连接缓冲区，然后使用缓冲区中的行来执行与当前表的连接。 (Block Nested Loop) 指示使用 Block Nested-Loop 算法， (Batched Key
+Access) 指示使用 Batched Key Access 算法，并 (hash join) 指示使用散列连接。也就是说， EXPLAIN 缓冲输出前一行表中的键，并从出现的行所代表的表中批量提取匹配的行 Using join buffer 。
+在 JSON 格式的输出中， 的值 using_join_buffer 始终是 Block Nested Loop 、 Batched Key
+Access 或之一 hash join 。
+哈希连接从 MySQL 8.0.18 开始可用；MySQL 8.0.20 或更高版本的 MySQL 中不使用 Block Nested-Loop 算法。有关这些优化的更多信息，请参阅 第 8.2.1.4 节，“哈希连接优化” 和 块嵌套循环连接算法 。
+请参阅 Batched Key Access Joins ，了解有关 Batched Key Access 算法的信息。
+Using MRR （JSON 属性 message ：）
+使用多范围读取优化策略读取表。请参阅 第 8.2.1.11 节，“多范围读取优化” 。
+Using sort_union(...) , Using
+union(...) , Using
+intersect(...) (JSON 属性: message )
+这些指示特定算法，显示如何为 index_merge 连接类型合并索引扫描。请参阅 第 8.2.1.3 节，“索引合并优化” 。
+Using temporary （JSON 属性 using_temporary_table ：）
+为了解析查询，MySQL 需要创建一个临时表来保存结果。如果查询包含以不同方式列出列的子句， GROUP BY 通常
+会发生这种情况。 ORDER BY
+Using where （JSON 属性 attached_condition ：）
+WHERE 子句用于限制哪些行与下一个表匹配或发送给客户端
+。 Extra 除非您特别打算从表中获取或检查所有行，否则如果值不是 Using where 并且表连接类型是 ALL or
+，您的查询可能有问题 index 。
+Using where 在 JSON 格式的输出中没有直接的对应物；该 attached_condition 属性包含 WHERE 使用的任何条件。
+Using where with pushed condition （JSON 属性 message ：）
+此项仅适用 于 NDB 表格。这意味着 NDB Cluster 正在使用条件下推优化来提高非索引列和常量之间直接比较的效率。在这种情况下，条件被 “ 下推 ” 到集群的数据节点，并同时在所有数据节点上进行评估。这消除了通过网络发送不匹配行的需要，并且可以将此类查询的速度提高 5 到 10 倍，这比可以使用但未使用条件下推的情况要快。有关详细信息，请参阅 第 8.2.1.5 节，“发动机状态下推优化” 。
+Zero limit （JSON 属性 message ：）
+查询有一个 LIMIT 0 子句，不能选择任何行。
+EXPLAIN 输出解释
+通过计算输出 rows 列中
+的值的乘积，您可以很好地了解连接的好坏。 EXPLAIN 这应该大致告诉您 MySQL 必须检查多少行才能执行查询。如果使用 max_join_size 系统变量限制查询，则此行产品还用于确定 SELECT 执行哪些多表语句以及中止哪些语句。请参阅 第 5.1.1 节，“配置服务器” 。
+以下示例显示了如何根据 提供的信息逐步优化多表连接 EXPLAIN 。
+假设您有 SELECT 此处显示的语句，并且您打算使用以下方法检查它 EXPLAIN ：
+EXPLAIN SELECT tt.TicketNumber, tt.TimeIn,
+tt.ProjectReference, tt.EstimatedShipDate,
+tt.ActualShipDate, tt.ClientID,
+tt.ServiceCodes, tt.RepetitiveID,
+tt.CurrentProcess, tt.CurrentDPPerson,
+tt.RecordVolume, tt.DPPrinted, et.COUNTRY,
+et_1.COUNTRY, do.CUSTNAME
+FROM tt, et, et AS et_1, do
+WHERE tt.SubmitTime IS NULL
+AND tt.ActualPC = et.EMPLOYID
+AND tt.AssignedPC = et_1.EMPLOYID
+AND tt.ClientID = do.CUSTNMBR;
+对于此示例，做出以下假设：
+被比较的列声明如下。
+桌子 柱子 数据类型
+tt ActualPC CHAR(10)
+tt AssignedPC CHAR(10)
+tt ClientID CHAR(10)
+et EMPLOYID CHAR(15)
+do CUSTNMBR CHAR(15)
+这些表具有以下索引。
+桌子 指数
+tt ActualPC
+tt AssignedPC
+tt ClientID
+et EMPLOYID （首要的关键）
+do CUSTNMBR （首要的关键）
+这些 tt.ActualPC 值分布不均。
+最初，在执行任何优化之前， EXPLAIN 语句会生成以下信息：
+table type possible_keys key key_len ref rows Extra
+et ALL PRIMARY NULL NULL NULL 74
+do ALL PRIMARY NULL NULL NULL 2135
+et_1 ALL PRIMARY NULL NULL NULL 74
+tt ALL AssignedPC, NULL NULL NULL 3872
+ClientID,
+ActualPC
+Range checked for each record (index map: 0x23)
+因为 type 对于 ALL 每个表，此输出表明 MySQL 正在生成所有表的笛卡尔积；也就是说，每行的组合。这需要相当长的时间，因为必须检查每个表中行数的乘积。对于手头的案例，该产品为 74 × 2135 × 74 × 3872 = 45,268,558,720 行。如果桌子更大，您只能想象需要多长时间。
+这里的一个问题是，如果它们被声明为相同的类型和大小，MySQL 可以更有效地使用列上的索引。在这种情况下，如果它们被声明为相同的大小，则被认为是相同的 VARCHAR 。
+声明为
+和
+is ，因此存在长度不匹配。 CHAR tt.ActualPC CHAR(10) et.EMPLOYID CHAR(15)
+要解决列长度之间的这种差异，请使用
+从 10 个字符 ALTER TABLE 延长 ActualPC 到 15 个字符：
+mysql> ALTER TABLE tt MODIFY ActualPC VARCHAR(15);
+现在 tt.ActualPC 和 et.EMPLOYID 都是 VARCHAR(15) 。再次执行该 EXPLAIN 语句会产生以下结果：
+table type possible_keys key key_len ref rows Extra
+tt ALL AssignedPC, NULL NULL NULL 3872 Using
+ClientID, where
+ActualPC
+do ALL PRIMARY NULL NULL NULL 2135
+Range checked for each record (index map: 0x1)
+et_1 ALL PRIMARY NULL NULL NULL 74
+Range checked for each record (index map: 0x1)
+et eq_ref PRIMARY PRIMARY 15 tt.ActualPC 1
+这并不完美，但要好得多： rows 值的乘积少了 74 倍。这个版本在几秒钟内执行。
+可以进行第二次更改以消除 tt.AssignedPC =
+et_1.EMPLOYID 和 tt.ClientID =
+do.CUSTNMBR 比较的列长度不匹配：
+mysql> ALTER TABLE tt MODIFY AssignedPC VARCHAR(15),
+MODIFY ClientID VARCHAR(15);
+修改后， EXPLAIN 产生如下所示的输出：
+table type possible_keys key key_len ref rows Extra
+et ALL PRIMARY NULL NULL NULL 74
+tt ref AssignedPC, ActualPC 15 et.EMPLOYID 52 Using
+ClientID, where
+ActualPC
+et_1 eq_ref PRIMARY PRIMARY 15 tt.AssignedPC 1
+do eq_ref PRIMARY PRIMARY 15 tt.ClientID 1
+在这一点上，查询几乎被优化得尽可能好。剩下的问题是，默认情况下，MySQL 假定 tt.ActualPC 列中的值是均匀分布的，而表的情况并非如此 tt 。幸运的是，告诉 MySQL 分析密钥分布很容易：
+mysql> ANALYZE TABLE tt;
+使用附加索引信息，连接是完美的并 EXPLAIN 产生以下结果：
+table type possible_keys key key_len ref rows Extra
+tt ALL AssignedPC NULL NULL NULL 3872 Using
+ClientID, where
+ActualPC
+et eq_ref PRIMARY PRIMARY 15 tt.ActualPC 1
+et_1 eq_ref PRIMARY PRIMARY 15 tt.AssignedPC 1
+do eq_ref PRIMARY PRIMARY 15 tt.ClientID 1
+输出中的 rows 列 EXPLAIN 是来自 MySQL 连接优化器的有根据的猜测。 rows 通过将乘积与查询返回的实际行数进行比较，检查数字是否更接近真实
+情况。如果数字相差很大，您可以通过 STRAIGHT_JOIN 在 SELECT 语句中使用并尝试在 FROM 子句中以不同的顺序列出表来获得更好的性能。（但是， STRAIGHT_JOIN 可能会阻止使用索引，因为它会禁用半连接转换。请参阅 第 8.2.2.1 节，“使用半连接转换优化 IN 和 EXISTS 子查询谓词” .)
+EXPLAIN
+SELECT 与子查询一起使用
+时，在某些情况下可以执行修改数据的语句；有关详细信息，请参阅 第 13.2.11.8 节，“派生表” 。

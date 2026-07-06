@@ -1,0 +1,80 @@
+Redis DECR 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis DECR 命令
+将 key 中存储的数字值减 1。
+* 语法
+DECR key
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名，value 必须是整数或不存在
+* 返回值
+条件 返回值
+递减成功 返回递减后的新值（Integer）
+key 不存在 先设为 0 再递减，返回 -1
+value 非整数 返回错误
+* 时间复杂度
+O(1)
+*
+* 示例
+> SET counter 10
+OK
+> DECR counter
+(integer) 9
+
+# key 不存在
+> DECR newcounter
+(integer) -1
+
+# 非数字
+> SET mykey "hello"
+> DECR mykey
+(error) ERR value is not an integer or out of range
+* 常见错误
+value 非整数或超出 64 位范围 ：返回错误。
+浮点数不能用 DECR ：浮点数用 DECRBYFLOAT （不存在，需用 INCRBYFLOAT key -increment ）。
+* 最佳实践
+库存扣减 ：DECR 实现原子库存扣减， DECR stock:1001 返回 -1 表示超卖（需配合判断）。
+限流计数器 ：窗口内 DECR 配额，归零后拒绝请求。
+* FAQ
+Q: DECR 和 INCR 是对称的吗？ A: 是。DECR 是 INCR 的逆操作。也可用 INCRBY key -1 替代 DECR。
+Q: 库存扣减后如何判断售罄？ A: DECR stock:1001 返回负数说明超卖，业务层需回滚或拒绝。更安全的做法是用 Lua 脚本先判断再扣减。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

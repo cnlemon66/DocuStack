@@ -1,0 +1,85 @@
+Redis HSET 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis HSET 命令
+设置 Hash 中指定 field 的 value。若 field 已存在则覆盖，key 不存在则创建新 Hash。
+* 语法
+HSET key field value [field value ...]
+Redis 4.0+ 支持一次设置多个 field-value 对。
+* 参数说明
+参数 类型 必填 说明
+key String 是 Hash 的键名
+field String 是 字段名
+value String 是 字段值（二进制安全）
+* 返回值
+条件 返回值
+新增 field 数量 整数（Redis 4.0+）
+老版本（<4.0） 0 或 1（不区分新增/覆盖）
+* 时间复杂度
+O(1)（单个 field），O(N)（N 个 field-value 对）
+* 示例
+# 设置单个 field
+> HSET user:1001 name "Alice"
+(integer) 1
+
+> HSET user:1001 age "30"
+(integer) 1
+
+# 覆盖已有 field
+> HSET user:1001 name "Bob"
+(integer) 0
+
+# 批量设置（Redis 4.0+）
+> HSET user:1002 name "Charlie" age "25" city "Beijing"
+(integer) 3
+
+# key 不存在时自动创建
+> HSET newuser:999 name "New"
+(integer) 1
+> TYPE newuser:999
+hash
+* 常见错误
+参数数量不对 ：HSET 的 field 和 value 必须成对出现，否则报错。
+对非 Hash 类型 key 使用 ：返回 WRONGTYPE。
+* 最佳实践
+批量写入 ：一次 HSET 多个 field-value 对，减少网络往返。
+用 Hash 替代多 key ：存储对象属性时，用 HSET user:1001 替代 SET user:1001:name 等多 key，节省内存（Hash 底层 ziplist 压缩存储小 field）。
+控制 Hash 大小 ：field 数量建议不超过 5000，避免 HGETALL 阻塞。
+* FAQ
+Q: HSET 和 HMSET 有什么区别？ A: Redis 4.0 起 HSET 支持多 field， HMSET 已废弃，官方推荐统一使用 HSET。
+Q: 如何判断 field 是新增还是覆盖？ A: Redis 4.0+ HSET 返回的是新增 field 的数量。返回 0 表示全部是覆盖操作。
+Q: Hash 的 field 可以设置过期时间吗？ A: 不可以。Redis 不支持对 Hash 的单个 field 设置 TTL ，只能对整个 key 用 EXPIRE 。
+相关命令
+HDEL
+HEXISTS
+HEXPIRE
+HEXPIREAT
+HEXPIRETIME
+HGET
+HGETALL
+HGETDEL
+HGETEX
+HINCRBY
+HINCRBYFLOAT
+HKEYS
+HLEN
+HMGET
+HMSET
+HPERSIST
+HPEXPIRE
+HPEXPIREAT
+HPEXPIRETIME
+HPTTL
+HRANDFIELD
+HSCAN
+HSET
+HSETEX
+HSETNX
+HSTRLEN
+HTTL
+HVALS

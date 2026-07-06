@@ -1,0 +1,80 @@
+15.8.12 为专用 MySQL 服务器启用自动配置_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.12 为专用 MySQL 服务器启用自动配置
+15.8.12 为专用 MySQL 服务器启用自动配置
+innodb_dedicated_server 启用时，
+自动 InnoDB 配置以下变量：
+innodb_buffer_pool_size
+innodb_redo_log_capacity 或者，在 MySQL 8.0.30 之前， innodb_log_file_size 和 innodb_log_files_in_group .
+笔记
+innodb_log_file_size 并 innodb_log_files_in_group 在 MySQL 8.0.30 中弃用。这些变量被变量取代 innodb_redo_log_capacity 。
+innodb_flush_method
+innodb_dedicated_server 仅当 MySQL 实例驻留在可以使用所有可用系统资源的专用服务器上
+时才考虑启用
+。例如， innodb_dedicated_server 如果您在 Docker 容器或仅运行 MySQL 的专用 VM 中运行 MySQL 服务器，请考虑启用。 innodb_dedicated_server 如果 MySQL 实例与其他应用程序共享系统资源，则不建议
+启用
+。
+下面的信息描述了每个变量是如何自动配置的。
+innodb_buffer_pool_size
+缓冲池大小根据服务器上检测到的内存量进行配置。
+表 15.8 自动配置的缓冲池大小
+检测到的服务器内存 缓冲池大小
+小于 1GB 128MB（默认值）
+1GB 至 4GB detected server memory * 0.5
+大于4GB detected server memory * 0.75
+innodb_redo_log_capacity
+重做日志容量是根据服务器上检测到的内存量配置的，在某些情况下，是否 innodb_buffer_pool_size 明确配置。如果 innodb_buffer_pool_size 未明确配置，则采用默认值。
+警告
+innodb_buffer_pool_size 如果设置为大于检测到的服务器内存量的值，
+
+则自动重做日志容量配置行为未定义
+。
+表 15.9 自动配置的日志文件大小
+检测到的服务器内存 缓冲池大小 重做日志容量
+小于 1GB 未配置 100MB
+小于 1GB 小于 1GB 100MB
+1GB 到 2GB 不适用 100MB
+2GB 至 4GB 未配置 1GB
+2GB 至 4GB 任何配置值 圆形（0.5 * detected server memory GB）* 0.5 GB
+4GB 至 10.66GB 不适用 圆形（0.75 * detected server memory GB）* 0.5 GB
+10.66GB 至 170.66GB 不适用 圆形（0.5625 * detected server memory GB）* 0.5 GB
+大于 170.66GB 不适用 128GB
+innodb_log_file_size （在 MySQL 8.0.30 中已弃用）
+日志文件大小根据自动配置的缓冲池大小进行配置。
+表 15.10 自动配置的日志文件大小
+缓冲池大小 日志文件大小
+小于 8GB 512MB
+8GB 至 128GB 1024MB
+大于128GB 2048MB
+innodb_log_files_in_group （在 MySQL 8.0.30 中已弃用）
+日志文件的数量根据自动配置的缓冲池大小进行配置。 innodb_log_files_in_group MySQL 8.0.14 中添加
+了变量的自动配置
+。
+表 15.11 自动配置的日志文件数
+缓冲池大小 日志文件数
+小于 8GB 轮( buffer pool size )
+8GB 至 128GB 圆（ buffer pool size * 0.75）
+大于128GB 64
+笔记
+innodb_log_files_in_group 如果舍入缓冲池大小值小于 2GB，则强制执行
+
+最小值
+2。
+innodb_flush_method
+flush 方法设置
+为启用 O_DIRECT_NO_FSYNC 时
+。 innodb_dedicated_server 如果 O_DIRECT_NO_FSYNC 设置不可用， innodb_flush_method 则使用默认设置。
+InnoDB 在刷新 I/O 期间使用，但
+在每次写入操作后 O_DIRECT 跳过系统调用。 fsync()
+警告
+在 MySQL 8.0.14 之前，该设置不适用于 XFS 和 EXT4 等需要 fsync() 系统调用来同步文件系统元数据更改的文件系统。
+从 MySQL 8.0.14 开始， fsync() 在创建新文件、增加文件大小和关闭文件后调用，以确保同步文件系统元数据更改。 fsync() 每次写操作后仍然会跳过系统调用
+。
+如果重做日志文件和数据文件驻留在不同的存储设备上，则可能会丢失数据，并且在数据文件写入从非电池供电的设备缓存中刷新之前会发生意外退出。如果您使用或打算将不同的存储设备用于重做日志文件和数据文件，并且您的数据文件驻留在具有非电池后备缓存的设备上，请 O_DIRECT 改用。
+如果在选项文件或其他地方显式配置了自动配置的选项，则使用显式指定的设置，并打印类似于此的启动警告 stderr ：
+[警告] [000000] InnoDB：innodb_buffer_pool_size 的选项 innodb_dedicated_server 被忽略，因为明确指定了 innodb_buffer_pool_size=134217728。
+一个选项的显式配置不会阻止其他选项的自动配置。
+如果 innodb_dedicated_server 启用并 innodb_buffer_pool_size 显式配置，则基于缓冲池大小配置的变量使用根据在服务器上检测到的内存量计算的缓冲池大小值，而不是显式定义的缓冲池大小值。
+每次启动 MySQL 服务器时，都会根据需要评估和重新配置自动配置的设置。

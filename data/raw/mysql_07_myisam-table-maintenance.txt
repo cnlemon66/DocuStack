@@ -1,0 +1,20 @@
+7.6 MyISAM表维护和崩溃恢复_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 
+7.6 MyISAM表维护和崩溃恢复
+7.6 MyISAM表维护和崩溃恢复
+7.6.1 使用 myisamchk 进行崩溃恢复 7.6.2 如何检查 MyISAM 表的错误 7.6.3 如何修复 MyISAM 表 7.6.4 MyISAM表优化 7.6.5 设置 MyISAM 表维护计划
+本节讨论如何使用 myisamchk 检查或修复 MyISAM 表（具有
+存储数据和索引的表 .MYD 和文件）。 .MYI 对于一般的 myisamchk 背景，请参阅 第 4.6.4 节，“myisamchk — MyISAM 表维护实用程序” 。其他表修复信息可以在 第 2.11.13 节“重建或修复表或索引” 中找到。
+您可以使用 myisamchk 检查、修复或优化数据库表。以下部分描述了如何执行这些操作以及如何设置表维护计划。有关使用 myisamchk 获取有关表的信息的信息，请参阅 第 4.6.4.5 节，“使用 myisamchk 获取表信息” 。
+尽管使用 myisamchk 进行表修复非常安全，但
+在进行修复或任何可能对表进行大量更改的维护操作 之前进行备份始终是一个好主意。
+影响索引的myisamchk 操作会导致 MyISAM FULLTEXT 使用与 MySQL 服务器使用的值不兼容的全文参数重建索引。为避免此问题，请遵循 第 4.6.4.1 节“myisamchk 常规选项” 。
+MyISAM 表维护也可以使用执行类似于 myisamchk 可以执行的操作的 SQL 语句来完成：
+要检查 MyISAM 表，请使用 CHECK TABLE .
+要修复 MyISAM 表，请使用 REPAIR TABLE .
+要优化 MyISAM 表，请使用 OPTIMIZE TABLE .
+要分析 MyISAM 表，请使用 ANALYZE TABLE .
+有关这些语句的其他信息，请参阅 第 13.7.3 节，“表维护语句” 。
+这些语句可以直接使用，也可以通过 mysqlcheck 客户端程序使用。 与myisamchk 相比，这些语句的优势之一是服务器完成所有工作。使用 myisamchk 时，您必须确保服务器不会同时使用这些表，这样 myisamchk 和服务器之间就不会发生不必要的交互。

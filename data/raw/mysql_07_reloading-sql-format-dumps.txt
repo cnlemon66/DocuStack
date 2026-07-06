@@ -1,0 +1,24 @@
+7.4.2 重新加载 SQL 格式的备份_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 7.4 使用 mysqldump 进行备份 / 
+7.4.2 重新加载 SQL 格式的备份
+7.4.2 重新加载 SQL 格式的备份
+要重新加载由mysqldump 编写的包含 SQL 语句的转储文件
+，请将其用作 mysql 客户端的输入。如果转储文件是由 mysqldump 使用 --all-databases or --databases 选项创建的，它包含 CREATE DATABASE 和 USE 语句，并且没有必要指定要加载数据的默认数据库：
+$> mysql < dump.sql
+或者，从 mysql 中使用 source 命令：
+mysql> source dump.sql
+CREATE DATABASE 如果文件是不包含and
+语句
+的单数据库转储 USE ，请先创建数据库（如有必要）：
+$> mysqladmin create db1
+然后在加载转储文件时指定数据库名称：
+$> mysql db1 < dump.sql
+或者，从 mysql 中创建数据库，选择它作为默认数据库，然后加载转储文件：
+mysql> CREATE DATABASE IF NOT EXISTS db1;
+mysql> USE db1;
+mysql> source dump.sql
+笔记
+对于 Windows PowerShell 用户：由于“<”字符保留供将来在 PowerShell 中使用，因此需要一种替代方法，例如使用引号 cmd.exe /c "mysql
+< dump.sql" 。

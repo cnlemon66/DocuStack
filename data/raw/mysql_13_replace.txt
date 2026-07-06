@@ -1,0 +1,99 @@
+13.2.9 REPLACE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 
+13.2.9 REPLACE 语句
+13.2.9 REPLACE 语句
+REPLACE [LOW_PRIORITY | DELAYED]
+[INTO] tbl_name [PARTITION ( partition_name [, partition_name ] ...)]
+[( col_name [, col_name ] ...)]
+{ {VALUES | VALUE} ( value_list ) [, ( value_list )] ...
+|
+VALUES row_constructor_list }
+
+REPLACE [LOW_PRIORITY | DELAYED]
+[INTO] tbl_name [PARTITION ( partition_name [, partition_name ] ...)]
+SET assignment_list REPLACE [LOW_PRIORITY | DELAYED]
+[INTO] tbl_name [PARTITION ( partition_name [, partition_name ] ...)]
+[( col_name [, col_name ] ...)]
+{SELECT ... | TABLE table_name } value :
+{ expr | DEFAULT} value_list : value [, value ] ... row_constructor_list :
+ROW( value_list )[, ROW( value_list )][, ...] assignment : col_name = value assignment_list : assignment [, assignment ] ...
+REPLACE 工作方式与 完全相同
+，只是如果表中的旧行与 a或
+索引 INSERT 的新行具有相同的值
+，则在插入新行之前删除旧行。请参阅 第 13.2.6 节，“INSERT 语句” 。 PRIMARY KEY UNIQUE
+REPLACE 是 SQL 标准的 MySQL 扩展。它要么插入，要么 删除 并插入。对于标准 SQL 的另一个 MySQL 扩展——插入或 更新 ——请参阅第13.2.6.2 节，“INSERT ... ON DUPLICATE KEY UPDATE 语句” 。
+DELAYED 插入和替换在 MySQL 5.6 中被弃用。在 MySQL 8.0 中， DELAYED 不支持。服务器识别但忽略 DELAYED 关键字，将替换处理为非延迟替换，并生成 ER_WARN_LEGACY_SYNTAX_CONVERTED 警告： REPLACE DELAYED 不再受支持。该语句已转换为 REPLACE 。该 DELAYED 关键字计划在未来版本中删除。发布。
+笔记
+REPLACE PRIMARY KEY 仅当表具有or UNIQUE 索引时才有意义。否则，它等同于 INSERT ，因为没有索引可用于确定新行是否与另一行重复。
+所有列的值均取自 REPLACE 语句中指定的值。任何缺失的列都设置为其默认值，就像 INSERT . 您不能引用当前行中的值并在新行中使用它们。如果您使用诸如 之类的赋值，则对右侧列名的引用将被视为
+，因此该赋值等同于。 SET col_name = col_name + 1 DEFAULT( col_name ) SET col_name =
+DEFAULT( col_name ) + 1
+在 MySQL 8.0.19 及更高版本中，您可以使用指定 REPLACE 尝试插入
+的列值 VALUES ROW() 。
+要使用 REPLACE ，您必须同时拥有表的 INSERT 和 DELETE 权限。
+如果显式替换生成的列，则唯一允许的值为 DEFAULT . 有关生成的列的信息，请参阅 第 13.1.20.8 节，“CREATE TABLE 和生成的列” 。
+REPLACE PARTITION 使用带有逗号分隔的分区、子分区或两者名称列表的子句支持显式分区选择。与 一样 INSERT ，如果无法将新行插入这些分区或子分区中的任何一个， REPLACE 语句将失败并显示错误 Found a row not matching the given partition set 。有关更多信息和示例，请参阅 第 24.5 节，“分区选择” 。
+该 REPLACE 语句返回一个计数以指示受影响的行数。这是删除和插入的行的总和。如果 single-row 的计数为 1， REPLACE 则插入一行并且没有删除任何行。如果计数大于 1，则在插入新行之前删除了一个或多个旧行。如果表包含多个唯一索引并且新行重复不同唯一索引中不同旧行的值，则单个行可能会替换多个旧行。
+受影响的行数可以很容易地确定是否 REPLACE 只添加了一行或者它是否还替换了任何行：检查计数是 1（添加）还是更大（替换）。
+如果您使用的是 C API，则可以使用 mysql_affected_rows() 函数获取受影响的行数。
+您不能替换为表并从子查询中的同一个表中进行选择。
+REPLACE MySQL 对(and
+)
+使用以下算法 LOAD DATA ...
+REPLACE ：
+尝试将新行插入表中
+当主键或唯一索引发生重复键错误导致插入失败时：
+从表中删除具有重复键值的冲突行
+再次尝试将新行插入表中
+在重复键错误的情况下，存储引擎可能会执行 REPLACE 更新而不是删除加插入，但语义是相同的。除了存储引擎递增状态变量
+的方式可能存在差异外，没有用户可见的影响
+。 Handler_ xxx
+因为 REPLACE ... SELECT 语句的结果取决于行的顺序， SELECT 并且不能始终保证此顺序，所以在为源和副本记录这些语句时可能会出现分歧。因此， REPLACE ... SELECT 语句被标记为对基于语句的复制不安全。使用基于语句的模式时，此类语句会在错误日志中产生警告，并在使用模式时使用基于行的格式写入二进制日志 MIXED 。另见 第 17.2.1.1 节，“基于语句和基于行的复制的优点和缺点” 。
+MySQL 8.0.19 及更高版本支持 TABLE 以及 SELECT with REPLACE ，就像它支持 with 一样 INSERT 。有关更多信息和示例，
+请参阅 第 13.2.6.1 节，“INSERT ... SELECT 语句” 。
+在修改未分区以适应分区的现有表时，或者在修改已分区表的分区时，您可以考虑更改表的主键（请参阅 第 24.6.1 节，“分区键、主键和唯一键” ）。您应该知道，如果您这样做， REPLACE 语句的结果可能会受到影响，就像您修改非分区表的主键一样。考虑由以下 CREATE TABLE 语句创建的表：
+CREATE TABLE test (
+id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+data VARCHAR(64) DEFAULT NULL,
+ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+PRIMARY KEY (id)
+);
+当我们创建这张表并运行mysql客户端中显示的语句时，结果如下：
+mysql> REPLACE INTO test VALUES (1, 'Old', '2014-08-20 18:47:00');
+Query OK, 1 row affected (0.04 sec)
+
+mysql> REPLACE INTO test VALUES (1, 'New', '2014-08-20 18:47:42');
+Query OK, 2 rows affected (0.04 sec)
+
+mysql> SELECT * FROM test;
++----+------+---------------------+
+| id | data | ts |
++----+------+---------------------+
+| 1 | New | 2014-08-20 18:47:42 |
++----+------+---------------------+
+1 row in set (0.00 sec)
+现在我们创建第二个表几乎与第一个相同，除了主键现在覆盖 2 列，如下所示（强调文本）：
+CREATE TABLE test2 (
+id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+data VARCHAR(64) DEFAULT NULL,
+ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id, ts) );
+当我们运行与原始
+表 test2 相同的两条
+语句时，我们会得到不同的结果： REPLACE test
+mysql> REPLACE INTO test2 VALUES (1, 'Old', '2014-08-20 18:47:00');
+Query OK, 1 row affected (0.05 sec)
+
+mysql> REPLACE INTO test2 VALUES (1, 'New', '2014-08-20 18:47:42');
+Query OK, 1 row affected (0.06 sec)
+
+mysql> SELECT * FROM test2;
++----+------+---------------------+
+| id | data | ts |
++----+------+---------------------+
+| 1 | Old | 2014-08-20 18:47:00 |
+| 1 | New | 2014-08-20 18:47:42 |
++----+------+---------------------+
+2 rows in set (0.00 sec)
+这是因为，当在 上运行时 test2 ， id 和 ts 列的值都必须与要替换的行的现有行的值相匹配；否则，插入一行。

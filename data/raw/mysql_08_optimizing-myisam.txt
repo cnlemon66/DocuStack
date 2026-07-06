@@ -1,0 +1,8 @@
+8.6 优化 MyISAM 表_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 
+8.6 优化 MyISAM 表
+8.6 优化 MyISAM 表
+8.6.1 优化 MyISAM 查询 8.6.2 MyISAM 表的批量数据加载 8.6.3 优化 REPAIR TABLE 语句
+存储引擎在 MyISAM 读取为主的数据或低并发操作时表现最佳，因为表锁限制了执行同步更新的能力。在 MySQL 中， InnoDB 是默认的存储引擎而不是 MyISAM .

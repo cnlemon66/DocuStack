@@ -1,0 +1,47 @@
+8.3.8 InnoDB和MyISAM索引统计收集_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.3 优化和索引 / 
+8.3.8 InnoDB和MyISAM索引统计收集
+8.3.8 InnoDB和MyISAM索引统计收集
+存储引擎收集有关表的统计信息以供优化器使用。表统计是基于值组的，其中值组是一组具有相同键前缀值的行。出于优化器的目的，一个重要的统计数据是平均值组大小。
+MySQL 通过以下方式使用平均值组大小：
+ref 估计每次访问
+
+必须读取多少行
+估计一个partial join产生了多少行，也就是一个操作产生的行数
+(...) JOIN tbl_name ON tbl_name . key = expr
+随着索引的平均值组大小的增加，索引对于这两个目的的用处减少，因为每次查找的平均行数增加：为了使索引有利于优化目的，最好每个索引值都以较小的目标为目标表中的行数。当给定的索引值产生大量行时，索引的用处不大，MySQL 也不太可能使用它。
+平均值组大小与表基数有关，表基数是值组的数量。该 SHOW INDEX 语句显示基于 的基数值 N/S ，其中 N 是表中的行数， S 是平均值组大小。该比率在表中产生近似数量的值组。
+对于基于 <=> 比较运算符的连接， NULL 与任何其他值没有区别对待： NULL <=> NULL ，就像任何其他
+. N <=> N N
+但是，对于基于 = 运算符的连接， NULL 与非 NULL 值不同：
+当
+或
+（或两者）为
+时不为真。这会影响
+对以下形式比较的访问： 如果当前值为 ，则MySQL 不会访问该表
+，因为比较不可能为真。 expr1 = expr2 expr1 expr2 NULL ref tbl_name.key = expr expr NULL
+对于 = 比较，表中有多少 NULL 个值并不重要。出于优化目的，相关值是非 NULL 值组的平均大小。但是，MySQL 当前不支持收集或使用该平均大小。
+对于 InnoDB 和表，您可以分别通过和
+系统变量 MyISAM 对表统计信息的收集进行一些控制
+。这些变量具有三个可能的值，它们的区别如下： innodb_stats_method myisam_stats_method
+当变量设置为 时 nulls_equal ，所有 NULL 值都被视为相同（即，它们都形成一个值组）。
+如果 NULL 值组大小远高于平均非 NULL 值组大小，则此方法会使平均值组大小向上倾斜。这使得索引在优化器看来不如它对查找非 NULL 值的连接真正有用。因此，该
+方法可能会导致优化器在应该访问时 nulls_equal 不使用索引
+。 ref
+当变量设置为 时 nulls_unequal ， NULL 值不被视为相同。相反，每个 NULL 值形成一个单独的大小为 1 的值组。
+如果您有很多 NULL 值，此方法会向下倾斜平均值组大小。如果非值组的平均 NULL 大小很大，将 NULL 每个值计为大小为 1 的组会导致优化器高估查找非值的连接的索引 NULL 值。因此，当其他方法可能更好时
+，该 nulls_unequal 方法可能会导致优化器使用此索引进行
+查找。 ref
+当变量设置为 时 nulls_ignored ， NULL 值将被忽略。
+如果您倾向于使用许多使用 <=> rather than的联接 = ， NULL 则值在比较中并不特殊，并且一个 NULL 等于另一个。在这种情况下， nulls_equal 是合适的统计方法。
+系统 innodb_stats_method 变量具有全局值；系统 myisam_stats_method 变量具有全局值和会话值。设置全局值会影响来自相应存储引擎的表的统计信息收集。设置会话值仅影响当前客户端连接的统计信息收集。这意味着您可以强制使用给定的方法重新生成表的统计信息，而不会通过将会话值设置为 myisam_stats_method .
+要重新生成 MyISAM 表统计信息，您可以使用以下任何一种方法：
+执行 myisamchk --stats_method= method_name --analyze
+更改表使其统计信息过时（例如插入一行然后删除），然后设置 myisam_stats_method 并发出 ANALYZE TABLE 语句
+关于使用 innodb_stats_method and
+的一些注意事项 myisam_stats_method ：
+您可以强制显式收集表统计信息，如前所述。但是，MySQL 也可以自动收集统计信息。例如，如果在对表执行语句的过程中，其中一些语句修改了表，MySQL 可能会收集统计信息。（例如，这可能发生在批量插入或删除或某些 ALTER TABLE 语句中。）如果发生这种情况，将使用任何值 innodb_stats_method 或 myisam_stats_method 当时有。因此，如果您使用一种方法收集统计信息，但是当稍后自动收集表的统计信息时系统变量设置为另一种方法，则使用另一种方法。
+无法判断使用哪种方法为给定表生成统计信息。
+这些变量仅适用于 InnoDB 和 MyISAM 表。其他存储引擎只有一种收集表统计信息的方法。通常它更接近 nulls_equal 方法。

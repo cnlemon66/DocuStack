@@ -1,0 +1,7 @@
+8.13.3 使用 performance_schema 测量性能_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.13 测量性能（基准测试） / 
+8.13.3 使用 performance_schema 测量性能
+8.13.3 使用 performance_schema 测量性能
+您可以查询 performance_schema 数据库中的表以查看有关服务器性能特征及其运行的应用程序的实时信息。有关详细信息，请参阅 第 27 章， MySQL 性能模式 。

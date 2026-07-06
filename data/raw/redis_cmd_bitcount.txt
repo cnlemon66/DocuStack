@@ -1,0 +1,86 @@
+Redis BITCOUNT 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis BITCOUNT 命令
+BITCOUNT 统计指定字符串中值为 1 的二进制位数（Population Count），也可统计指定字节范围或位范围内的 1 的个数。
+* 语法
+BITCOUNT key [start end [BIT | BYTE]]
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+start Integer 否 起始位置（0-based）
+end Integer 否 结束位置（0-based，包含）
+BIT / BYTE Keyword 否 指定 start/end 的单位，默认 BYTE（字节）。Redis 7.0+ 支持 BIT 单位（位）
+* 返回值
+Integer ：值为 1 的位数
+Error ：key 存储的不是 String 类型
+* 时间复杂度
+O(N)，N 为统计的字节数或位数
+* 示例
+* 基本用法（统计整个 key）
+> SET mykey "foobar"
+OK
+> BITCOUNT mykey
+26
+* 统计字节范围（前 3 字节）
+> BITCOUNT mykey 0 2
+17
+* 按位统计范围（Redis 7.0+）
+> SET mykey "\x00\xff" # 二进制数据
+OK
+> BITCOUNT mykey 0 7 BIT
+0
+> BITCOUNT mykey 8 15 BIT
+8
+* 常见错误
+错误 原因 解决
+WRONGTYPE key 不是 String 类型 检查 key 的类型： TYPE key
+ERR syntax error BIT/BYTE 参数位置错误或版本过低 Redis 7.0+ 才支持 BIT 单位
+* 最佳实践
+位图（Bitmap）场景必备 ：统计在线用户数、签到天数等
+大数据量时建议用范围参数缩小扫描范围
+和 BITPOS 配合使用：先定位有 1 的位置，再用 BITCOUNT 统计数量
+内存效率高：1 亿用户在线状态仅需约 12MB
+* FAQ
+Q1: BITCOUNT 只能统计 1 吗？能统计 0 吗？ A: 不能直接统计 0。可通过总位数减去 1 的个数计算： STRLEN(key) * 8 - BITCOUNT(key) 。
+Q2: BITCOUNT 和 HyperLogLog 哪个更适合计数？ A: BITCOUNT 精确计数但占用空间与用户量成正比；HyperLogLog 近似计数但空间固定约 12KB。需要精确值用 Bitmap，海量数据允许误差用 HyperLogLog。
+Q3: 为什么 "foobar" 的 BITCOUNT 是 26？ A: 'f'=0x66(01100110, 4个1), 'o'=0x6F(01101111, 6个1), 'o'=6, 'b'=0x62(01100010, 3个1), 'a'=0x61(01100001, 3个1), 'r'=0x72(01110010, 4个1)。总和 = 4+6+6+3+3+4 = 26。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

@@ -1,0 +1,197 @@
+13.1.21 CREATE TABLESPACE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.21 CREATE TABLESPACE 语句
+13.1.21 CREATE TABLESPACE 语句
+CREATE [UNDO] TABLESPACE tablespace_name InnoDB and NDB: [ADD DATAFILE ' file_name ']
+[AUTOEXTEND_SIZE [=] value ] InnoDB only: [FILE_BLOCK_SIZE = value]
+[ENCRYPTION [=] {'Y' | 'N'}] NDB only: USE LOGFILE GROUP logfile_group [EXTENT_SIZE [=] extent_size ]
+[INITIAL_SIZE [=] initial_size ]
+[MAX_SIZE [=] max_size ]
+[NODEGROUP [=] nodegroup_id ]
+[WAIT]
+[COMMENT [=] ' string '] InnoDB and NDB: [ENGINE [=] engine_name ] Reserved for future use: [ENGINE_ATTRIBUTE [=] ' string ']
+该语句用于创建表空间。精确的语法和语义取决于所使用的存储引擎。在标准的 MySQL 版本中，这始终是一个 InnoDB 表空间。MySQL NDB Cluster 还支持使用 NDB 存储引擎的表空间。
+InnoDB 的注意事项
+NDB Cluster 的注意事项
+选项
+笔记
+InnoDB 示例
+新开发银行示例
+InnoDB 的注意事项
+CREATE TABLESPACE 语法用于创建通用表空间或撤消表空间。MySQL 8.0.14引入的 UNDO 关键字，必须指定创建undo表空间。
+通用表空间是共享表空间。它可以容纳多个表格，并支持所有表格行格式。可以在相对于数据目录或独立于数据目录的位置创建通用表空间。
+创建 InnoDB 通用表空间后，使用或
+将表添加到表空间。有关详细信息，请参阅 第 15.6.3.3 节，“通用表空间” 。 CREATE TABLE tbl_name ... TABLESPACE [=] tablespace_name ALTER TABLE tbl_name TABLESPACE [=] tablespace_name
+撤消表空间包含撤消日志。通过指定完全限定的数据文件路径，可以在选定的位置创建撤消表空间。有关详细信息，请参阅 第 15.6.3.4 节，“撤消表空间” 。
+NDB Cluster 的注意事项
+该语句用于创建一个表空间，该表空间可以包含一个或多个数据文件，为 NDB Cluster Disk Data tables 提供存储空间（参见 第 23.6.10 节，“NDB Cluster Disk Data Tables” ）。使用此语句创建一个数据文件并将其添加到表空间。可以使用 ALTER TABLESPACE 语句将其他数据文件添加到表空间（请参阅 第 13.1.10 节，“ALTER TABLESPACE 语句” ）。
+笔记
+所有 NDB Cluster 磁盘数据对象共享相同的命名空间。这意味着 每个磁盘数据对象 必须唯一命名（而不仅仅是给定类型的每个磁盘数据对象）。例如，表空间和日志文件组不能同名，表空间和数据文件不能同名。
+一个或多个 UNDO 日志文件的日志文件组必须分配给要使用该 USE LOGFILE GROUP 子句创建的表空间。 logfile_group 必须是使用创建的现有日志文件组 CREATE LOGFILE
+GROUP （请参阅 第 13.1.16 节，“CREATE LOGFILE GROUP 语句” ）。多个表空间可以使用相同的日志文件组进行 UNDO 日志记录。
+设置 EXTENT_SIZE or INITIAL_SIZE 时，您可以选择在数字后面加上一个数量级的单字母缩写，类似于 中使用的那些 my.cnf 。通常，这是字母 M （兆字节）或 G （千兆字节）之一。
+INITIAL_SIZE 并按 EXTENT_SIZE 以下方式四舍五入：
+EXTENT_SIZE 向上舍入为最接近的 32K 整数倍。
+INITIAL_SIZE 向下 舍入
+到最接近的 32K 的整数倍；该结果四舍五入到最接近的整数倍 EXTENT_SIZE （在任何四舍五入之后）。
+笔记
+NDB 为数据节点重启操作保留 4% 的表空间。此保留空间不能用于数据存储。
+刚刚描述的舍入是明确完成的，当执行任何此类舍入时，MySQL 服务器会发出警告。NDB 内核也使用四舍五入的值来计算 INFORMATION_SCHEMA.FILES 列值和其他目的。但是，为避免意外结果，我们建议您在指定这些选项时始终使用 32K 的整数倍。
+当 CREATE TABLESPACE 与 一起使用时 ENGINE [=] NDB ，将在每个 Cluster 数据节点上创建一个表空间和关联的数据文件。 INFORMATION_SCHEMA.FILES 您可以通过查询表来验证数据文件是否已创建并获取有关它们的信息
+。（请参阅本节后面的示例。）
+（参见 第 26.3.15 节，“INFORMATION_SCHEMA FILES 表” 。）
+选项
+ADD DATAFILE ：定义表空间数据文件的名称。创建 NDB 表空间时总是需要这个选项；因为 InnoDB 在 MySQL 8.0.14 及以后的版本中，只有在创建 undo 表空间时才需要。， file_name 包括任何指定的路径，必须用单引号或双引号引起来。文件名（不包括文件扩展名）和目录名的长度必须至少为一个字节。不支持零长度文件名和目录名。
+InnoDB 由于在处理数据文件的方式和
+方式上存在很大差异， NDB 因此在接下来的讨论中将分别介绍这两种存储引擎。
+InnoDB 数据文件。 InnoDB 表空间仅支持单个数据文件，其名称必须包含
+
+扩展 .ibd 名。
+要将 InnoDB 通用表空间数据文件放置在数据目录之外的位置，请包括完全限定路径或相对于数据目录的路径。撤消表空间只允许使用完全限定的路径。如果不指定路径，则在数据目录中创建一个通用表空间。 innodb_undo_directory 在变量定义的目录中创建未指定路径的撤消表空间
+。如果 innodb_undo_directory 变量未定义，则在数据目录中创建撤消表空间。
+为避免与隐式创建的 file-per-table 表空间发生冲突， InnoDB 不支持在数据目录下的子目录中创建通用表空间。在数据目录之外创建通用表空间或撤消表空间时，该目录必须存在并且必须 InnoDB 在创建表空间之前已知。要使目录为 所知 InnoDB ，请将其添加到 innodb_directories 值或添加到其值附加到 innodb_directories 值的变量之一。 innodb_directories 是只读变量。配置它需要重新启动服务器。
+如果在创建表空间 ADD DATAFILE 时没有指定该子句 InnoDB ，则隐式创建一个具有唯一文件名的表空间数据文件。唯一的文件名是一个 128 位 UUID，格式为五组十六进制数字，由破折号 ( aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee ) 分隔。如果存储引擎需要，将添加文件扩展名。 .ibd 为 InnoDB 通用表空间数据文件添加文件扩展名。在复制环境中，在复制源服务器上创建的数据文件名与在副本服务器上创建的数据文件名不同。
+从 MySQL 8.0.17 开始，该 ADD DATAFILE 子句在创建表空间时不允许循环目录引用 InnoDB 。例如， /../ 以下语句中的循环目录引用 ( ) 是不允许的：
+CREATE TABLESPACE ts1 ADD DATAFILE ts1.ibd ' any_directory /../ts1.ibd';
+Linux 上存在此限制的一个例外，如果前面的目录是符号链接，则允许循环目录引用。例如，如果 any_directory 是符号链接，则允许上例中的数据文件路径。（仍然允许数据文件路径以 ' ../ ' 开头。）
+NDB 数据文件。 一个 NDB 表空间支持多个数据文件，可以有任何合法的文件名； ALTER
+TABLESPACE 在使用语句
+创建 NDB Cluster 表空间后，可以将更多数据文件添加到它。
+默认情况下， NDB 表空间数据文件在数据节点文件系统目录中创建，即
+
+在数据节点的数据目录 ( ) 下命名的目录，其中
+数据节点的
+. 要将数据文件放置在默认位置以外的位置，请包括绝对目录路径或相对于默认位置的路径。如果指定的目录不存在，
+则尝试创建它；运行数据节点进程的系统用户帐户必须具有适当的权限才能执行此操作。 ndb_ nodeid _fs/TS DataDir nodeid NodeId NDB
+笔记
+在确定用于数据文件的路径时， NDB 不扩展 ~ （波浪号）字符。
+当多个数据节点在同一个物理主机上运行时，以下注意事项适用：
+创建数据文件时不能指定绝对路径。
+不可能在数据节点文件系统目录之外创建表空间数据文件，除非每个数据节点都有一个单独的数据目录。
+如果每个数据节点都有自己的数据目录，则可以在该目录中的任何位置创建数据文件。
+如果每个数据节点都有自己的数据目录，也可以使用相对路径在节点的数据目录之外创建数据文件，只要此路径解析为每个运行的数据节点在主机文件系统上的唯一位置在那个主机上。
+FILE_BLOCK_SIZE ：此选项（特定于 InnoDB 一般表空间，被忽略） NDB 定义了表空间数据文件的块大小。可以字节或千字节为单位指定值。例如，一个 8 KB 的文件块大小可以指定为 8192 或 8K。如果不指定此选项， FILE_BLOCK_SIZE 则默认为该 innodb_page_size 值。 FILE_BLOCK_SIZE 当您打算使用表空间来存储压缩 InnoDB 表 ( ROW_FORMAT=COMPRESSED ) 时，是必需的。在这种情况下，您必须 FILE_BLOCK_SIZE 在创建表空间时定义表空间。
+如果 FILE_BLOCK_SIZE 等于该 innodb_page_size 值，则表空间只能包含具有未压缩行格式（ COMPACT 、 REDUNDANT 和 DYNAMIC ）的表。具有 COMPRESSED 行格式的表与未压缩的表具有不同的物理页面大小。因此，压缩表不能与未压缩表共存于同一个表空间中。
+对于包含压缩表的通用表空间， FILE_BLOCK_SIZE 必须指定，并且该 FILE_BLOCK_SIZE 值必须是与该值相关的有效压缩页面大小 innodb_page_size 。此外，压缩表 ( KEY_BLOCK_SIZE ) 的物理页面大小必须等于 FILE_BLOCK_SIZE/1024 。例如，如果 innodb_page_size=16K , 和 FILE_BLOCK_SIZE=8K ， KEY_BLOCK_SIZE 表的 必须为 8。有关更多信息，请参阅 第 15.6.3.3 节，“常规表空间” 。
+USE LOGFILE GROUP ：对于 是必需的 NDB ，这是以前使用 创建的日志文件组的名称 CREATE LOGFILE
+GROUP 。不支持 InnoDB ，它因错误而失败。
+EXTENT_SIZE ：此选项特定于 NDB，不受 InnoDB 支持，它会因错误而失败。 EXTENT_SIZE 设置属于表空间的任何文件使用的范围的大小（以字节为单位）。默认值为 1M。最小大小为 32K，理论上最大为 2G，但实际最大大小取决于许多因素。在大多数情况下，更改范围大小不会对性能产生任何可衡量的影响，并且建议在除最不寻常的情况外的所有情况下使用默认值。
+盘 区是磁盘空间分配
+的单位。在使用另一个范围之前，一个范围将填充该范围可以包含的尽可能多的数据。理论上，每个数据文件最多可以使用 65,535 (64K) 个扩展区；但是，建议的最大值为 32,768 (32K)。单个数据文件的推荐最大大小为 32G，即 32K extents × 每个 extent 1 MB。此外，一旦一个区被分配给一个给定的分区，它就不能用来存储来自不同分区的数据；一个范围不能存储来自多个分区的数据。这意味着，例如，具有单个数据文件的表空间 INITIAL_SIZE （在以下项目中描述）为 256 MB 并且其 EXTENT_SIZE 128M只有两个extent，所以最多可以用来存放两个不同磁盘数据表分区的数据。
+您可以通过查询表来查看给定数据文件中有多少空闲盘区 INFORMATION_SCHEMA.FILES ，从而得出该文件中剩余空闲空间的估计值。有关进一步的讨论和示例，请参阅 第 26.3.15 节，“INFORMATION_SCHEMA FILES 表” 。
+INITIAL_SIZE ：此选项特定于 NDB ，并且不受 支持 InnoDB ，它会因错误而失败。
+该 INITIAL_SIZE 参数设置特定使用的数据文件的总大小（以字节为单位） ADD DATATFILE 。一旦这个文件被创建，它的大小就不能改变；但是，您可以使用 将更多数据文件添加到表空间 ALTER
+TABLESPACE ... ADD DATAFILE 。
+INITIAL_SIZE 是可选的；它的默认值为 134217728 (128 MB)。
+在 32 位系统上，支持的最大值为 INITIAL_SIZE 4294967296 (4 GB)。
+AUTOEXTEND_SIZE ：在 MySQL 8.0.23 之前被 MySQL 忽略；从 MySQL 8.0.23 开始，定义 InnoDB 表空间变满时扩展表空间大小的量。该设置必须是 4MB 的倍数。默认设置为 0，这会导致表空间根据隐式默认行为进行扩展。有关详细信息，请参阅 第 15.6.3.9 节，“表空间 AUTOEXTEND_SIZE 配置” 。
+无论使用何种存储引擎，对 MySQL NDB Cluster 8.0 的任何版本都没有影响。
+MAX_SIZE : 目前被 MySQL 忽略；保留以备将来使用。无论使用何种存储引擎，对 MySQL 8.0 或 MySQL NDB Cluster 8.0 的任何版本都没有影响。
+NODEGROUP : 目前被 MySQL 忽略；保留以备将来使用。无论使用何种存储引擎，对 MySQL 8.0 或 MySQL NDB Cluster 8.0 的任何版本都没有影响。
+WAIT : 目前被 MySQL 忽略；保留以备将来使用。无论使用何种存储引擎，对 MySQL 8.0 或 MySQL NDB Cluster 8.0 的任何版本都没有影响。
+COMMENT : 目前被 MySQL 忽略；保留以备将来使用。无论使用何种存储引擎，对 MySQL 8.0 或 MySQL NDB Cluster 8.0 的任何版本都没有影响。
+该子句为
+通用表空间 ENCRYPTION 启用或禁用页级数据加密。 InnoDB MySQL 8.0.13 中引入了对通用表空间的加密支持。
+从 MySQL 8.0.16 开始，如果 ENCRYPTION 未指定该子句，则该 default_table_encryption 设置控制是否启用加密。该 ENCRYPTION 子句覆盖 default_table_encryption 设置。但是，如果 table_encryption_privilege_check 启用变量， TABLE_ENCRYPTION_ADMIN 则需要权限才能使用与 ENCRYPTION 设置不同的子句 default_table_encryption 设置。
+在创建启用加密的表空间之前，必须安装和配置密钥环插件。
+当一个通用表空间被加密时，驻留在该表空间中的所有表都被加密。同样，在加密表空间中创建的表也是加密的。
+有关更多信息，请参阅 第 15.13 节，“InnoDB 静态数据加密”
+ENGINE ：定义使用表空间的存储引擎，其中 engine_name 是存储引擎的名称。目前， InnoDB 标准 MySQL 8.0 版本仅支持存储引擎。MySQL NDB Cluster 支持 NDB 和 InnoDB 表空间。如果未指定选项 default_storage_engine ，则使用系统变量的值
+。 ENGINE
+该 ENGINE_ATTRIBUTE 选项（自 MySQL 8.0.21 起可用）用于指定主存储引擎的表空间属性。该选项保留供将来使用。
+允许的值是包含有效 JSON 文档或空字符串 ('') 的字符串文字。无效 JSON 被拒绝。
+CREATE TABLESPACE ts1 ENGINE_ATTRIBUTE='{" key ":" value "}';
+ENGINE_ATTRIBUTE 值可以重复而不会出错。在这种情况下，使用最后指定的值。
+ENGINE_ATTRIBUTE 服务器不检查值，也不会在表的存储引擎更改时清除它们。
+笔记
+有关 MySQL 表空间命名的规则，请参阅 第 9.2 节，“模式对象名称” 。除了这些规则之外，斜杠字符 ( “ / ” ) 是不允许的，您也不能使用以 开头的名称 innodb_ ，因为此前缀保留供系统使用。
+不支持创建临时通用表空间。
+一般表空间不支持临时表。
+该 TABLESPACE 选项可用于 CREATE TABLE 或 ALTER TABLE 将 InnoDB 表分区或子分区分配给 file-per-table 表空间。所有分区必须属于同一个存储引擎。 InnoDB 不支持将表分区分配给共享
+表空间。共享表空间包括 InnoDB 系统表空间和通用表空间。
+通用表空间支持添加任何行格式的表，使用 CREATE TABLE ...
+TABLESPACE . innodb_file_per_table 不需要启用。
+innodb_strict_mode 不适用于一般表空间。表空间管理规则是独立于 innodb_strict_mode . 如果 CREATE TABLESPACE 参数不正确或不兼容，无论 innodb_strict_mode 设置如何，操作都会失败。当使用 CREATE TABLE ...
+TABLESPACE or
+将表添加到通用表空间 ALTER TABLE ...
+TABLESPACE 时， innodb_strict_mode 将被忽略，但语句将被评估为 innodb_strict_mode 启用。
+用于 DROP TABLESPACE 删除表空间。 DROP TABLE 在删除表空间之前，必须使用表空间
+删除所有表。在删除 NDB Cluster 表空间之前，您还必须使用一个或多个 ALTER
+TABLESPACE ... DROP DATATFILE 语句删除其所有数据文件。请参阅 第 23.6.10.1 节，“NDB Cluster 磁盘数据对象” 。
+InnoDB 添加到
+通用表空间
+的表的所有部分 InnoDB 都驻留在通用表空间中，包括索引和 BLOB 页。
+对于 NDB 分配到表空间的表，只有那些没有索引的列存储在磁盘上，并实际使用表空间数据文件。 NDB 所有表的
+索引和索引列始终保存在内存中。
+与系统表空间类似，截断或删除存储在通用表空间中的表会在通用表空间 .ibd 数据文件 内部创建只能用于新 InnoDB 数据的可用空间。空间不会像 file-per-table 表空间那样释放回操作系统。
+通用表空间不与任何数据库或模式相关联。
+ALTER TABLE ...
+DISCARD TABLESPACE 并且 ALTER TABLE
+...IMPORT TABLESPACE 不支持属于通用表空间的表。
+服务器对引用通用表空间的 DDL 使用表空间级元数据锁定。相比之下，服务器对引用每个表文件表空间的 DDL 使用表级元数据锁定。
+生成的或现有的表空间不能更改为通用表空间。
+通用表空间名称和 file-per-table 表空间名称之间没有冲突。
+一般表空间名称中不允许出现在 file-per-table 表空间名称中
+的 “ / ”字符。
+mysqldump 和 mysqlpump 不转储 InnoDB CREATE TABLESPACE 语句。
+InnoDB 示例
+此示例演示创建一个通用表空间并添加三个不同行格式的未压缩表。
+mysql> CREATE TABLESPACE `ts1` ADD DATAFILE 'ts1.ibd' ENGINE=INNODB;
+
+mysql> CREATE TABLE t1 (c1 INT PRIMARY KEY) TABLESPACE ts1 ROW_FORMAT=REDUNDANT;
+
+mysql> CREATE TABLE t2 (c1 INT PRIMARY KEY) TABLESPACE ts1 ROW_FORMAT=COMPACT;
+
+mysql> CREATE TABLE t3 (c1 INT PRIMARY KEY) TABLESPACE ts1 ROW_FORMAT=DYNAMIC;
+此示例演示创建通用表空间和添加压缩表。该示例假定默认 innodb_page_size 值为 16K。8192的 FILE_BLOCK_SIZE 要求压缩表的 a KEY_BLOCK_SIZE 为 8。
+mysql> CREATE TABLESPACE `ts2` ADD DATAFILE 'ts2.ibd' FILE_BLOCK_SIZE = 8192 Engine=InnoDB;
+
+mysql> CREATE TABLE t4 (c1 INT PRIMARY KEY) TABLESPACE ts2 ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8;
+此示例演示了在不指定子句的情况下创建通用表空间，该 ADD DATAFILE 子句从 MySQL 8.0.14 开始是可选的。
+mysql> CREATE TABLESPACE `ts3` ENGINE=INNODB;
+此示例演示如何创建撤消表空间。
+mysql> CREATE UNDO TABLESPACE undo_003 ADD DATAFILE ' undo_003 .ibu';
+新开发银行示例
+假设您希望创建一个 NDB Cluster Disk Data 表空间 myts ，使用名为 mydata-1.dat . 一个 NDB 表空间总是需要使用一个由一个或多个撤销日志文件组成的日志文件组。对于这个例子，我们首先创建一个名为的日志文件组 mylg ，其中包含一个名为 的撤消长文件 myundo-1.dat ，使用 CREATE LOGFILE GROUP 如下所示的语句：
+mysql> CREATE LOGFILE GROUP myg1
+-> ADD UNDOFILE 'myundo-1.dat'
+-> ENGINE=NDB;
+Query OK, 0 rows affected (3.29 sec)
+现在您可以使用以下语句创建前面描述的表空间：
+mysql> CREATE TABLESPACE myts
+-> ADD DATAFILE 'mydata-1.dat'
+-> USE LOGFILE GROUP mylg
+-> ENGINE=NDB;
+Query OK, 0 rows affected (2.98 sec)
+您现在可以使用
+带有和选项的 CREATE TABLE 语句
+创建磁盘数据表
+，类似于此处显示的内容： TABLESPACE STORAGE DISK
+mysql> CREATE TABLE mytable (
+-> id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+-> lname VARCHAR(50) NOT NULL,
+-> fname VARCHAR(50) NOT NULL,
+-> dob DATE NOT NULL,
+-> joined DATE NOT NULL,
+-> INDEX(last_name, first_name)
+-> )
+-> TABLESPACE myts STORAGE DISK
+-> ENGINE=NDB;
+Query OK, 0 rows affected (1.41 sec)
+重要的是要注意只有来自的 dob 和 joined 列 mytable 实际存储在磁盘上，因为 id 、 lname 和 fname 列都已编入索引。
+如前所述，当 CREATE TABLESPACE 与 一起使用时 ENGINE [=] NDB ，将在每个 NDB Cluster 数据节点上创建一个表空间和关联的数据文件。您可以通过查询表来验证数据文件是否已创建并获取有关它们的信息 INFORMATION_SCHEMA.FILES ，如下所示：
+mysql> SELECT FILE_NAME, FILE_TYPE, LOGFILE_GROUP_NAME, STATUS, EXTRA
+-> FROM INFORMATION_SCHEMA.FILES
+-> WHERE TABLESPACE_NAME = 'myts';
+
++--------------+------------+--------------------+--------+----------------+
+| file_name | file_type | logfile_group_name | status | extra |
++--------------+------------+--------------------+--------+----------------+
+| mydata-1.dat | DATAFILE | mylg | NORMAL | CLUSTER_NODE=5 |
+| mydata-1.dat | DATAFILE | mylg | NORMAL | CLUSTER_NODE=6 |
+| NULL | TABLESPACE | mylg | NORMAL | NULL |
++--------------+------------+--------------------+--------+----------------+
+3 rows in set (0.01 sec)
+有关其他信息和示例，请参阅 第 23.6.10.1 节，“NDB Cluster 磁盘数据对象” 。

@@ -1,0 +1,29 @@
+8.14.8 NDB Cluster 线程状态_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.14 查看服务器线程（进程）信息 / 
+8.14.8 NDB Cluster 线程状态
+8.14.8 NDB Cluster 线程状态
+Committing events to binlog
+Opening mysql.ndb_apply_status
+Processing events
+该线程正在处理二进制日志记录的事件。
+Processing events from schema table
+该线程正在执行模式复制的工作。
+Shutting down
+Syncing ndb table schema operation and
+binlog
+这用于为 NDB 提供正确的模式操作二进制日志。
+Waiting for allowed to take ndbcluster global
+schema lock
+线程正在等待获取全局模式锁的权限。
+Waiting for event from ndbcluster
+服务器充当 NDB Cluster 中的 SQL 节点，并连接到集群管理节点。
+Waiting for first event from ndbcluster
+Waiting for ndbcluster binlog update to reach
+current position
+Waiting for ndbcluster global schema lock
+该线程正在等待另一个线程持有的全局模式锁被释放。
+Waiting for ndbcluster to start
+Waiting for schema epoch
+线程正在等待一个模式纪元（即全局检查点）。

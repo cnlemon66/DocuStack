@@ -1,0 +1,33 @@
+15.8.7 配置 InnoDB I/O 容量_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.7 配置 InnoDB I/O 容量
+15.8.7 配置 InnoDB I/O 容量
+主 InnoDB 线程和其他线程在后台执行各种任务，其中大部分是 I/O 相关的，例如从缓冲池中刷新脏页以及将更改缓冲区中的更改写入适当的二级索引。 InnoDB 尝试以不会对服务器的正常工作产生不利影响的方式执行这些任务。它会尝试估计可用 I/O 带宽并调整其活动以利用可用容量。
+该 innodb_io_capacity 变量定义了可用于 的总体 I/O 容量 InnoDB 。它应该设置为大约系统每秒可以执行的 I/O 操作数 (IOPS)。 innodb_io_capacity 设置后，根据 InnoDB 设置值预估后台任务可用的I/O带宽。
+您可以设置 innodb_io_capacity 为 100 或更大的值。默认值为 200 。通常，100 左右的值适用于消费级存储设备，例如高达 7200 RPM 的硬盘驱动器。更快的硬盘驱动器、RAID 配置和固态驱动器 (SSD) 受益于更高的值。
+理想情况下，将设置保持在尽可能低的水平，但不要太低以至于背景活动落后。如果该值太高，数据将从缓冲池中删除，并且更改缓冲区的速度太快，缓存无法提供显着的好处。对于具有更高 I/O 速率的繁忙系统，您可以设置更高的值以帮助服务器处理与高行更改率相关的后台维护工作。通常，您可以根据用于 InnoDB I/O 的驱动器数量来增加该值。例如，您可以在使用多个磁盘或 SSD 的系统上增加该值。
+默认设置 200 通常足以满足低端 SSD 的需求。对于更高端的总线连接 SSD，请考虑更高的设置，例如 1000。对于具有单个 5400 RPM 或 7200 RPM 驱动器的系统，您可以将该值降低到 100，这表示可用于可执行约 100 IOPS 的老一代磁盘驱动器的每秒 I/O 操作 (IOPS) 的估计比例。
+虽然您可以指定一个很高的值，例如一百万，但实际上这样大的值几乎没有什么好处。通常，不建议使用高于 20000 的值，除非您确定较低的值不足以满足您的工作负载。
+调整时考虑写入工作负载 innodb_io_capacity 。具有大量写入工作负载的系统可能会受益于更高的设置。对于写入工作负载较小的系统，较低的设置可能就足够了。
+该 innodb_io_capacity 设置不是每个缓冲池实例设置。可用 I/O 容量在用于刷新活动的缓冲池实例之间平均分配。
+您可以 innodb_io_capacity 在 MySQL 选项文件 ( my.cnf 或 my.ini ) 中设置值或在运行时使用 SET GLOBAL 语句修改它，这需要足够的权限来设置全局系统变量。请参阅 第 5.1.9.1 节，“系统变量权限” 。
+忽略检查点的 I/O 容量
+默认情况下启用的 innodb_flush_sync 变量会导致
+设置在 检查点 innodb_io_capacity 发生的 I/O 活动突发期间被忽略
+。要遵守
+设置定义的 I/O 速率，请禁用。 innodb_io_capacity innodb_flush_sync
+您可以 innodb_flush_sync 在 MySQL 选项文件 ( my.cnf 或 my.ini ) 中设置值或在运行时使用 SET
+GLOBAL 语句修改它，这需要足够的权限来设置全局系统变量。请参阅 第 5.1.9.1 节，“系统变量权限” 。
+配置最大 I/O 容量
+如果刷新活动落后， InnoDB 可以更积极地刷新，每秒 I/O 操作 (IOPS) 的速率高于 innodb_io_capacity 变量定义的速率。该变量定义了在这种情况下后台任务 innodb_io_capacity_max 执行的最大 IOPS 数
+。 InnoDB
+如果您 innodb_io_capacity 在启动时指定设置但未指定值 innodb_io_capacity_max ， innodb_io_capacity_max 则默认为值的两倍 innodb_io_capacity 或 2000，以较大者为准。
+配置时 innodb_io_capacity_max ，两倍 innodb_io_capacity 通常是一个很好的起点。默认值 2000 适用于使用 SSD 或多个常规磁盘驱动器的工作负载。对于不使用 SSD 或多个磁盘驱动器的工作负载，2000 的设置可能太高，并且可能允许过多的刷新。对于单个常规磁盘驱动器，建议设置为 200 到 400 之间。对于高端、总线连接的 SSD，请考虑更高的设置，例如 2500。与 innodb_io_capacity 设置一样，保持设置尽可能低，但不要低到 InnoDB 无法充分扩展 IOPS 速率超出 innodb_io_capacity 设置的程度。
+调整时考虑写入工作负载 innodb_io_capacity_max 。具有大量写入工作负载的系统可能会受益于更高的设置。对于写入工作负载较小的系统，较低的设置可能就足够了。
+innodb_io_capacity_max 不能设置为低于该
+值的 innodb_io_capacity 值。
+设置 innodb_io_capacity_max 为 DEFAULT 使用 SET 语句 ( SET GLOBAL
+innodb_io_capacity_max=DEFAULT ) 设置 innodb_io_capacity_max 为最大值。
+该 innodb_io_capacity_max 限制适用于所有缓冲池实例。它不是每个缓冲池实例设置。

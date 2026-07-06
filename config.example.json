@@ -1,0 +1,8 @@
+{
+  "port": 8765,
+  "llm": {
+    "provider": "deepseek",
+    "api_key": "sk-你的deepseek密钥",
+    "model": "deepseek-chat"
+  }
+}

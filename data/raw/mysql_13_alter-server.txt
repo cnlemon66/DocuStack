@@ -1,0 +1,12 @@
+13.1.8 ALTER SERVER 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.8 ALTER SERVER 语句
+13.1.8 ALTER SERVER 语句
+ALTER SERVER server_name OPTIONS ( option [, option ] ...)
+更改 的服务器信息 server_name ，调整 CREATE SERVER 语句中允许的任何选项。表中的相应字段会相应 mysql.servers 更新。此语句需要 SUPER 权限。
+例如，要更新 USER 选项：
+ALTER SERVER s OPTIONS (USER 'sally');
+ALTER SERVER 导致隐式提交。请参阅 第 13.3.3 节，“导致隐式提交的语句” 。
+ALTER SERVER 无论使用何种日志记录格式，都不会写入二进制日志。

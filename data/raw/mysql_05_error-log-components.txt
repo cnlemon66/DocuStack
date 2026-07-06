@@ -1,0 +1,73 @@
+5.5.3 错误日志组件_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.5 MySQL组件 / 
+5.5.3 错误日志组件
+5.5.3 错误日志组件
+本节介绍各个错误日志组件的特征。有关配置错误日志记录的一般信息，请参阅 第 5.4.2 节，“错误日志” 。
+日志组件可以是过滤器或接收器：
+过滤器处理日志事件，以添加、删除或修改事件字段，或完全删除事件。生成的事件传递到已启用组件列表中的下一个日志组件。
+接收器是日志事件的目的地（写入器）。通常，接收器将日志事件处理成具有特定格式的日志消息，并将这些消息写入其关联的输出，例如文件或系统日志。sink 也可以写入 Performance Schema error_log 表；参见 第 27.12.21.1 节，“error_log 表” 。事件未经修改地传递到已启用组件列表中的下一个日志组件（即，尽管接收器格式化事件以生成输出消息，但它不会在事件在内部传递到下一个组件时修改事件）。
+log_error_services 系统变量值列出启用的日志组件
+。未在列表中命名的组件被禁用。从 MySQL 8.0.30 开始， log_error_services 如果尚未加载错误日志组件，也会隐式加载它们。有关详细信息，请参阅 第 5.4.2.1 节，“错误日志配置” 。
+以下部分描述了各个日志组件，按组件类型分组：
+过滤错误日志组件
+接收器错误日志组件
+组件描述包括以下类型的信息：
+组件名称和预期用途。
+组件是内置的还是必须加载的。 INSTALL COMPONENT 对于可加载组件，描述指定使用和 UNINSTALL COMPONENT 语句显式加载或卸载组件时要使用的 URN
+。隐式加载错误日志组件只需要组件名称。有关详细信息，请参阅 第 5.4.2.1 节，“错误日志配置” 。
+该组件是否可以在值中多次列出 log_error_services 。
+对于接收器组件，组件将输出写入的目标。
+对于接收器组件，它是否支持性能模式 error_log 表的接口。
+过滤错误日志组件
+错误日志过滤器组件实现错误日志事件的过滤。如果没有启用过滤器组件，则不会发生过滤。
+任何已启用的过滤器组件只会影响值后面列出的组件的日志事件 log_error_services 。特别是，对于任何 log_error_services 过滤器组件之前列出的任何日志接收器组件，都不会发生日志事件过滤。
+log_filter_internal 组件
+log_error_verbosity 用途：结合和 log_error_suppression_list 系统变量
+，实现基于日志事件优先级和错误码的过滤
+。请参阅 第 5.4.2.5 节，“基于优先级的错误日志过滤 (log_filter_internal)” 。
+URN：该组件是内置的，不需要加载。
+允许多次使用：否。
+如果 log_filter_internal 被禁用， log_error_verbosity 则 log_error_suppression_list 没有任何效果。
+log_filter_dragnet 组件
+用途：根据 dragnet.log_error_filter_rules 系统变量设置定义的规则实现过滤。请参阅 第 5.4.2.6 节，“基于规则的错误日志过滤 (log_filter_dragnet)” 。
+瓮： file://component_log_filter_dragnet
+允许多次使用：否。
+接收器错误日志组件
+错误日志接收器组件是实现错误日志输出的编写器。如果没有开启sink组件，则不会有日志输出。
+一些接收器组件描述引用默认错误日志目标。这是控制台或文件，由系统变量的值指示 log_error ，如 第 5.4.2.2 节“默认错误日志目标配置” 中所述确定。
+log_sink_internal 组件
+目的：实现传统的错误日志消息输出格式。
+URN：该组件是内置的，不需要加载。
+允许多次使用：否。
+输出目的地：写入默认错误日志目的地。
+性能模式支持：写入 error_log 表。提供一个解析器，用于读取由以前的服务器实例创建的错误日志文件。
+log_sink_json 组件
+目的：实现 JSON 格式的错误记录。请参阅 第 5.4.2.7 节，“以 JSON 格式记录错误” 。
+瓮： file://component_log_sink_json
+允许多次使用：是的。
+log_error 输出目的地：此接收器根据系统变量
+
+给出的默认错误日志目的地确定其输出目的地
+：
+如果 log_error 命名一个文件，接收器基于该文件名的输出文件命名，加上一个数字
+
+后缀，从 00 开始。例如，如果
+是
+，则值中命名的连续实例
+写入
+，
+等等。 . NN .json NN log_error file_name log_sink_json log_error_services file_name .00.json file_name .01.json
+如果 log_error 是 stderr ，接收器将写入控制台。如果 log_sink_json 在值中多次命名 log_error_services ，它们都会写入控制台，这可能没有用。
+性能模式支持：写入 error_log 表。提供一个解析器，用于读取由以前的服务器实例创建的错误日志文件。
+log_sink_syseventlog 组件
+目的：实现错误记录到系统日志。 syslog 这是 Windows、 Unix 和类 Unix 系统上的事件日志。请参阅 第 5.4.2.8 节，“错误记录到系统日志” 。
+瓮： file://component_log_sink_syseventlog
+允许多次使用：否。
+输出目的地：写入系统日志。不使用默认错误日志目标。
+性能模式支持：不写入 error_log 表。不提供用于读取以前服务器实例创建的错误日志文件的解析器。
+log_sink_test 组件
+目的：用于内部编写测试用例，不用于生产。
+瓮： file://component_log_sink_test
+接收器属性（例如是否允许多次使用和输出目标）未指定， log_sink_test 因为如前所述，它供内部使用。因此，其行为随时可能发生变化。

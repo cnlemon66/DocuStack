@@ -1,0 +1,11 @@
+13.1.30 DROP SERVER 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.30 DROP SERVER 语句
+13.1.30 DROP SERVER 语句
+DROP SERVER [ IF EXISTS ] server_name
+删除名为 的服务器的服务器定义 server_name 。表中相应的行 mysql.servers 被删除。此语句需要 SUPER 权限。
+删除表的服务器不会影响 FEDERATED 在创建时使用此连接信息的任何表。请参阅 第 13.1.18 节，“CREATE SERVER 语句” 。
+DROP SERVER 导致隐式提交。请参阅 第 13.3.3 节，“导致隐式提交的语句” 。
+DROP SERVER 无论使用何种日志记录格式，都不会写入二进制日志。

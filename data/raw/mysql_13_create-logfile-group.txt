@@ -1,0 +1,61 @@
+13.1.16 CREATE LOGFILE GROUP 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.16 CREATE LOGFILE GROUP 语句
+13.1.16 CREATE LOGFILE GROUP 语句
+CREATE LOGFILE GROUP logfile_group ADD UNDOFILE ' undo_file '
+[INITIAL_SIZE [=] initial_size ]
+[UNDO_BUFFER_SIZE [=] undo_buffer_size ]
+[REDO_BUFFER_SIZE [=] redo_buffer_size ]
+[NODEGROUP [=] nodegroup_id ]
+[WAIT]
+[COMMENT [=] ' string ']
+ENGINE [=] engine_name
+此语句创建一个名为的新日志文件组 logfile_group ，其中包含一个 UNDO 名为“ undo_file ”的文件。一个 CREATE LOGFILE GROUP 语句只有一个 ADD UNDOFILE 子句。有关日志文件组命名的规则，请参阅 第 9.2 节，“模式对象名称” 。
+笔记
+所有 NDB Cluster 磁盘数据对象共享相同的命名空间。这意味着 每个磁盘数据对象 必须唯一命名（而不仅仅是给定类型的每个磁盘数据对象）。例如，表空间和日志文件组不能同名，表空间和数据文件不能同名。
+在任何给定时间，每个 NDB Cluster 实例只能有一个日志文件组。
+可选 INITIAL_SIZE 参数设置 UNDO 文件的初始大小；如果未指定，则默认为 128M （128 兆字节）。可选 UNDO_BUFFER_SIZE 参数设置 UNDO 日志文件组缓冲区使用的大小；默认值为 UNDO_BUFFER_SIZE （ 8M 八兆字节）；该值不能超过可用的系统内存量。这两个参数都以字节为单位指定。您可以选择在其中一个或两个后面加上一个数量级的单字母缩写，类似于 my.cnf . 通常，这是字母 M （兆字节）或 G （千兆字节）之一。
+用于的内存 UNDO_BUFFER_SIZE 来自全局池，其大小由 SharedGlobalMemory 数据节点配置参数的值决定。 InitialLogFileGroup 这包括数据节点配置参数
+的设置为此选项隐含的任何默认值
+。
+允许的最大值为 UNDO_BUFFER_SIZE 629145600 (600 MB)。
+在 32 位系统上，支持的最大值为 INITIAL_SIZE 4294967296 (4 GB)。（漏洞 #29186）
+允许的最小值为 INITIAL_SIZE 1048576 (1 MB)。
+该 ENGINE 选项决定了该日志文件组使用的存储引擎，with engine_name 是存储引擎的名称。在 MySQL 8.0 中，这必须是 NDB (or NDBCLUSTER )。如果 ENGINE 未设置，MySQL 会尝试使用 default_storage_engine 服务器系统变量指定的引擎（以前称为 storage_engine ）。在任何情况下，如果未将引擎指定为 NDB 或 NDBCLUSTER ，则该 CREATE
+LOGFILE GROUP 语句看似成功但实际上无法创建日志文件组，如下所示：
+mysql> CREATE LOGFILE GROUP lg1
+-> ADD UNDOFILE 'undo.dat' INITIAL_SIZE = 10M;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> SHOW WARNINGS;
++-------+------+------------------------------------------------------------------------------------------------+
+| Level | Code | Message |
++-------+------+------------------------------------------------------------------------------------------------+
+| Error | 1478 | Table storage engine 'InnoDB' does not support the create option 'TABLESPACE or LOGFILE GROUP' |
++-------+------+------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> DROP LOGFILE GROUP lg1 ENGINE = NDB;
+ERROR 1529 (HY000): Failed to drop LOGFILE GROUP
+
+mysql> CREATE LOGFILE GROUP lg1
+-> ADD UNDOFILE 'undo.dat' INITIAL_SIZE = 10M
+-> ENGINE = NDB;
+Query OK, 0 rows affected (2.97 sec)
+事实上， CREATE LOGFILE GROUP 当一个非存储引擎被命名时，该语句实际上并没有返回错误 NDB ，而是看起来成功了，这是一个已知问题，我们希望在未来的 NDB Cluster 版本中解决这个问题。
+REDO_BUFFER_SIZE 、 NODEGROUP 、 WAIT 和 COMMENT 被解析但被忽略，因此在 MySQL 8.0 中没有影响。这些选项旨在用于未来的扩展。
+与 一起使用时，会在每个 Cluster 数据节点上创建 ENGINE [=] NDB 一个日志文件组和关联的日志文件。您可以通过查询表 UNDO 来验证 UNDO 文件是否已创建并获取有关它们的信息
+。 INFORMATION_SCHEMA.FILES 例如：
+mysql> SELECT LOGFILE_GROUP_NAME, LOGFILE_GROUP_NUMBER, EXTRA
+-> FROM INFORMATION_SCHEMA.FILES
+-> WHERE FILE_NAME = 'undo_10.dat';
++--------------------+----------------------+----------------+
+| LOGFILE_GROUP_NAME | LOGFILE_GROUP_NUMBER | EXTRA |
++--------------------+----------------------+----------------+
+| lg_3 | 11 | CLUSTER_NODE=3 |
+| lg_3 | 11 | CLUSTER_NODE=4 |
++--------------------+----------------------+----------------+
+2 rows in set (0.06 sec)
+CREATE LOGFILE GROUP 仅对 NDB Cluster 的磁盘数据存储有用。请参阅 第 23.6.10 节，“NDB Cluster 磁盘数据表” 。

@@ -1,0 +1,81 @@
+Redis HEXISTS 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis HEXISTS 命令
+HEXISTS 检查哈希表（Hash）中指定的字段（field）是否存在。
+* 语法
+HEXISTS key field
+* 参数说明
+参数 类型 必填 说明
+key String 是 哈希表的键名
+field String 是 要检查的字段名
+* 返回值
+Integer 1 ：字段存在
+Integer 0 ：字段不存在，或 key 不存在
+Error ：key 不是哈希表类型
+* 时间复杂度
+O(1)
+*
+* 示例
+* 基本用法
+> HSET myhash field1 "hello"
+(integer) 1
+> HEXISTS myhash field1
+(integer) 1
+> HEXISTS myhash field2
+(integer) 0
+* 键不存在
+> HEXISTS nonexist field
+(integer) 0
+* 获取字段数量对比
+> HSET user:100 name "Alice" age "25"
+(integer) 2
+> HEXISTS user:100 name
+(integer) 1
+> HEXISTS user:100 email
+(integer) 0
+* 常见错误
+错误 原因 解决
+WRONGTYPE Operation against a key holding the wrong kind of value key 不是哈希表类型 检查 key 的数据类型，或使用 TYPE 命令确认
+* 最佳实践
+在需要判断字段是否存在后再决定 HGET 或 HSET 的场景，HEXISTS 提供 O(1) 的原子检查
+如果仅需要获取值并判断是否存在，直接 HGET 更经济（ HGET 返回 nil 即表示不存在）
+批量判断多个字段时，考虑使用 HMGET 或 HGETALL 减少网络往返
+* FAQ
+Q1: HEXISTS 和 HGET 在判断字段存在性上有什么区别？ A: HEXISTS 只返回 0/1，不返回值； HGET 返回值或 nil。如果不需要值，HEXISTS 语义更清晰；如果需要值同时判断存在性， HGET 更高效。
+Q2: HEXISTS 对空字段（field 为 ""）有效吗？ A: 有效。字段名可以为空字符串，只要该 field 被 HSET 设置过，HEXISTS 就会返回 1。
+Q3: HEXISTS 会触发键的过期检查吗？ A: 会。HEXISTS 作为读取命令，会刷新键的 LRU/LFU 访问时间，但不会修改数据。
+相关命令
+HDEL
+HEXISTS
+HEXPIRE
+HEXPIREAT
+HEXPIRETIME
+HGET
+HGETALL
+HGETDEL
+HGETEX
+HINCRBY
+HINCRBYFLOAT
+HKEYS
+HLEN
+HMGET
+HMSET
+HPERSIST
+HPEXPIRE
+HPEXPIREAT
+HPEXPIRETIME
+HPTTL
+HRANDFIELD
+HSCAN
+HSET
+HSETEX
+HSETNX
+HSTRLEN
+HTTL
+HVALS

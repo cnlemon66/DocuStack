@@ -1,0 +1,13 @@
+13.1.28 DROP LOGFILE GROUP 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.28 DROP LOGFILE GROUP 语句
+13.1.28 DROP LOGFILE GROUP 语句
+DROP LOGFILE GROUP logfile_group ENGINE [=] engine_name
+此语句删除名为 的日志文件组 logfile_group 。日志文件组必须已经存在，否则会产生错误。（有关创建日志文件组的信息，请参阅 第 13.1.16 节，“CREATE LOGFILE GROUP 语句” 。）
+重要的
+在删除日志文件组之前，您必须删除使用该日志文件组进行 UNDO 日志记录的所有表空间。
+required ENGINE 子句提供要删除的日志文件组使用的存储引擎的名称。 engine_name 目前，唯一允许的
+值为 NDB 和 NDBCLUSTER 。
+DROP LOGFILE GROUP 仅对 NDB Cluster 的磁盘数据存储有用。请参阅 第 23.6.10 节，“NDB Cluster 磁盘数据表” 。

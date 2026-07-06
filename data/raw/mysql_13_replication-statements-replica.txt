@@ -1,0 +1,11 @@
+13.4.2 控制副本服务器的SQL语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.4 复制语句 / 
+13.4.2 控制副本服务器的SQL语句
+13.4.2 控制副本服务器的SQL语句
+13.4.2.1 将 MASTER 更改为语句 13.4.2.2 更改复制过滤器语句 13.4.2.3 将复制源更改为语句 13.4.2.4 MASTER_POS_WAIT() 语句 13.4.2.5 RESET REPLICA 语句 13.4.2.6 RESET SLAVE 语句 13.4.2.7 SOURCE_POS_WAIT() 语句 13.4.2.8 START REPLICA 语句 13.4.2.9 START SLAVE 语句 13.4.2.10 STOP REPLICA 语句 13.4.2.11 STOP SLAVE 语句 13.4.2.12 配置源列表的函数
+本节讨论用于管理副本服务器的语句。 第 13.4.1 节，“用于控制源服务器的 SQL 语句” ，讨论了用于管理源服务器的语句。
+除了此处描述的语句外， SHOW REPLICA
+STATUS 还 SHOW RELAYLOG
+EVENTS 与副本一起使用。有关这些语句的信息，请参阅 第 13.7.7.35 节，“SHOW REPLICA STATUS 语句” 和 第 13.7.7.32 节，“SHOW RELAYLOG EVENTS 语句” 。

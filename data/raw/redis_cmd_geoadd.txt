@@ -1,0 +1,58 @@
+Redis GEOADD 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis GEOADD 命令
+向 Geo 集合中添加一个或多个地理位置成员。
+* 语法
+GEOADD key [NX | XX] [CH] longitude latitude member [longitude latitude member ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 Geo 集合键名（底层是 Sorted Set）
+NX 标志 否 仅新增，不更新已有 member
+XX 标志 否 仅更新已有 member
+CH 标志 否 返回变更数量（默认返回新增数）
+longitude Double 是 经度，范围 -180 ~ 180
+latitude Double 是 纬度，范围 -85.05112878 ~ 85.05112878
+member String 是 成员名
+* 返回值
+条件 返回值
+默认 新增 member 数量（Integer）
+CH 新增 + 修改数量
+* 时间复杂度
+O(log(N))（单个 member），N 为 Geo 集合成员数。
+* 示例
+# 添加单个位置
+> GEOADD cities 116.4074 39.9042 "Beijing"
+(integer) 1
+
+# 批量添加
+> GEOADD cities 121.4737 31.2304 "Shanghai" 113.2644 23.1291 "Guangzhou"
+(integer) 2
+
+# 只更新已有
+> GEOADD cities XX 116.4074 39.9042 "Beijing"
+(integer) 1
+* 常见错误
+经纬度范围错误 ：纬度超出约 ±85.05° 时返回错误（因为使用了墨卡托投影）。
+* 最佳实践
+附近的人/商户 ：GEOADD 存储用户或商户位置， GEORADIUS 查询附近。
+批量添加 ：一次 GEOADD 多个位置，减少网络往返。
+* FAQ
+Q: GEOADD 和 ZADD 有什么区别？ A: GEOADD 是 ZADD 的包装，将经纬度编码为 geohash 存入 Sorted Set 的 score。底层数据结构相同。
+Q: 坐标精度如何？ A: 52 位整数编码，精度约 0.5 米。绝大多数场景足够精确。
+相关命令
+GEOADD
+GEODIST
+GEOHASH
+GEOPOS
+GEORADIUS
+GEORADIUSBYMEMBER
+GEORADIUSBYMEMBER_RO
+GEORADIUS_RO
+GEOSEARCH
+GEOSEARCHSTORE

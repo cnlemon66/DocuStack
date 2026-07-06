@@ -1,0 +1,434 @@
+12.16 信息函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 
+12.16 信息函数
+12.16 信息函数
+表 12.20 信息函数
+姓名 描述
+BENCHMARK() 重复执行一个表达式
+CHARSET() 返回参数的字符集
+COERCIBILITY() 返回字符串参数的排序规则强制性值
+COLLATION() 返回字符串参数的排序规则
+CONNECTION_ID() 返回连接的连接 ID（线程 ID）
+CURRENT_ROLE() 返回当前活动角色
+CURRENT_USER() , CURRENT_USER 经过身份验证的用户名和主机名
+DATABASE() 返回默认（当前）数据库名称
+FOUND_ROWS() 对于带有 LIMIT 子句的 SELECT，如果没有 LIMIT 子句，将返回的行数
+ICU_VERSION() ICU库版本
+LAST_INSERT_ID() 最后一个 INSERT 的 AUTOINCREMENT 列的值
+ROLES_GRAPHML() 返回表示内存角色子图的 GraphML 文档
+ROW_COUNT() 更新的行数
+SCHEMA() DATABASE() 的同义词
+SESSION_USER() USER() 的同义词
+SYSTEM_USER() USER() 的同义词
+USER() 客户端提供的用户名和主机名
+VERSION() 返回一个表示 MySQL 服务器版本的字符串
+BENCHMARK( count , expr )
+该函数
+重复 BENCHMARK() 执行表达式。它可以用来计算 MySQL 处理表达式的速度。结果值为, or
+对于不适当的参数，例如
+重复计数或负重复计数。 expr count 0 NULL NULL
+预期用途来自 mysql 客户端，它报告查询执行时间：
+mysql> SELECT BENCHMARK(1000000,AES_ENCRYPT('hello','goodbye'));
++---------------------------------------------------+
+| BENCHMARK(1000000,AES_ENCRYPT('hello','goodbye')) |
++---------------------------------------------------+
+| 0 |
++---------------------------------------------------+
+1 row in set (4.74 sec)
+报告的时间是客户端经过的时间，而不是服务器端的 CPU 时间。建议执行 BENCHMARK() 几次，并根据服务器机器的负载程度来解释结果。
+BENCHMARK() 旨在测量标量表达式的运行时性能，这对您使用它和解释结果的方式有一些重要影响：
+只能使用标量表达式。尽管表达式可以是子查询，但它必须返回单列且至多为单行。例如， BENCHMARK(10, (SELECT * FROM
+t)) 如果表格 t 有多于一列或多于一行，则失败。
+就所涉及的开销量而言，
+执行语句
+时间与执行不同
+。两者具有非常不同的执行配置文件，您不应期望它们花费相同的时间。前者分别涉及解析器、优化器、表锁定和运行时评估
+时间。后者仅涉及运行时评估 SELECT expr N SELECT BENCHMARK( N , expr ) N N 次，而所有其他组件仅一次。已经分配的内存结构被重用，并且运行时优化（例如已经为聚合函数评估的结果的本地缓存）可以改变结果。因此，使用 BENCHMARK() 通过赋予该组件更多权重并消除
+由网络、解析器、优化器等引入
+的 “ 噪音 ”来衡量运行时组件的性能。
+CHARSET( str )
+返回字符串参数的字符集，或者 NULL 如果参数是 NULL .
+mysql> SELECT CHARSET('abc');
+-> 'utf8mb3'
+mysql> SELECT CHARSET(CONVERT('abc' USING latin1));
+-> 'latin1'
+mysql> SELECT CHARSET(USER());
+-> 'utf8mb3'
+COERCIBILITY( str )
+返回字符串参数的排序规则强制性值。
+mysql> SELECT COERCIBILITY('abc' COLLATE utf8mb4_swedish_ci);
+-> 0
+mysql> SELECT COERCIBILITY(USER());
+-> 3
+mysql> SELECT COERCIBILITY('abc');
+-> 4
+mysql> SELECT COERCIBILITY(1000);
+-> 5
+返回值的含义如下表所示。较低的值具有较高的优先级。
+可压制性 意义 例子
+0 显式整理 带 COLLATE 子句的值
+1 无整理 连接具有不同排序规则的字符串
+2 隐式整理 列值、存储的例程参数或局部变量
+3 系统常数 USER() 返回值
+4 强制的 文字串
+5 数字 数值或时间值
+6 可忽略 NULL 或派生自的表达式 NULL
+有关详细信息，请参阅 第 10.8.4 节，“表达式中的排序规则强制性” 。
+COLLATION( str )
+返回字符串参数的排序规则。
+mysql> SELECT COLLATION('abc');
+-> 'utf8mb4_0900_ai_ci'
+mysql> SELECT COLLATION(_utf8mb4'abc');
+-> 'utf8mb4_0900_ai_ci'
+mysql> SELECT COLLATION(_latin1'abc');
+-> 'latin1_swedish_ci'
+CONNECTION_ID()
+返回连接的连接 ID（线程 ID）。每个连接都有一个 ID，该 ID 在当前连接的客户端集合中是唯一的。
+by 返回
+的值与
+表的列、
+输出的列和性能模式表的列中 CONNECTION_ID() 显示的值类型相同。 ID INFORMATION_SCHEMA.PROCESSLIST Id SHOW PROCESSLIST PROCESSLIST_ID threads
+mysql> SELECT CONNECTION_ID();
+-> 23786
+警告
+pseudo_thread_id 更改系统变量
+
+的会话值会
+更改 CONNECTION_ID() 函数返回的值。
+CURRENT_ROLE()
+返回一个 utf8mb3 字符串，其中包含当前会话的当前活动角色，以逗号分隔， NONE 如果没有则返回。该值反映了 sql_quote_show_create 系统变量的设置。
+假设一个帐户被授予如下角色：
+GRANT 'r1', 'r2' TO 'u1'@'localhost';
+SET DEFAULT ROLE ALL TO 'u1'@'localhost';
+在 的会话中 u1 ，初始 CURRENT_ROLE() 值命名默认帐户角色。使用 SET
+ROLE 以下更改：
+mysql> SELECT CURRENT_ROLE();
++-------------------+
+| CURRENT_ROLE() |
++-------------------+
+| `r1`@`%`,`r2`@`%` |
++-------------------+
+mysql> SET ROLE 'r1'; SELECT CURRENT_ROLE();
++----------------+
+| CURRENT_ROLE() |
++----------------+
+| `r1`@`%` |
++----------------+
+CURRENT_USER , CURRENT_USER()
+返回服务器用于验证当前客户端的 MySQL 帐户的用户名和主机名组合。该帐户决定了您的访问权限。返回值是 utf8mb3 字符集中的字符串。
+的值 CURRENT_USER() 可以不同于 的值 USER() 。
+mysql> SELECT USER();
+-> 'davida@localhost'
+mysql> SELECT * FROM mysql.user;
+ERROR 1044: Access denied for user ''@'localhost' to
+database 'mysql'
+mysql> SELECT CURRENT_USER();
+-> '@localhost'
+该示例说明，尽管客户端指定了用户名 davida （如 USER() 函数值所示），但服务器使用匿名用户帐户对客户端进行了身份验证（如 CURRENT_USER() 值的空用户名部分所示）。发生这种情况的一种方式是，在 的授权表中没有列出任何帐户 davida 。
+在存储的程序或视图中， CURRENT_USER() 返回定义对象的用户的帐户（由其 DEFINER 值给出），除非使用 SQL SECURITY INVOKER 特征定义。在后一种情况下， CURRENT_USER() 返回对象的调用者。
+触发器和事件没有定义 SQL
+SECURITY 特征的选项，因此对于这些对象， CURRENT_USER() 返回定义该对象的用户的帐户。要返回调用者，请使用 USER() 或 SESSION_USER() 。
+以下语句支持使用该 CURRENT_USER() 函数来代替受影响的用户或定义者的名称（以及可能的主机）；在这种情况下， CURRENT_USER() 根据需要扩展：
+DROP USER
+RENAME USER
+GRANT
+REVOKE
+CREATE FUNCTION
+CREATE PROCEDURE
+CREATE TRIGGER
+CREATE EVENT
+CREATE VIEW
+ALTER EVENT
+ALTER VIEW
+SET PASSWORD
+有关此扩展 CURRENT_USER() 对复制的影响的信息，请参阅 第 17.5.1.8 节，“CURRENT_USER() 的复制” 。
+DATABASE()
+将默认（当前）数据库名称作为 utf8mb3 字符集中的字符串返回。如果没有默认数据库，则 DATABASE() 返回 NULL 。在存储的例程中，默认数据库是与例程关联的数据库，它不一定与调用上下文中的默认数据库相同。
+mysql> SELECT DATABASE();
+-> 'test'
+如果没有默认数据库，则 DATABASE() 返回 NULL 。
+FOUND_ROWS()
+笔记
+从
+MySQL 8.0.17 开始，不推荐使用 SQL_CALC_FOUND_ROWS 查询修饰符和伴随函数； FOUND_ROWS() 希望它们在未来版本的 MySQL 中被删除。作为替换，考虑使用 执行您的查询 LIMIT ，然后使用 COUNT(*) 和不
+执行第二个查询 LIMIT 以确定是否有其他行。例如，而不是这些查询：
+SELECT SQL_CALC_FOUND_ROWS * FROM tbl_name WHERE id > 100 LIMIT 10;
+SELECT FOUND_ROWS();
+请改用这些查询：
+SELECT * FROM tbl_name WHERE id > 100 LIMIT 10;
+SELECT COUNT(*) FROM tbl_name WHERE id > 100;
+COUNT(*) 受到某些优化。 SQL_CALC_FOUND_ROWS 导致某些优化被禁用。
+一个 SELECT 语句可以包含一个 LIMIT 子句来限制服务器返回给客户端的行数。在某些情况下，希望知道在没有 的情况下该语句会返回多少行 LIMIT ，但无需再次运行该语句。要获取此行数，请在语句中包含一个 SQL_CALC_FOUND_ROWS 选项
+，然后再调用： SELECT FOUND_ROWS()
+mysql> SELECT SQL_CALC_FOUND_ROWS * FROM tbl_name -> WHERE id > 100 LIMIT 10;
+mysql> SELECT FOUND_ROWS();
+第二个返回一个数字，表示如果没有子句
+写入 SELECT 第一个会返回多少行
+。 SELECT LIMIT
+SQL_CALC_FOUND_ROWS 如果在最近的成功 SELECT 语句
+中
+没有选项，则 FOUND_ROWS() 返回该语句返回的结果集中的行数。如果语句包含 LIMIT 子句， FOUND_ROWS() 则返回不超过限制的行数。例如
+，如果语句包含or FOUND_ROWS() ，则分别返回 10 或 60 。 LIMIT
+10 LIMIT 50, 10
+可用的行计数 FOUND_ROWS() 是暂时的，并且不打算在语句之后的语句之后可用 SELECT SQL_CALC_FOUND_ROWS 。如果您以后需要引用该值，请将其保存：
+mysql> SELECT SQL_CALC_FOUND_ROWS * FROM ... ;
+mysql> SET @rows = FOUND_ROWS();
+如果使用 SELECT
+SQL_CALC_FOUND_ROWS ，MySQL 必须计算完整结果集中有多少行。但是，这比没有 再次运行查询要快 LIMIT ，因为不需要将结果集发送到客户端。
+SQL_CALC_FOUND_ROWS 并且 FOUND_ROWS() 在您想要限制查询返回的行数的情况下很有用，而且还可以在不再次运行查询的情况下确定完整结果集中的行数。一个示例是一个 Web 脚本，它呈现一个分页显示，其中包含指向显示搜索结果其他部分的页面的链接。使用 FOUND_ROWS() 使您能够确定其余结果还需要多少其他页面。
+SQL_CALC_FOUND_ROWS 和
+语句
+的使用比简单语句 FOUND_ROWS() 更复杂，因为可能出现在一个. 它可以应用于 中的单个语句，或全局应用于整个
+结果。 UNION SELECT LIMIT UNION SELECT UNION UNION
+SQL_CALC_FOUND_ROWS for
+
+的目的 UNION 是它应该返回没有 global 时返回的行数 LIMIT 。 SQL_CALC_FOUND_ROWS with
+的使用条件 UNION 是：
+SQL_CALC_FOUND_ROWS 关键字必须
+出现 SELECT 在 UNION .
+的值 FOUND_ROWS() 只有在 UNION ALL 使用时才是准确的。如果使用 UNION without ALL ，会出现去重的情况，而的值 FOUND_ROWS() 只是近似值。
+如果 中不 LIMIT 存在 , 将 UNION 被 SQL_CALC_FOUND_ROWS 忽略并返回为处理 UNION .
+除了这里描述的情况之外， 的行为 FOUND_ROWS() 是未定义的（例如，它的值 SELECT 跟在一个因错误而失败的语句之后）。
+重要的
+FOUND_ROWS() 使用基于语句的复制不能可靠地复制。此函数使用基于行的复制自动复制。
+ICU_VERSION()
+用于支持正则表达式操作的 Unicode 国际组件 (ICU) 库的版本（请参阅 第 12.8.2 节，“正则表达式” ）。此功能主要用于测试用例。
+LAST_INSERT_ID() , LAST_INSERT_ID( expr )
+如果没有参数，
+则 LAST_INSERT_ID() 返回一个 BIGINT UNSIGNED （64 位）值，表示 AUTO_INCREMENT 作为最近执行的 INSERT 语句的结果为列成功插入的第一个自动生成的值。 LAST_INSERT_ID() 如果没有成功插入行，则
+值
+保持不变。
+对于参数， LAST_INSERT_ID() 返回一个无符号整数，或者 NULL 如果参数是 NULL .
+例如，插入生成 AUTO_INCREMENT 值的行后，可以像这样获取值：
+mysql> SELECT LAST_INSERT_ID();
+-> 195
+当前执行的语句不影响 的值 LAST_INSERT_ID() 。假设您 AUTO_INCREMENT 使用一个语句生成一个值，然后 LAST_INSERT_ID() 在一个多行 INSERT 语句中引用，该语句将行插入到具有自己的 AUTO_INCREMENT 列的表中。第二条语句中的值 LAST_INSERT_ID() 保持稳定；它的第二行和后面的行的值不受前面插入的行的影响。（您应该知道，如果混合引用 LAST_INSERT_ID() 和
+，效果是不确定的。） LAST_INSERT_ID( expr )
+如果前面的语句返回错误，则值为 LAST_INSERT_ID() 未定义。对于事务表，如果语句因错误而回滚，则 的值 LAST_INSERT_ID() 未定义。对于 manual ROLLBACK ， 的值 LAST_INSERT_ID() 并没有恢复到交易前；它保持原样 ROLLBACK 。
+在存储例程（过程或函数）或触发器的主体内，值的 LAST_INSERT_ID() 变化方式与在这些对象的主体外执行的语句相同。存储例程或触发器对 LAST_INSERT_ID() 以下语句所见的值的影响取决于例程的类型：
+如果存储过程执行更改值的语句， LAST_INSERT_ID() 则更改后的值会被过程调用后的语句看到。
+对于更改值的存储函数和触发器，该值会在函数或触发器结束时恢复，因此在它之后的语句看不到已更改的值。
+生成的 ID 以每个连接为基础 在服务器中维护
+。这意味着函数返回给给定客户端的
+值是为影响 该客户端 的列的 AUTO_INCREMENT 最近语句生成的第一个值
+。这个值不会受到其他客户端的影响，即使他们生成
+自己的值。此行为确保每个客户端都可以检索自己的 ID，而无需担心其他客户端的活动，也不需要锁或事务。 AUTO_INCREMENT AUTO_INCREMENT
+LAST_INSERT_ID() 如果将行的 AUTO_INCREMENT 列设置为非 “ 魔术 ” 值（即不是 NULL 和不是的值），则
+值不会更改 0 。
+重要的
+如果使用单个 INSERT 语句插入多行，
+则 仅返回为第 一个 插入行 LAST_INSERT_ID() 生成的值。这样做的原因是可以很容易地在
+其他服务器上复制相同的语句。 INSERT
+例如：
+mysql> USE test;
+
+mysql> CREATE TABLE t (
+id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+name VARCHAR(10) NOT NULL
+);
+
+mysql> INSERT INTO t VALUES (NULL, 'Bob');
+
+mysql> SELECT * FROM t;
++----+------+
+| id | name |
++----+------+
+| 1 | Bob |
++----+------+
+
+mysql> SELECT LAST_INSERT_ID();
++------------------+
+| LAST_INSERT_ID() |
++------------------+
+| 1 |
++------------------+
+
+mysql> INSERT INTO t VALUES
+(NULL, 'Mary'), (NULL, 'Jane'), (NULL, 'Lisa');
+
+mysql> SELECT * FROM t;
++----+------+
+| id | name |
++----+------+
+| 1 | Bob |
+| 2 | Mary |
+| 3 | Jane |
+| 4 | Lisa |
++----+------+
+
+mysql> SELECT LAST_INSERT_ID();
++------------------+
+| LAST_INSERT_ID() |
++------------------+
+| 2 |
++------------------+
+尽管第二个 INSERT 语句将三个新行插入到 t 中，但为这些行中的第一行生成的 ID 是 2 ，并且它是 LAST_INSERT_ID() 为以下 SELECT 语句返回的这个值。
+如果您使用 INSERT
+IGNORE 并且该行被忽略，则 LAST_INSERT_ID() 与当前值保持不变（如果连接尚未执行成功，则返回 0 INSERT ），并且对于非事务性表， AUTO_INCREMENT 计数器不会递增。对于 InnoDB 表，
+如果设置为或，则 AUTO_INCREMENT 计数器递增
+，如以下示例所示： innodb_autoinc_lock_mode 1 2
+mysql> USE test;
+
+mysql> SELECT @@innodb_autoinc_lock_mode;
++----------------------------+
+| @@innodb_autoinc_lock_mode |
++----------------------------+
+| 1 |
++----------------------------+
+
+mysql> CREATE TABLE `t` (
+`id` INT(11) NOT NULL AUTO_INCREMENT,
+`val` INT(11) DEFAULT NULL,
+PRIMARY KEY (`id`),
+UNIQUE KEY `i1` (`val`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+# Insert two rows
+
+mysql> INSERT INTO t (val) VALUES (1),(2);
+
+# With auto_increment_offset=1, the inserted rows
+# result in an AUTO_INCREMENT value of 3
+
+mysql> SHOW CREATE TABLE t\G
+*************************** 1. row ***************************
+Table: t
+Create Table: CREATE TABLE `t` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`val` int(11) DEFAULT NULL,
+PRIMARY KEY (`id`),
+UNIQUE KEY `i1` (`val`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1
+
+# LAST_INSERT_ID() returns the first automatically generated
+# value that is successfully inserted for the AUTO_INCREMENT column
+
+mysql> SELECT LAST_INSERT_ID();
++------------------+
+| LAST_INSERT_ID() |
++------------------+
+| 1 |
++------------------+
+
+# The attempted insertion of duplicate rows fail but errors are ignored
+
+mysql> INSERT IGNORE INTO t (val) VALUES (1),(2);
+Query OK, 0 rows affected (0.00 sec)
+Records: 2 Duplicates: 2 Warnings: 0
+
+# With innodb_autoinc_lock_mode=1, the AUTO_INCREMENT counter
+# is incremented for the ignored rows
+
+mysql> SHOW CREATE TABLE t\G
+*************************** 1. row ***************************
+Table: t
+Create Table: CREATE TABLE `t` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`val` int(11) DEFAULT NULL,
+PRIMARY KEY (`id`),
+UNIQUE KEY `i1` (`val`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1
+
+# The LAST_INSERT_ID is unchanged because the previous insert was unsuccessful
+
+mysql> SELECT LAST_INSERT_ID();
++------------------+
+| LAST_INSERT_ID() |
++------------------+
+| 1 |
++------------------+
+有关更多信息，请参阅 第 15.6.1.6 节，“InnoDB 中的 AUTO_INCREMENT 处理” 。
+如果 expr 作为参数给定，则参数 LAST_INSERT_ID() 的值由函数返回，并被记住为下一个要返回的值 LAST_INSERT_ID() 。这可用于模拟序列：
+创建一个表来保存序列计数器并初始化它：
+mysql> CREATE TABLE sequence (id INT NOT NULL);
+mysql> INSERT INTO sequence VALUES (0);
+使用该表生成序列号，如下所示：
+mysql> UPDATE sequence SET id=LAST_INSERT_ID(id+1);
+mysql> SELECT LAST_INSERT_ID();
+该 UPDATE 语句递增序列计数器并导致下一次调用 LAST_INSERT_ID() 返回更新后的值。该 SELECT 语句检索该值。 mysql_insert_id() C API 函数也可用于获取值。
+请参阅 mysql_insert_id() 。
+您可以在不调用 的情况下生成序列 LAST_INSERT_ID() ，但以这种方式使用函数的效用是 ID 值作为最后自动生成的值保存在服务器中。它是多用户安全的，因为多个客户端可以发出语句并使用语句（或
+） UPDATE 获取自己的序列值
+，而不会影响或受其他生成自己序列值的客户端的影响。 SELECT mysql_insert_id()
+请注意， mysql_insert_id() 它仅在 INSERT and UPDATE 语句之后更新，因此您不能
+
+在执行其他 SQL 语句（如
+or
+）之后使用 C API 函数检索 for 的值。 LAST_INSERT_ID( expr ) SELECT SET
+ROLES_GRAPHML()
+返回一个 utf8mb3 字符串，其中包含表示内存角色子图的 GraphML 文档。查看元素中的
+内容需要 ROLE_ADMIN 特权（或已弃用的特权） 。否则，结果只显示一个空元素： SUPER <graphml>
+mysql> SELECT ROLES_GRAPHML();
++---------------------------------------------------+
+| ROLES_GRAPHML() |
++---------------------------------------------------+
+| <?xml version="1.0" encoding="UTF-8"?><graphml /> |
++---------------------------------------------------+
+ROW_COUNT()
+ROW_COUNT() 返回值如下：
+DDL 语句：0。这适用于 CREATE TABLE or
+等​​语句 DROP TABLE 。
+以外的 DML 语句 SELECT ：受影响的行数。这适用于 UPDATE , INSERT , or DELETE （和以前一样）等语句，但现在也适用于 and 等 ALTER
+TABLE 语句 LOAD
+DATA 。
+SELECT ：如果语句返回结果集，则为 -1，否则为“ 受影响 ” 的行数
+。例如，对于 SELECT * FROM t1 ， ROW_COUNT() 返回 -1。对于
+，
+返回写入文件的行数。 SELECT * FROM t1 INTO OUTFILE
+' file_name ' ROW_COUNT()
+SIGNAL 陈述：0。
+对于 UPDATE 语句，默认情况下受影响的行值是实际更改的行数。如果
+在连接到 mysqld CLIENT_FOUND_ROWS 时将标志
+指定为，则受影响的行值是 “ 找到 ” 的行数；也就是说，由子句匹配。 mysql_real_connect() WHERE
+对于 REPLACE 语句，如果新行替换旧行，则 affected-rows 值为 2，因为在这种情况下，删除重复行后插入一行。
+对于 INSERT
+... ON DUPLICATE KEY UPDATE 语句，如果该行作为新行插入，则每行的受影响行值为 1，如果更新现有行，则为 2，如果现有行设置为其当前值，则为 0。如果您指定 CLIENT_FOUND_ROWS 标志，并且现有行设置为其当前值，则受影响的行值为 1（而不是 0）。
+该 ROW_COUNT() 值类似于
+C API 函数的值和 mysql 客户端在语句执行后显示 mysql_affected_rows() 的行数。
+mysql> INSERT INTO t VALUES(1),(2),(3);
+Query OK, 3 rows affected (0.00 sec)
+Records: 3 Duplicates: 0 Warnings: 0
+
+mysql> SELECT ROW_COUNT();
++-------------+
+| ROW_COUNT() |
++-------------+
+| 3 |
++-------------+
+1 row in set (0.00 sec)
+
+mysql> DELETE FROM t WHERE i IN(1,2);
+Query OK, 2 rows affected (0.00 sec)
+
+mysql> SELECT ROW_COUNT();
++-------------+
+| ROW_COUNT() |
++-------------+
+| 2 |
++-------------+
+1 row in set (0.00 sec)
+重要的
+ROW_COUNT() 使用基于语句的复制不能可靠地复制。此函数使用基于行的复制自动复制。
+SCHEMA()
+此函数是 的同义词 DATABASE() 。
+SESSION_USER()
+SESSION_USER() 是的同义词 USER() 。
+SYSTEM_USER()
+SYSTEM_USER() 是的同义词 USER() 。
+笔记
+SYSTEM_USER() 功能不同于 SYSTEM_USER 特权
+。前者返回当前 MySQL 帐户名。后者区分系统用户和普通用户帐户类别（请参阅 第 6.2.11 节，“帐户类别” ）。
+USER()
+以字符集中的字符串形式返回当前 MySQL 用户名和主机名 utf8mb3 。
+mysql> SELECT USER();
+-> 'davida@localhost'
+该值指示您在连接到服务器时指定的用户名，以及您连接的客户端主机。该值可以与 的值不同 CURRENT_USER() 。
+VERSION()
+返回一个指示 MySQL 服务器版本的字符串。字符串使用 utf8mb3 字符集。除了版本号之外，该值可能还有一个后缀。请参阅 第 5.1.8 节“服务器系统变量” version 中系统变量
+的说明。
+此函数对于基于语句的复制是不安全的。如果您在 binlog_format 设置为
+时使用此功能，则会记录一条警告 STATEMENT 。
+mysql> SELECT VERSION();
+-> '8.0.31-standard'

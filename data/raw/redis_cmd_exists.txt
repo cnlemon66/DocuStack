@@ -1,0 +1,79 @@
+Redis EXISTS 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis EXISTS 命令
+判断 key 是否存在。
+* 语法
+EXISTS key [key ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 可一次检查多个 key
+* 返回值
+条件 返回值
+单个 key 存在返回 1，不存在返回 0
+多个 key 返回存在的 key 数量（Redis 3.0.3+）
+* 时间复杂度
+O(1)（单个 key），O(N)（N 个 key）
+* 示例
+> SET mykey hello
+OK
+> EXISTS mykey
+(integer) 1
+
+> EXISTS nokey
+(integer) 0
+
+# 批量检查
+> SET k1 v1
+> SET k2 v2
+> EXISTS k1 k2 k3
+(integer) 2
+* 常见错误
+过期 key ：已过期的 key EXISTS 返回 0，但过期存在短暂延迟（被动/主动过期机制）。
+类型无关 ：EXISTS 不关心 key 的类型，只判断存在性。
+* 最佳实践
+缓存读取场景不需要先 EXISTS 再 GET ，直接 GET 判断 nil 更高效，减少一次 RTT。
+批量检查使用 EXISTS k1 k2 k3 而非多次 EXISTS。
+* FAQ
+Q: EXISTS 和 TYPE 有什么区别？ A: EXISTS 只判断存在性返回 0/1； TYPE 返回 key 的数据类型或 none。
+Q: 过期 key EXISTS 一定返回 0 吗？ A: 大部分情况下是，但 Redis 过期是惰性+定期，极端情况下过期 key 可能短暂存在。
+相关命令
+COPY
+DEL
+DUMP
+EXISTS
+EXPIRE
+EXPIREAT
+EXPIRETIME
+KEYS
+MIGRATE
+MOVE
+OBJECT
+OBJECT ENCODING
+OBJECT FREQ
+OBJECT HELP
+OBJECT IDLETIME
+OBJECT REFCOUNT
+PERSIST
+PEXPIRE
+PEXPIREAT
+PEXPIRETIME
+PTTL
+RANDOMKEY
+RENAME
+RENAMENX
+RESTORE
+SCAN
+SORT
+SORT_RO
+TOUCH
+TTL
+TYPE
+UNLINK
+WAIT
+WAITAOF

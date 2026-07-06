@@ -1,0 +1,80 @@
+Redis HGET 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis HGET 命令
+返回 Hash 中指定 field 的 value。
+* 语法
+HGET key field
+* 参数说明
+参数 类型 必填 说明
+key String 是 Hash 的键名
+field String 是 Hash 中的字段名
+* 返回值
+条件 返回值
+field 存在 返回对应的 value
+field 不存在 (nil)
+key 不存在 (nil)
+key 非 Hash 类型 WRONGTYPE 错误
+* 时间复杂度
+O(1)
+*
+* 示例
+> HSET user:1001 name "Alice" age "30"
+(integer) 2
+
+> HGET user:1001 name
+"Alice"
+
+> HGET user:1001 age
+"30"
+
+> HGET user:1001 email
+(nil)
+
+> HGET nonexistent name
+(nil)
+* 常见错误
+WRONGTYPE ：对非 Hash 类型的 key 使用 HGET。
+field 不存在返回 nil ：与 key 不存在难以区分，可用 HEXISTS key field 明确判断。
+* 最佳实践
+按需读取 ：用 HGET 读取单个 field，不要用 HGETALL 读取全部后再过滤，避免传输大 Hash。
+批量读取 ：需要多个 field 时用 HMGET key field1 field2 ，减少 RTT。
+大 Hash 拆分 ：Hash field 超过 5000 时，按业务维度拆分为多个 Hash。
+* FAQ
+Q: HGET 和 HMGET 有什么区别？ A: HGET 读取单个 field； HMGET 一次读取多个 field，返回数组，减少网络往返。
+Q: HGET 能一次读取所有 field 吗？ A: 不能，用 HGETALL 。但大 Hash 慎用 HGETALL ，会阻塞 Redis。
+Q: Hash 的 field 和 value 有大小限制吗？ A: 理论上 field 和 value 都是 String，最大 512MB。但生产环境建议单个 Hash 总大小不超过 1MB。
+相关命令
+HDEL
+HEXISTS
+HEXPIRE
+HEXPIREAT
+HEXPIRETIME
+HGET
+HGETALL
+HGETDEL
+HGETEX
+HINCRBY
+HINCRBYFLOAT
+HKEYS
+HLEN
+HMGET
+HMSET
+HPERSIST
+HPEXPIRE
+HPEXPIREAT
+HPEXPIRETIME
+HPTTL
+HRANDFIELD
+HSCAN
+HSET
+HSETEX
+HSETNX
+HSTRLEN
+HTTL
+HVALS

@@ -1,0 +1,141 @@
+Redis 中文教程
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis 中文教程
+Redis（Remote Dictionary Server）是一个开源的高性能键值对存储系统，通常被称为 数据结构服务器 。因为值（value）不仅可以是简单的字符串（String），还可以是哈希（Hash）、列表（List）、集合（Set）、有序集合（Sorted Set）、流（Stream）、位图（Bitmap）、HyperLogLog、地理空间（Geo）等复杂数据类型。
+Redis 使用 C 语言开发，遵守 BSD 协议，是互联网技术中使用最为广泛的中间件之一。随着它在新浪微博等大型互联网公司的使用而逐渐风靡国内，也是中高级后端技术开发工程师技术面试过程中最常问到的知识点。
+本教程涵盖 Redis 基础知识、数据类型详解、高级特性、实战应用及面试准备，适合从零入门到进阶提升的各个阶段读者。
+* 📚 教程目录
+* 🚀 入门基础
+从零开始学习 Redis，了解基本概念并完成安装配置。
+教程 说明
+Redis 简介 Redis 是什么、主要特点、架构组成
+为什么要选择 Redis 十大核心使用场景、技术选型对比、使用禁忌
+在 Windows 上安装 Redis Windows 平台安装指南
+在 Ubuntu 上安装 Redis Ubuntu/Debian 平台安装指南
+Linux 安装 Redis Linux 通用安装与配置
+Redis 配置 配置文件详解、常用参数调优
+Redis 服务器 启动、停止、日志管理、进程监控
+* 📊 数据类型详解
+Redis 支持 9 种核心数据类型，每种类型都有丰富的原子操作命令。
+教程 说明
+Redis 数据类型概述 五种基础数据类型对比与选择指南
+Redis 字符串 String：缓存、计数器、分布式锁、Session
+Redis 哈希 Hash：对象存储、购物车、用户属性
+Redis 列表 List：消息队列、时间线、最新消息
+Redis 集合 Set：标签、共同好友、去重、抽奖
+Redis 有序集合 Sorted Set：排行榜、延时队列、范围查询
+Redis 流 Stream：消息队列、消费者组、事件溯源
+Redis 地理空间 Geo：附近的人、距离计算、地理位置服务
+Redis HyperLogLog HyperLogLog：UV 统计、基数估算
+* 🔑 键与命令
+教程 说明
+Redis 键 键命名规范、过期策略、淘汰机制、扫描遍历
+Redis 命令 常用命令速查、命令分类与使用技巧
+* 🔧 高级特性
+深入掌握 Redis 的企业级功能，构建高可用、高性能的应用架构。
+教程 说明
+Redis 持久化 RDB 快照、AOF 日志、混合持久化、备份恢复策略
+Redis 备份与恢复 数据备份方案、灾难恢复流程、迁移工具
+Redis 事务 MULTI/EXEC/WATCH、原子性保证、乐观锁实现
+Redis 管道 Pipeline 批量操作、减少 RTT、性能提升 10 倍
+Redis 发布订阅 Pub/Sub 实时推送、Sharded Pub/Sub（7.0+）
+Redis 脚本 Lua 脚本原子执行、Redis Functions（7.0+）
+Redis 分区 数据分片、哈希槽、集群扩缩容、Twemproxy
+Redis 连接 客户端连接池、长连接管理、连接数优化
+Redis 客户端连接 连接协议、身份验证、空闲超时、最大客户端数
+Redis 安全 ACL 权限控制、SSL/TLS、命令重命名、防火墙
+Redis 性能测试 redis-benchmark 使用、性能基准测试方法
+* 🌐 客户端开发
+教程 说明
+Java 连接 Redis Jedis、Lettuce、Spring Data Redis 使用
+PHP 连接 Redis phpredis 扩展、Predis 客户端使用
+* ⚖️ 技术对比
+教程 说明
+Redis vs Memcached 缓存选型：数据结构、持久化、集群、性能对比
+Redis vs MongoDB 存储选型：内存 vs 磁盘、场景互补
+Redis vs Elasticsearch 搜索选型：缓存加速 vs 全文检索
+* 🎓 面试准备
+教程 说明
+Redis 面试题 涵盖 Redis 核心概念、数据类型、持久化、高可用、性能优化、Redis 7.x 新特性等高频面试题
+* 🎯 学习路径推荐
+* 初学者路线（1-2 周）
+Redis 简介 — 了解 Redis 是什么
+为什么要选择 Redis — 理解使用场景
+安装 Redis 或 Ubuntu 安装 — 动手实践
+数据类型概述 — 建立整体认知
+字符串 → 哈希 → 列表 — 逐一掌握基础类型
+键 + 命令 — 熟悉日常操作
+* 进阶路线（2-4 周）
+集合 → 有序集合 — 掌握复杂数据结构
+持久化 — 理解数据安全机制
+事务 + 管道 — 提升操作效率
+发布订阅 + Stream — 消息队列方案
+分区 — 应对大规模数据
+安全 — 生产环境必备
+* 高级路线（持续）
+性能测试 — 建立性能基线
+备份恢复 — 运维保障
+技术对比 — 架构选型能力
+面试题 — 查漏补缺，巩固知识体系
+* 📌 关键特性速览
+特性 说明
+高性能 单机 10万+ QPS，内存操作微秒级延迟
+丰富数据类型 9 种核心类型 + 模块扩展（Bloom、JSON、Search 等）
+持久化 RDB + AOF + 混合持久化（4.0+），数据不丢失
+高可用 主从复制、哨兵自动故障转移、Cluster 集群
+原子操作 所有命令原子执行，支持 Lua 脚本和 Functions
+发布订阅 Pub/Sub 实时推送，Stream 可靠消息队列
+内存管理 LRU/LFU 淘汰策略、内存碎片整理、大 Key 分析
+地理空间 Geo 坐标存储与半径查询
+Redis 7.x Functions、改进 ACL、Sharded Pub/Sub、MP-AOF
+* 🔗 相关资源
+Redis 命令手册 — 265+ 命令完整中文参考
+Redis 文档 — 主题文档与深度文章
+Redis 客户端 — 各语言客户端与可视化工具
+Redis 下载 — 获取最新稳定版本
+Redis 中文文档首页 Redis 简介
+Redis 教程
+Redis 简介
+Windows 安装 Redis
+Linux 安装 Redis
+Ubuntu 安装 Redis
+Redis 配置
+Redis 数据类型
+Redis 命令
+Redis 命令
+Redis 键
+Redis 字符串
+Redis 哈希
+Redis 列表
+Redis 集合
+Redis 有序集合
+Redis HyperLogLog
+Redis 地理信息
+Redis Stream
+Redis 发布订阅
+Redis 事务
+Redis 脚本
+Redis 连接
+Redis 服务器
+Redis 高级功能
+Redis 备份和还原
+Redis 持久化
+Redis 使用密码
+Redis 性能测试
+Redis 客户端连接
+Redis 流水线
+Redis 分区
+JAVA 使用 Redis
+PHP 使用 Redis
+Redis 差异
+Redis 和 Memcached
+Redis 和 MongoDB
+Redis 和 Elasticsearch
+面试问题
+Redis 面试问题

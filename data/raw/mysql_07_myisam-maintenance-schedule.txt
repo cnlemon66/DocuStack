@@ -1,0 +1,19 @@
+7.6.5 设置 MyISAM 表维护计划_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 7 章备份与恢复 / 7.6 MyISAM表维护和崩溃恢复 / 
+7.6.5 设置 MyISAM 表维护计划
+7.6.5 设置 MyISAM 表维护计划
+定期执行表检查而不是等待问题发生是个好主意。检查和修复 MyISAM 表的一种方法是使用 CHECK TABLE and REPAIR TABLE 语句。请参阅 第 13.7.3 节，“表维护语句” 。
+检查表的另一种方法是使用 myisamchk 。出于维护目的，您可以使用 myisamchk -s 。该 -s 选项（ 的缩写 --silent ）使 myisamchk 以静默模式运行，仅在发生错误时打印消息。
+MyISAM 启用自动表检查
+也是一个好主意
+。例如，每当机器在更新过程中重启时，您通常需要在进一步使用之前检查每个可能受到影响的表。（这些是 “ 预期的崩溃表 ” 。 ）要使服务器自动检查
+表，请使用
+系统变量集 MyISAM 启动它。 myisam_recover_options 请参阅 第 5.1.8 节，“服务器系统变量” 。
+您还应该在正常的系统操作期间定期检查您的表格。例如，您可以运行一个 cron 作业来每周检查一次重要的表，在 crontab 文件中使用如下一行：
+35 0 * * 0 /path/to/myisamchk --fast --silent /path/to/datadir /*/*.MYI
+这将打印出有关崩溃表的信息，以便您可以根据需要检查和修复它们。
+首先，每晚在过去 24 小时内更新的所有表上执行 myisamchk -s 。 当您发现问题很少发生时，您可以将检查频率降低到每周一次左右。
+通常，MySQL 表几乎不需要维护。如果您对 MyISAM 具有动态大小行的表（具有 VARCHAR 、 BLOB 或 TEXT 列的表）执行许多更新，或者具有许多已删除行的表，您可能希望不时对表进行碎片整理/回收空间。您可以通过 OPTIMIZE TABLE 在有问题的表上使用来执行此操作。或者，如果您可以暂时停止 mysqld 服务器，请将位置更改为数据目录并在服务器停止时使用此命令：
+$> myisamchk -r -s --sort-index --myisam_sort_buffer_size=16M */*.MYI

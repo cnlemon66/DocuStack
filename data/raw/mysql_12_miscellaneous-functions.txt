@@ -1,0 +1,581 @@
+12.24 辅助功能_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 
+12.24 辅助功能
+12.24 辅助功能
+表 12.29 辅助功能
+姓名 描述 介绍 弃用
+ANY_VALUE() 抑制 ONLY_FULL_GROUP_BY 值拒绝
+BIN_TO_UUID() 将二进制 UUID 转换为字符串
+DEFAULT() 返回表列的默认值
+GROUPING() 区分超级聚合 ROLLUP 行和常规行
+INET_ATON() 返回 IP 地址的数值
+INET_NTOA() 从数值返回 IP 地址
+INET6_ATON() 返回 IPv6 地址的数值
+INET6_NTOA() 从数值返回 IPv6 地址
+IS_IPV4() 参数是否为 IPv4 地址
+IS_IPV4_COMPAT() 参数是否为 IPv4 兼容地址
+IS_IPV4_MAPPED() 参数是否为 IPv4 映射地址
+IS_IPV6() 参数是否为 IPv6 地址
+IS_UUID() 参数是否是有效的 UUID
+MASTER_POS_WAIT() 阻塞直到副本已读取并将所有更新应用到指定位置 8.0.26
+NAME_CONST() 使列具有给定的名称
+SLEEP() 睡眠数秒
+SOURCE_POS_WAIT() 阻塞直到副本已读取并将所有更新应用到指定位置 8.0.26
+UUID() 返回通用唯一标识符 (UUID)
+UUID_SHORT() 返回一个整数值的通用标识符
+UUID_TO_BIN() 将字符串 UUID 转换为二进制
+VALUES() 定义要在 INSERT 期间使用的值
+ANY_VALUE( arg )
+此功能对于启用 SQL 模式 GROUP BY 时的查询
+很有用 ONLY_FULL_GROUP_BY ，适用于 MySQL 拒绝您知道有效的查询但 MySQL 无法确定的原因的情况。函数返回值和类型与其参数的返回值和类型相同，但不检查 ONLY_FULL_GROUP_BY SQL模式的函数结果。
+例如，如果 name 是非索引列，则以下查询将失败并 ONLY_FULL_GROUP_BY 启用：
+mysql> SELECT name, address, MAX(age) FROM t GROUP BY name;
+ERROR 1055 (42000): Expression #2 of SELECT list is not in GROUP
+BY clause and contains nonaggregated column 'mydb.t.address' which
+is not functionally dependent on columns in GROUP BY clause; this
+is incompatible with sql_mode=only_full_group_by
+发生故障是因为 address 它是一个非聚合列，它既没有在 GROUP BY 列中命名，也没有在功能上依赖于它们。因此， address 每个组中行的值 name 是不确定的。有多种方法可以使 MySQL 接受查询：
+更改表以创建 name 主键或唯一 NOT NULL 列。这使 MySQL 能够确定 address 在功能上依赖于 name ; 也就是说， address 由 唯一确定 name 。 NULL （如果必须允许作为有效值，
+则此技术不适用 name 。）
+用于 ANY_VALUE() 指代 address ：
+SELECT name, ANY_VALUE(address), MAX(age) FROM t GROUP BY name;
+在这种情况下，MySQL 忽略 address 每个 name 组内值的不确定性并接受查询。如果您根本不关心为每个组选择了哪个非聚合列的值，这可能很有用。 ANY_VALUE() 不是聚合函数，不像 SUM() or
+之类的函数 COUNT() 。它只是用来抑制非确定性测试。
+禁用 ONLY_FULL_GROUP_BY 。这相当于使用 ANY_VALUE() with ONLY_FULL_GROUP_BY enabled，如前一项所述。
+ANY_VALUE() 如果列之间存在功能依赖但 MySQL 无法确定它，这也是有用的。以下查询是有效的，因为 age 它在功能上依赖于分组列 age-1 ，但 MySQL 无法判断并拒绝 ONLY_FULL_GROUP_BY 启用的查询：
+SELECT age FROM t GROUP BY age-1;
+要使 MySQL 接受查询，请使用 ANY_VALUE() ：
+SELECT ANY_VALUE(age) FROM t GROUP BY age-1;
+ANY_VALUE() 可用于在没有 GROUP BY 子句的情况下引用聚合函数的查询：
+mysql> SELECT name, MAX(age) FROM t;
+ERROR 1140 (42000): In aggregated query without GROUP BY, expression
+#1 of SELECT list contains nonaggregated column 'mydb.t.name'; this
+is incompatible with sql_mode=only_full_group_by
+如果没有 GROUP BY ，则只有一个组，并且不确定 name 为该组选择哪个值。 ANY_VALUE() 告诉 MySQL 接受查询：
+SELECT ANY_VALUE(name), MAX(age) FROM t;
+可能是因为给定数据集的某些属性，您知道选定的非聚合列在功能上有效地依赖于 GROUP BY 列。例如，应用程序可能强制一列相对于另一列的唯一性。在这种情况下，使用 ANY_VALUE() 有效功能依赖列可能有意义。
+有关其他讨论，请参阅 第 12.20.3 节，“MySQL 对 GROUP BY 的处理” 。
+BIN_TO_UUID( binary_uuid ) , BIN_TO_UUID( binary_uuid , swap_flag )
+BIN_TO_UUID() 是 的倒数 UUID_TO_BIN() 。它将二进制 UUID 转换为字符串 UUID 并返回结果。二进制值应该是一个 UUID 作为 VARBINARY(16) 值。返回值是由破折号分隔的五个十六进制数组成的字符串。（有关此格式的详细信息，请参阅 UUID() 函数说明。）如果 UUID 参数为 NULL ，则返回值为 NULL 。如果任何参数无效，则会发生错误。
+BIN_TO_UUID() 接受一个或两个参数：
+单参数形式采用二进制 UUID 值。假定 UUID 值不会交换其时间低和时间高的部分。字符串结果与二进制参数的顺序相同。
+双参数形式采用二进制 UUID 值和交换标志值：
+如果 swap_flag 为 0，则双参数形式等同于单参数形式。字符串结果与二进制参数的顺序相同。
+如果 swap_flag 为 1，则假定 UUID 值已交换其时间低和时间高部分。这些部分被交换回它们在结果值中的原始位置。
+有关时间部分交换的用法示例和信息，请参阅 UUID_TO_BIN() 函数描述。
+DEFAULT( col_name )
+返回表列的默认值。如果该列没有默认值，则会产生错误。
+仅允许对具有文字默认值的列使用
+
+指定命名列的默认值，而不允许对具有表达式默认值的列使用。 DEFAULT( col_name )
+mysql> UPDATE t SET i = DEFAULT(i)+1 WHERE id < 100;
+FORMAT( X , D )
+将数字 X 格式化为类似于 的格式 '#,###,###.##' ，四舍五入到 D 小数位，并将结果作为字符串返回。有关详细信息，请参阅 第 12.8 节，“字符串函数和运算符” 。
+GROUPING( expr [, expr ] ...)
+对于 GROUP BY 包含 WITH ROLLUP 修饰符的查询，该 ROLLUP 操作会生成超级聚合输出行，其中 NULL 代表所有值的集合。该 GROUPING() 函数使您能够将 NULL 超级聚合行的 NULL 值与常规分组行中的值区分开来。
+GROUPING() 在选择列表、 HAVING 子句和（从 MySQL 8.0.12 开始） ORDER BY 子句中是允许的。
+to 的每个参数都 GROUPING() 必须是与 GROUP BY 子句中的表达式完全匹配的表达式。表达式不能是位置说明符。对于每个表达式， GROUPING() 如果当前行中的表达式值是 NULL 表示超级聚合值的，则生成 1。否则， GROUPING() 生成 0，表示表达式值 NULL 对于常规结果行是 a 或不是 NULL 。
+假设该表 t1 包含这些行，其中 NULL 表示类似 “ 其他 ” 或 “ 未知 ” 的内容：
+mysql> SELECT * FROM t1;
++------+-------+----------+
+| name | size | quantity |
++------+-------+----------+
+| ball | small | 10 |
+| ball | large | 20 |
+| ball | NULL | 5 |
+| hoop | small | 15 |
+| hoop | large | 5 |
+| hoop | NULL | 3 |
++------+-------+----------+
+表的摘要 WITH ROLLUP 如下所示：
+mysql> SELECT name, size, SUM(quantity) AS quantity
+FROM t1
+GROUP BY name, size;
++------+-------+----------+
+| name | size | quantity |
++------+-------+----------+
+| ball | small | 10 |
+| ball | large | 20 |
+| ball | NULL | 5 |
+| hoop | small | 15 |
+| hoop | large | 5 |
+| hoop | NULL | 3 |
++------+-------+----------+
+结果包含 NULL 值，但这些值不代表超级聚合行，因为查询不包括 WITH ROLLUP 。
+添加 WITH ROLLUP 会生成包含附加值的超级聚合摘要行 NULL 。但是，如果不将此结果与前一个结果进行比较，则不容易看出哪些 NULL 值出现在超级聚合行中，哪些值出现在常规分组行中：
+mysql> SELECT name, size, SUM(quantity) AS quantity
+FROM t1
+GROUP BY name, size WITH ROLLUP;
++------+-------+----------+
+| name | size | quantity |
++------+-------+----------+
+| ball | NULL | 5 |
+| ball | large | 20 |
+| ball | small | 10 |
+| ball | NULL | 35 |
+| hoop | NULL | 3 |
+| hoop | large | 5 |
+| hoop | small | 15 |
+| hoop | NULL | 23 |
+| NULL | NULL | 58 |
++------+-------+----------+
+要区分 NULL 超级聚合行中的值与常规分组行中的值，请使用 GROUPING() ，它仅对超级聚合 NULL 值返回 1：
+mysql> SELECT
+name, size, SUM(quantity) AS quantity,
+GROUPING(name) AS grp_name,
+GROUPING(size) AS grp_size
+FROM t1
+GROUP BY name, size WITH ROLLUP;
++------+-------+----------+----------+----------+
+| name | size | quantity | grp_name | grp_size |
++------+-------+----------+----------+----------+
+| ball | NULL | 5 | 0 | 0 |
+| ball | large | 20 | 0 | 0 |
+| ball | small | 10 | 0 | 0 |
+| ball | NULL | 35 | 0 | 1 |
+| hoop | NULL | 3 | 0 | 0 |
+| hoop | large | 5 | 0 | 0 |
+| hoop | small | 15 | 0 | 0 |
+| hoop | NULL | 23 | 0 | 1 |
+| NULL | NULL | 58 | 1 | 1 |
++------+-------+----------+----------+----------+
+常见用途 GROUPING() ：
+用标签代替超级聚合 NULL 值：
+mysql> SELECT
+IF(GROUPING(name) = 1, 'All items', name) AS name,
+IF(GROUPING(size) = 1, 'All sizes', size) AS size,
+SUM(quantity) AS quantity
+FROM t1
+GROUP BY name, size WITH ROLLUP;
++-----------+-----------+----------+
+| name | size | quantity |
++-----------+-----------+----------+
+| ball | NULL | 5 |
+| ball | large | 20 |
+| ball | small | 10 |
+| ball | All sizes | 35 |
+| hoop | NULL | 3 |
+| hoop | large | 5 |
+| hoop | small | 15 |
+| hoop | All sizes | 23 |
+| All items | All sizes | 58 |
++-----------+-----------+----------+
+通过过滤掉常规分组行仅返回超级聚合行：
+mysql> SELECT name, size, SUM(quantity) AS quantity
+FROM t1
+GROUP BY name, size WITH ROLLUP
+HAVING GROUPING(name) = 1 OR GROUPING(size) = 1;
++------+------+----------+
+| name | size | quantity |
++------+------+----------+
+| ball | NULL | 35 |
+| hoop | NULL | 23 |
+| NULL | NULL | 58 |
++------+------+----------+
+GROUPING() 允许多个表达式参数。在这种情况下， GROUPING() 返回值表示由每个表达式的结果组合而成的位掩码，其中最低位对应于最右边表达式的结果。例如，对于三个表达式参数，
+计算如下： GROUPING( expr1 , expr2 , expr3 )
+result for GROUPING( expr3 )
++ result for GROUPING( expr2 ) << 1
++ result for GROUPING( expr1 ) << 2
+以下查询显示 GROUPING() 单个参数的结果如何组合用于多参数调用以生成位掩码值：
+mysql> SELECT
+name, size, SUM(quantity) AS quantity,
+GROUPING(name) AS grp_name,
+GROUPING(size) AS grp_size,
+GROUPING(name, size) AS grp_all
+FROM t1
+GROUP BY name, size WITH ROLLUP;
++------+-------+----------+----------+----------+---------+
+| name | size | quantity | grp_name | grp_size | grp_all |
++------+-------+----------+----------+----------+---------+
+| ball | NULL | 5 | 0 | 0 | 0 |
+| ball | large | 20 | 0 | 0 | 0 |
+| ball | small | 10 | 0 | 0 | 0 |
+| ball | NULL | 35 | 0 | 1 | 1 |
+| hoop | NULL | 3 | 0 | 0 | 0 |
+| hoop | large | 5 | 0 | 0 | 0 |
+| hoop | small | 15 | 0 | 0 | 0 |
+| hoop | NULL | 23 | 0 | 1 | 1 |
+| NULL | NULL | 58 | 1 | 1 | 3 |
++------+-------+----------+----------+----------+---------+
+对于多个表达式参数， GROUPING() 如果任何表达式表示超级聚合值，则返回值为非零。因此，多参数 GROUPING() 语法通过使用单个多参数 GROUPING() 调用而不是多个单参数调用，提供了一种更简单的方法来编写仅返回超级聚合行的早期查询：
+mysql> SELECT name, size, SUM(quantity) AS quantity
+FROM t1
+GROUP BY name, size WITH ROLLUP
+HAVING GROUPING(name, size) <> 0;
++------+------+----------+
+| name | size | quantity |
++------+------+----------+
+| ball | NULL | 35 |
+| hoop | NULL | 23 |
+| NULL | NULL | 58 |
++------+------+----------+
+使用 GROUPING() 受以下限制：
+不要使用子查询 GROUP BY 表达式作为 GROUPING() 参数，因为匹配可能会失败。例如，此查询匹配失败：
+mysql> SELECT GROUPING((SELECT MAX(name) FROM t1))
+FROM t1
+GROUP BY (SELECT MAX(name) FROM t1) WITH ROLLUP;
+ERROR 3580 (HY000): Argument #1 of GROUPING function is not in GROUP BY
+GROUP BY 文字表达式不应在 HAVING 子句中用作 GROUPING() 参数。由于优化器评估 GROUP BY 和的时间不同 HAVING ，匹配可能会成功，但 GROUPING() 评估不会产生预期的结果。考虑这个查询：
+SELECT a AS f1, 'w' AS f2
+FROM t
+GROUP BY f1, f2 WITH ROLLUP
+HAVING GROUPING(f2) = 1;
+GROUPING() 对文字常量表达式的评估早于对 HAVING 整个子句的评估，并返回 0。要检查此类查询是否受到影响，
+请在
+列
+中使用 EXPLAIN 和查找
+。 Impossible having Extra
+有关 WITH ROLLUP and
+的更多信息 GROUPING() ，请参阅 第 12.20.2 节，“GROUP BY 修饰符” 。
+INET_ATON( expr )
+给定 IPv4 网络地址的点分四边形表示形式的字符串，返回一个整数，该整数表示网络字节顺序（大端）中地址的数值。如果它不理解其参数，或者如果是
+，则 INET_ATON() 返回
+。 NULL expr NULL
+mysql> SELECT INET_ATON('10.0.5.9');
+-> 167773449
+对于此示例，返回值计算为 10×256 3 + 0×256 2 + 5×256 + 9。
+INET_ATON() 可能会也可能不会返回短格式 IP 地址的非 NULL 结果（例如 '127.1' 的表示 '127.0.0.1' ）。因此， INET_ATON() 不应将 a 用于此类地址。
+笔记
+要存储由 生成的值 INET_ATON() ，请使用
+已签名的 INT UNSIGNED 列而不是
+。 INT 如果使用带符号的列，则无法正确存储与第一个八位字节大于 127 的 IP 地址对应的值。请参阅 第 11.1.7 节，“超出范围和溢出处理” 。
+INET_NTOA( expr )
+给定网络字节顺序的数字 IPv4 网络地址，返回地址的点分四字符串表示形式作为连接字符集中的字符串。
+如果它不理解其参数，则 INET_NTOA() 返回
+。 NULL
+mysql> SELECT INET_NTOA(167773449);
+-> '10.0.5.9'
+INET6_ATON( expr )
+给定一个字符串形式的 IPv6 或 IPv4 网络地址，返回一个二进制字符串，该字符串表示网络字节顺序（大端）中地址的数值。因为数字格式的 IPv6 地址需要比最大整数类型更多的字节，所以此函数返回的表示具有 VARBINARY 数据类型： VARBINARY(16) 用于 IPv6 地址和 VARBINARY(4) 用于 IPv4 地址。如果参数不是有效地址，或者是 NULL ，
+则 INET6_ATON() 返回 NULL 。
+以下示例用于
+以可打印形式 HEX() 显示
+结果： INET6_ATON()
+mysql> SELECT HEX(INET6_ATON('fdfe::5a55:caff:fefa:9089'));
+-> 'FDFE0000000000005A55CAFFFEFA9089'
+mysql> SELECT HEX(INET6_ATON('10.0.5.9'));
+-> '0A000509'
+INET6_ATON() 观察对有效参数的几个约束。这些在下面的列表中连同示例一起给出。
+尾随区域 ID 是不允许的，如 fe80::3%1 或 fe80::3%eth0 。
+不允许使用尾随网络掩码，如 2001:45f:3:ba::/64 或 198.51.100.0/24 。
+对于表示 IPv4 地址的值，仅支持无类地址。诸如此类的地址 198.51.1 被拒绝。不允许使用尾随端口号，如 198.51.100.2:8080 . 地址组件中不允许使用十六进制数字，例如 198.0xa0.1.2 . 不支持八进制数： 198.51.010.1 被视为 198.51.10.1 ，而不是 198.51.8.1 。这些 IPv4 约束也适用于具有 IPv4 地址部分的 IPv6 地址，例如 IPv4 兼容地址或 IPv4 映射地址。
+要将以数字形式表示为值的 IPv4 地址转换为 expr 以数字形式表示为 INT 值的 IPv6 地址 VARBINARY ，请使用以下表达式：
+INET6_ATON(INET_NTOA( expr ))
+例如：
+mysql> SELECT HEX(INET6_ATON(INET_NTOA(167773449)));
+-> '0A000509'
+如果 INET6_ATON() 从 mysql 客户端中调用，则二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+INET6_NTOA( expr )
+给定以数字形式表示为二进制字符串的 IPv6 或 IPv4 网络地址，返回地址的字符串表示形式作为连接字符集中的字符串。如果参数不是有效地址，或者是 NULL ，
+则 INET6_NTOA() 返回 NULL 。
+INET6_NTOA() 具有以下属性：
+它不使用操作系统函数来执行转换，因此输出字符串与平台无关。
+返回字符串的最大长度为 39 (4 x 8 + 7)。鉴于此声明：
+CREATE TABLE t AS SELECT INET6_NTOA( expr ) AS c1;
+结果表将具有以下定义：
+CREATE TABLE t (c1 VARCHAR(39) CHARACTER SET utf8mb3 DEFAULT NULL);
+返回字符串对 IPv6 地址使用小写字母。
+mysql> SELECT INET6_NTOA(INET6_ATON('fdfe::5a55:caff:fefa:9089'));
+-> 'fdfe::5a55:caff:fefa:9089'
+mysql> SELECT INET6_NTOA(INET6_ATON('10.0.5.9'));
+-> '10.0.5.9'
+
+mysql> SELECT INET6_NTOA(UNHEX('FDFE0000000000005A55CAFFFEFA9089'));
+-> 'fdfe::5a55:caff:fefa:9089'
+mysql> SELECT INET6_NTOA(UNHEX('0A000509'));
+-> '10.0.5.9'
+如果 INET6_NTOA() 从 mysql 客户端中调用，则二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+IS_IPV4( expr )
+如果参数是指定为字符串的有效 IPv4 地址，则返回 1，否则返回 0。返回 NULL 如果 expr 是 NULL 。
+mysql> SELECT IS_IPV4('10.0.5.9'), IS_IPV4('10.0.5.256');
+-> 1, 0
+对于给定的参数，如果 IS_IPV4() 返回 1， INET_ATON() ( 和 INET6_ATON() ) 返回非 NULL 。相反的说法是不正确的：在某些情况下，
+当
+返回 0
+时 INET_ATON() 返回非。 NULL IS_IPV4()
+正如前面的评论所暗示的， IS_IPV4() 比 INET_ATON() 什么构成有效的 IPv4 地址更严格，因此它可能对需要对无效值执行严格检查的应用程序很有用。或者，使用 INET6_ATON() 将 IPv4 地址转换为内部形式并检查 NULL 结果（指示无效地址）。
+与检查 IPv4 地址 INET6_ATON() 同样强大。 IS_IPV4()
+IS_IPV4_COMPAT( expr )
+此函数将以数字形式表示的 IPv6 地址作为二进制字符串，由 返回 INET6_ATON() 。如果参数是有效的 IPv4 兼容 IPv6 地址，则返回 1，否则返回 0（除非 expr 是 NULL ，在这种情况下函数返回 NULL ）。IPv4 兼容地址的格式为
+. :: ipv4_address
+mysql> SELECT IS_IPV4_COMPAT(INET6_ATON('::10.0.5.9'));
+-> 1
+mysql> SELECT IS_IPV4_COMPAT(INET6_ATON('::ffff:10.0.5.9'));
+-> 0
+IPv4 兼容地址的 IPv4 部分也可以使用十六进制表示法表示。例如， 198.51.100.1 具有以下原始十六进制值：
+mysql> SELECT HEX(INET6_ATON('198.51.100.1'));
+-> 'C6336401'
+以 IPv4 兼容形式表示， ::198.51.100.1 等同于 ::c0a8:0001 或（不带前导零） ::c0a8:1
+mysql> SELECT
+-> IS_IPV4_COMPAT(INET6_ATON('::198.51.100.1')),
+-> IS_IPV4_COMPAT(INET6_ATON('::c0a8:0001')),
+-> IS_IPV4_COMPAT(INET6_ATON('::c0a8:1'));
+-> 1, 1, 1
+IS_IPV4_MAPPED( expr )
+此函数将以数字形式表示的 IPv6 地址作为二进制字符串，由 返回 INET6_ATON() 。如果参数是有效的 IPv4 映射的 IPv6 地址，则返回 1，否则返回 0，除非 expr 是 NULL ，在这种情况下函数返回 NULL 。IPv4 映射地址的格式为
+. ::ffff: ipv4_address
+mysql> SELECT IS_IPV4_MAPPED(INET6_ATON('::10.0.5.9'));
+-> 0
+mysql> SELECT IS_IPV4_MAPPED(INET6_ATON('::ffff:10.0.5.9'));
+-> 1
+与 IS_IPV4_COMPAT() IPv4 映射地址的 IPv4 部分一样，也可以使用十六进制表示法表示：
+mysql> SELECT
+-> IS_IPV4_MAPPED(INET6_ATON('::ffff:198.51.100.1')),
+-> IS_IPV4_MAPPED(INET6_ATON('::ffff:c0a8:0001')),
+-> IS_IPV4_MAPPED(INET6_ATON('::ffff:c0a8:1'));
+-> 1, 1, 1
+IS_IPV6( expr )
+如果参数是指定为字符串的有效 IPv6 地址，则返回 1，否则返回 0，除非 expr 是 NULL ，在这种情况下函数返回 NULL 。此函数不将 IPv4 地址视为有效的 IPv6 地址。
+mysql> SELECT IS_IPV6('10.0.5.9'), IS_IPV6('::1');
+-> 0, 1
+对于给定的参数，如果 IS_IPV6() 返回 1，
+则 INET6_ATON() 返回非 NULL 。
+IS_UUID( string_uuid )
+如果参数是有效的字符串格式 UUID，则返回 1；如果参数不是有效的 UUID，则返回 0；如果 NULL 参数是 NULL .
+“ Valid ” 表示该值是可以解析的格式。也就是说，它具有正确的长度并且仅包含允许的字符（任何字母中的十六进制数字以及可选的破折号和大括号）。这种格式最常见：
+aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+这些其他格式也是允许的：
+aaaaaaaabbbbccccddddeeeeeeeeeeee
+{aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee}
+value中各个字段的含义参见 UUID() 函数说明。
+mysql> SELECT IS_UUID('6ccd780c-baba-1026-9564-5b8c656024db');
++-------------------------------------------------+
+| IS_UUID('6ccd780c-baba-1026-9564-5b8c656024db') |
++-------------------------------------------------+
+| 1 |
++-------------------------------------------------+
+mysql> SELECT IS_UUID('6CCD780C-BABA-1026-9564-5B8C656024DB');
++-------------------------------------------------+
+| IS_UUID('6CCD780C-BABA-1026-9564-5B8C656024DB') |
++-------------------------------------------------+
+| 1 |
++-------------------------------------------------+
+mysql> SELECT IS_UUID('6ccd780cbaba102695645b8c656024db');
++---------------------------------------------+
+| IS_UUID('6ccd780cbaba102695645b8c656024db') |
++---------------------------------------------+
+| 1 |
++---------------------------------------------+
+mysql> SELECT IS_UUID('{6ccd780c-baba-1026-9564-5b8c656024db}');
++---------------------------------------------------+
+| IS_UUID('{6ccd780c-baba-1026-9564-5b8c656024db}') |
++---------------------------------------------------+
+| 1 |
++---------------------------------------------------+
+mysql> SELECT IS_UUID('6ccd780c-baba-1026-9564-5b8c6560');
++---------------------------------------------+
+| IS_UUID('6ccd780c-baba-1026-9564-5b8c6560') |
++---------------------------------------------+
+| 0 |
++---------------------------------------------+
+mysql> SELECT IS_UUID(RAND());
++-----------------+
+| IS_UUID(RAND()) |
++-----------------+
+| 0 |
++-----------------+
+MASTER_POS_WAIT( log_name , log_pos [, timeout ][, channel ])
+此功能用于控制源/副本同步。它会阻塞，直到副本已读取并将所有更新应用到源二进制日志中的指定位置。从 MySQL 8.0.26 开始，
+已弃用，
+应改用 MASTER_POS_WAIT() 别名。 SOURCE_POS_WAIT() 在 MySQL 8.0.26 之前的版本中，使用 MASTER_POS_WAIT() .
+返回值是副本必须等待才能前进到指定位置的日志事件数。 NULL 复制SQL线程未启动、副本源信息未初始化、参数不正确或发生错误时返回。 -1 如果超过超时，它会返回。如果复制 SQL 线程在等待时停止 MASTER_POS_WAIT() ，则函数返回 NULL 。如果副本超过指定位置，该函数将立即返回。
+如果二进制日志文件位置已被标记为无效，则该函数会一直等待，直到知道有效的文件位置。为复制通道设置 CHANGE REPLICATION SOURCE TO 选项时，可以将二进制日志文件位置标记为无效
+，并且重新启动服务器或停止复制。 GTID_ONLY 在成功应用事务超过给定文件位置后，文件位置变得有效。如果施加器没有到达规定的位置，该功能将等待直到超时。使用 SHOW REPLICA
+STATUS 语句检查二进制日志文件位置是否已被标记为无效。
+在多线程副本上，当调用检查点操作以更新副本的状态时，
+
+该函数会一直等到 、 或系统变量设置的限制 replica_checkpoint_group 到期
+。
+根据系统变量的设置，该函数可能会在到达指定位置后一段时间后返回。 slave_checkpoint_group replica_checkpoint_period slave_checkpoint_period
+如果正在使用二进制日志事务压缩并且指定位置的事务有效负载被压缩（作为 a Transaction_payload_event ），则该函数会等待整个事务被读取和应用，并且位置已更新。
+如果 timeout 指定了值，则
+在秒数过去
+后 MASTER_POS_WAIT() 停止等待。必须大于 0；零或负数表示没有超时。 timeout timeout timeout
+可选 channel 值使您能够命名该函数适用于哪个复制通道。有关更多信息，请参阅 第 17.2.2 节，“复制通道” 。
+此函数对于基于语句的复制是不安全的。如果您在 binlog_format 设置为
+时使用此功能，则会记录一条警告 STATEMENT 。
+NAME_CONST( name , value )
+返回给定的值。当用于生成结果集列时， NAME_CONST() 使该列具有给定的名称。参数应该是常量。
+mysql> SELECT NAME_CONST('myname', 14);
++--------+
+| myname |
++--------+
+| 14 |
++--------+
+此函数仅供内部使用。服务器在从包含对本地程序变量的引用的存储程序中编写语句时使用它，如 第 25.7 节，“存储程序二进制日志记录” 中所述。 您可能会在mysqlbinlog 的输出中看到此函数。
+对于您的应用程序，您可以获得与刚才显示的示例完全相同的结果，方法是使用简单的别名，如下所示：
+mysql> SELECT 14 AS myname;
++--------+
+| myname |
++--------+
+| 14 |
++--------+
+1 row in set (0.00 sec)
+有关列别名的更多信息，
+
+请参阅 第 13.2.10 节，“SELECT 语句” 。
+SLEEP( duration )
+休眠（暂停）参数给定的秒数 duration ，然后返回 0。持续时间可能有小数部分。如果参数为 NULL or 负数，
+则 SLEEP() 在严格 SQL 模式下产生警告或错误。
+当 sleep 正常返回时（没有中断），它返回 0：
+mysql> SELECT SLEEP(1000);
++-------------+
+| SLEEP(1000) |
++-------------+
+| 0 |
++-------------+
+当 SLEEP() 被中断的查询调用唯一的东西时，它返回 1 并且查询本身不返回错误。无论查询被杀死还是超时都是如此：
+该语句被 KILL QUERY 另一个会话中断：
+mysql> SELECT SLEEP(1000);
++-------------+
+| SLEEP(1000) |
++-------------+
+| 1 |
++-------------+
+此语句因超时而中断：
+mysql> SELECT /*+ MAX_EXECUTION_TIME(1) */ SLEEP(1000);
++-------------+
+| SLEEP(1000) |
++-------------+
+| 1 |
++-------------+
+当 SLEEP() 只有查询的一部分被中断时，查询返回错误：
+该语句被 KILL QUERY 另一个会话中断：
+mysql> SELECT 1 FROM t1 WHERE SLEEP(1000);
+ERROR 1317 (70100): Query execution was interrupted
+此语句因超时而中断：
+mysql> SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1 FROM t1 WHERE SLEEP(1000);
+ERROR 3024 (HY000): Query execution was interrupted, maximum statement
+execution time exceeded
+此函数对于基于语句的复制是不安全的。如果您在 binlog_format 设置为
+时使用此功能，则会记录一条警告 STATEMENT 。
+SOURCE_POS_WAIT( log_name , log_pos [, timeout ][, channel ])
+此功能用于控制源/副本同步。它会阻塞，直到副本已读取并将所有更新应用到源二进制日志中的指定位置。从 MySQL 8.0.26 开始，使用 SOURCE_POS_WAIT() 代替 MASTER_POS_WAIT() ，该版本已弃用。在 MySQL 8.0.26 之前的版本中，使用 MASTER_POS_WAIT() .
+返回值是副本必须等待才能前进到指定位置的日志事件数。 NULL 复制SQL线程未启动、副本源信息未初始化、参数不正确或发生错误时返回。 -1 如果超过超时，它会返回。如果复制 SQL 线程在等待时停止 SOURCE_POS_WAIT() ，则函数返回 NULL 。如果副本超过指定位置，该函数将立即返回。
+如果二进制日志文件位置已被标记为无效，则该函数会一直等待，直到知道有效的文件位置。为复制通道设置 CHANGE REPLICATION SOURCE
+TO 选项时，可以将二进制日志文件位置标记为无效
+，并且重新启动服务器或停止复制。 GTID_ONLY 在成功应用事务超过给定文件位置后，文件位置变得有效。如果施加器没有到达规定的位置，该功能将等待直到超时。使用 SHOW REPLICA STATUS 语句检查二进制日志文件位置是否已被标记为无效。
+在多线程副本上，该函数会一直等到 replica_checkpoint_group or replica_checkpoint_period 系统变量设置的限制到期，此时调用检查点操作来更新副本的状态。根据系统变量的设置，该函数可能会在到达指定位置后一段时间后返回。
+如果正在使用二进制日志事务压缩并且指定位置的事务有效负载被压缩（作为 a Transaction_payload_event ），则该函数会等待整个事务被读取和应用，并且位置已更新。
+如果 timeout 指定了值，则
+在秒数过去
+后 SOURCE_POS_WAIT() 停止等待。必须大于 0；零或负数表示没有超时。 timeout timeout timeout
+可选 channel 值使您能够命名该函数适用于哪个复制通道。有关更多信息，请参阅 第 17.2.2 节，“复制通道” 。
+此函数对于基于语句的复制是不安全的。如果您在 binlog_format 设置为
+时使用此功能，则会记录一条警告 STATEMENT 。
+UUID()
+返回根据 RFC 4122 “ 通用唯一标识符 (UUID) URN 命名空间 ” ( http://www.ietf.org/rfc/rfc4122.txt ) 生成的通用唯一标识符 (UUID )。
+UUID 被设计为在空间和时间上全球唯一的数字。两次调用 UUID() 预计会生成两个不同的值，即使这些调用是在两个未相互连接的独立设备上执行的。
+警告
+尽管 UUID() 值旨在是唯一的，但它们不一定是不可猜测或不可预测的。如果需要不可预测性，UUID 值应该以其他方式生成。
+UUID() 返回一个符合 UUID 版本 1 的值，如 RFC 4122 中所述。该值是一个 128 位数字，表示为 utf8mb3 五个十六进制数字的字符串， aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee 格式如下：
+前三个数字是从时间戳的低、中和高部分生成的。高位部分还包括 UUID 版本号。
+第四个数字保留时间唯一性，以防时间戳值失去单调性（例如，由于夏令时）。
+第五个数字是提供空间唯一性的 IEEE 802 节点号。如果后者不可用（例如，因为主机设备没有以太网卡，或者不知道如何在主机操作系统上找到接口的硬件地址），则用一个随机数代替。在这种情况下，无法保证空间唯一性。尽管如此，碰撞的概率
+应该 非常低。
+仅在 FreeBSD、Linux 和 Windows 上考虑接口的 MAC 地址。在其他操作系统上，MySQL 使用随机生成的 48 位数字。
+mysql> SELECT UUID();
+-> '6ccd780c-baba-1026-9564-5b8c656024db'
+要在字符串和二进制 UUID 值之间进行转换，请使用 UUID_TO_BIN() 和 BIN_TO_UUID() 函数。要检查字符串是否为有效的 UUID 值，请使用该 IS_UUID() 函数。
+此函数对于基于语句的复制是不安全的。如果您在 binlog_format 设置为
+时使用此功能，则会记录一条警告 STATEMENT 。
+UUID_SHORT()
+返回一个 “ 短 ” 通用标识符作为 64 位无符号整数。返回的值 UUID_SHORT() 不同于函数返回的字符串格式的 128 位标识符， UUID() 并且具有不同的唯一性属性。 UUID_SHORT() 如果满足以下条件，则保证
+值
+是唯一的：
+当前服务器的 server_id 值介于 0 和 255 之间，并且在您的一组源服务器和副本服务器中是唯一的
+在mysqld 重新启动
+
+之间，您没有为您的服务器主机设置系统时间
+在mysqld 重新启动
+之间平均每秒
+调用 UUID_SHORT() 不到 1600 万次
+UUID_SHORT() 返回值是这样构造的
+
+：
+(server_id & 255) << 56
++ (server_startup_time_in_seconds << 24)
++ incremented_variable++;
+mysql> SELECT UUID_SHORT();
+-> 92395783831158784
+笔记
+UUID_SHORT() 不适用于基于语句的复制。
+UUID_TO_BIN( string_uuid ) , UUID_TO_BIN( string_uuid , swap_flag )
+将字符串 UUID 转换为二进制 UUID 并返回结果。（ IS_UUID() 函数描述列出了允许的字符串 UUID 格式。）返回的二进制 UUID 是一个 VARBINARY(16) 值。如果 UUID 参数是 NULL ，则返回值为 NULL 。如果任何参数无效，则会发生错误。
+UUID_TO_BIN() 接受一个或两个参数：
+单参数形式采用字符串 UUID 值。二进制结果与字符串参数的顺序相同。
+双参数形式采用字符串 UUID 值和标志值：
+如果 swap_flag 为 0，则双参数形式等同于单参数形式。二进制结果与字符串参数的顺序相同。
+如果 swap_flag 为1，则返回值格式不同：时间低位和时间高位部分（分别为第一组和第三组十六进制数字）交换。这会将变化较快的部分向右移动，如果结果存储在索引列中，则可以提高索引效率。
+时间部分交换假定使用 UUID 版本 1 值，例如由 UUID() 函数生成的值。对于不遵循版本 1 格式的其他方式生成的 UUID 值，时间部分交换没有任何好处。有关版本 1 格式的详细信息，请参见 UUID() 功能说明。
+假设您具有以下字符串 UUID 值：
+mysql> SET @uuid = '6ccd780c-baba-1026-9564-5b8c656024db';
+要将字符串 UUID 转换为带或不带时间部分交换的二进制文件，请使用 UUID_TO_BIN() ：
+mysql> SELECT HEX(UUID_TO_BIN(@uuid));
++----------------------------------+
+| HEX(UUID_TO_BIN(@uuid)) |
++----------------------------------+
+| 6CCD780CBABA102695645B8C656024DB |
++----------------------------------+
+mysql> SELECT HEX(UUID_TO_BIN(@uuid, 0));
++----------------------------------+
+| HEX(UUID_TO_BIN(@uuid, 0)) |
++----------------------------------+
+| 6CCD780CBABA102695645B8C656024DB |
++----------------------------------+
+mysql> SELECT HEX(UUID_TO_BIN(@uuid, 1));
++----------------------------------+
+| HEX(UUID_TO_BIN(@uuid, 1)) |
++----------------------------------+
+| 1026BABA6CCD780C95645B8C656024DB |
++----------------------------------+
+要将 返回的二进制 UUID 转换为 UUID_TO_BIN() 字符串 UUID，请使用 BIN_TO_UUID() . 如果您通过调用 UUID_TO_BIN() 第二个参数 1 来交换时间部分来 BIN_TO_UUID() 生成二进制 UUID，则在将二进制 UUID 转换回字符串 UUID 时，您还应该将第二个参数 1 传递给以取消交换时间部分：
+mysql> SELECT BIN_TO_UUID(UUID_TO_BIN(@uuid));
++--------------------------------------+
+| BIN_TO_UUID(UUID_TO_BIN(@uuid)) |
++--------------------------------------+
+| 6ccd780c-baba-1026-9564-5b8c656024db |
++--------------------------------------+
+mysql> SELECT BIN_TO_UUID(UUID_TO_BIN(@uuid,0),0);
++--------------------------------------+
+| BIN_TO_UUID(UUID_TO_BIN(@uuid,0),0) |
++--------------------------------------+
+| 6ccd780c-baba-1026-9564-5b8c656024db |
++--------------------------------------+
+mysql> SELECT BIN_TO_UUID(UUID_TO_BIN(@uuid,1),1);
++--------------------------------------+
+| BIN_TO_UUID(UUID_TO_BIN(@uuid,1),1) |
++--------------------------------------+
+| 6ccd780c-baba-1026-9564-5b8c656024db |
++--------------------------------------+
+如果时间部分交换的使用对于两个方向的转换不相同，则原始 UUID 无法正确恢复：
+mysql> SELECT BIN_TO_UUID(UUID_TO_BIN(@uuid,0),1);
++--------------------------------------+
+| BIN_TO_UUID(UUID_TO_BIN(@uuid,0),1) |
++--------------------------------------+
+| baba1026-780c-6ccd-9564-5b8c656024db |
++--------------------------------------+
+mysql> SELECT BIN_TO_UUID(UUID_TO_BIN(@uuid,1),0);
++--------------------------------------+
+| BIN_TO_UUID(UUID_TO_BIN(@uuid,1),0) |
++--------------------------------------+
+| 1026baba-6ccd-780c-9564-5b8c656024db |
++--------------------------------------+
+如果 UUID_TO_BIN() 从 mysql 客户端中调用，则二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+VALUES( col_name )
+在 INSERT
+... ON DUPLICATE KEY UPDATE 语句中，您可以使用子句中的
+
+函数来引用
+语句部分中的列值。换句话说，
+
+在子句中指的是将被插入的值，没有重复键冲突发生。此功能在多行插入中特别有用。该
+函数仅在语句的子句中有意义，否则返回。参见 第 13.2.6.2 节，“INSERT ... ON DUPLICATE KEY UPDATE 语句” 。 VALUES( col_name ) UPDATE INSERT VALUES( col_name ) UPDATE col_name VALUES() ON DUPLICATE KEY UPDATE INSERT NULL
+mysql> INSERT INTO table (a,b,c) VALUES (1,2,3),(4,5,6)
+-> ON DUPLICATE KEY UPDATE c=VALUES(a)+VALUES(b);
+重要的
+此用法在 MySQL 8.0.20 中已弃用，并且可能会在 MySQL 的未来版本中删除。请改用行别名或行别名和列别名。有关更多信息和示例，
+请参阅 第 13.2.6.2 节，“INSERT ... ON DUPLICATE KEY UPDATE 语句” 。

@@ -1,0 +1,458 @@
+12.1 内置函数和操作符参考_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 
+12.1 内置函数和操作符参考
+12.1 内置函数和操作符参考
+下表列出了每个内置（本机）函数和运算符，并提供了每个的简短描述。有关可在运行时加载的函数列表，请参阅 第 12.2 节，“可加载函数参考” 。
+表 12.1 内置函数和运算符
+姓名 描述 介绍 弃用
+& 按位与
+> 大于运算符
+>> 右移
+>= 大于或等于运算符
+< 小于运算符
+<> , != 不等于运算符
+<< 左移
+<= 小于等于运算符
+<=> NULL 安全等于运算符
+% , MOD 模运算符
+* 乘法运算符
++ 加法运算符
+- 减号运算符
+- 更改参数的符号
+-> 评估路径后从 JSON 列返回值；相当于 JSON_EXTRACT()。
+->> 在评估路径并取消引用结果后从 JSON 列返回值；相当于 JSON_UNQUOTE(JSON_EXTRACT())。
+/ 除法运算符
+:= 赋值
+= 赋值（作为 SET 语句的一部分，或作为语句中 SET 子句的
+一部分 UPDATE ）
+= 等于运算符
+^ 按位异或
+ABS() 返回绝对值
+ACOS() 返回反余弦
+ADDDATE() 将时间值（间隔）添加到日期值
+ADDTIME() 添加时间
+AES_DECRYPT() 使用 AES 解密
+AES_ENCRYPT() 使用 AES 加密
+AND , && 逻辑与
+ANY_VALUE() 抑制 ONLY_FULL_GROUP_BY 值拒绝
+ASCII() 返回最左边字符的数值
+ASIN() 返回反正弦
+ATAN() 返回反正切
+ATAN2() , ATAN() 返回两个参数的反正切值
+AVG() 返回参数的平均值
+BENCHMARK() 重复执行一个表达式
+BETWEEN ... AND ... 一个值是否在一个值范围内
+BIN() 返回包含数字二进制表示的字符串
+BIN_TO_UUID() 将二进制 UUID 转换为字符串
+BINARY 将字符串转换为二进制字符串 8.0.27
+BIT_AND() 返回按位与
+BIT_COUNT() 返回设置的位数
+BIT_LENGTH() 以位为单位返回参数的长度
+BIT_OR() 返回按位或
+BIT_XOR() 返回按位异或
+CAN_ACCESS_COLUMN() 限内部使用
+CAN_ACCESS_DATABASE() 限内部使用
+CAN_ACCESS_TABLE() 限内部使用
+CAN_ACCESS_USER() 限内部使用 8.0.22
+CAN_ACCESS_VIEW() 限内部使用
+CASE 案例操作员
+CAST() 将值转换为特定类型
+CEIL() 返回不小于参数的最小整数值
+CEILING() 返回不小于参数的最小整数值
+CHAR() 返回传递的每个整数的字符
+CHAR_LENGTH() 返回参数中的字符数
+CHARACTER_LENGTH() CHAR_LENGTH() 的同义词
+CHARSET() 返回参数的字符集
+COALESCE() 返回第一个非 NULL 参数
+COERCIBILITY() 返回字符串参数的排序规则强制性值
+COLLATION() 返回字符串参数的排序规则
+COMPRESS() 以二进制字符串形式返回结果
+CONCAT() 返回连接的字符串
+CONCAT_WS() 返回带分隔符的连接
+CONNECTION_ID() 返回连接的连接 ID（线程 ID）
+CONV() 在不同数基之间转换数字
+CONVERT() 将值转换为特定类型
+CONVERT_TZ() 从一个时区转换为另一个时区
+COS() 返回余弦
+COT() 返回余切
+COUNT() 返回返回行数的计数
+COUNT(DISTINCT) 返回多个不同值的计数
+CRC32() 计算循环冗余校验值
+CUME_DIST() 累计分配值
+CURDATE() 返回当前日期
+CURRENT_DATE() , CURRENT_DATE CURDATE() 的同义词
+CURRENT_ROLE() 返回当前活动角色
+CURRENT_TIME() , CURRENT_TIME CURTIME() 的同义词
+CURRENT_TIMESTAMP() , CURRENT_TIMESTAMP NOW() 的同义词
+CURRENT_USER() , CURRENT_USER 经过身份验证的用户名和主机名
+CURTIME() 返回当前时间
+DATABASE() 返回默认（当前）数据库名称
+DATE() 提取日期或日期时间表达式的日期部分
+DATE_ADD() 将时间值（间隔）添加到日期值
+DATE_FORMAT() 按指定格式设置日期
+DATE_SUB() 从日期中减去时间值（间隔）
+DATEDIFF() 减去两个日期
+DAY() DAYOFMONTH() 的同义词
+DAYNAME() 返回工作日的名称
+DAYOFMONTH() 返回月份中的第几天 (0-31)
+DAYOFWEEK() 返回参数的工作日索引
+DAYOFYEAR() 返回一年中的第几天 (1-366)
+DEFAULT() 返回表列的默认值
+DEGREES() 将弧度转换为度数
+DENSE_RANK() 当前行在其分区内的排名，没有间隙
+DIV 整数除法
+ELT() 返回索引号处的字符串
+EXP() 提升到的力量
+EXPORT_SET() 返回一个字符串，这样对于值位中设置的每个位，您都会得到一个 on 字符串，对于每个未设置的位，您都会得到一个 off 字符串
+EXTRACT() 提取日期的一部分
+ExtractValue() 使用 XPath 表示法从 XML 字符串中提取值
+FIELD() 后续参数中第一个参数的索引（位置）
+FIND_IN_SET() 第二个参数中第一个参数的索引（位置）
+FIRST_VALUE() 窗口框架第一行的参数值
+FLOOR() 返回不大于参数的最大整数值
+FORMAT() 返回格式化为指定小数位数的数字
+FORMAT_BYTES() 将字节数转换为带单位的值 8.0.16
+FORMAT_PICO_TIME() 将以皮秒为单位的时间转换为带单位的值 8.0.16
+FOUND_ROWS() 对于带有 LIMIT 子句的 SELECT，如果没有 LIMIT 子句，将返回的行数
+FROM_BASE64() 解码base64编码的字符串并返回结果
+FROM_DAYS() 将天数转换为日期
+FROM_UNIXTIME() 将 Unix 时间戳格式化为日期
+GeomCollection() 从几何构造几何集合
+GeometryCollection() 从几何构造几何集合
+GET_DD_COLUMN_PRIVILEGES() 限内部使用
+GET_DD_CREATE_OPTIONS() 限内部使用
+GET_DD_INDEX_SUB_PART_LENGTH() 限内部使用
+GET_FORMAT() 返回日期格式字符串
+GET_LOCK() 获取命名锁
+GREATEST() 返回最大的参数
+GROUP_CONCAT() 返回一个连接的字符串
+GROUPING() 区分超级聚合 ROLLUP 行和常规行
+GTID_SUBSET() 如果子集中的所有 GTID 也在集合中，则返回 true；否则为假。
+GTID_SUBTRACT() 返回集合中不在子集中的所有 GTID。
+HEX() 十进制或字符串值的十六进制表示
+HOUR() 提取小时
+ICU_VERSION() ICU库版本
+IF() 如果/否则构造
+IFNULL() Null if/else 构造
+IN() 一个值是否在一组值内
+INET_ATON() 返回 IP 地址的数值
+INET_NTOA() 从数值返回 IP 地址
+INET6_ATON() 返回 IPv6 地址的数值
+INET6_NTOA() 从数值返回 IPv6 地址
+INSERT() 在指定位置插入子字符串，最多指定字符数
+INSTR() 返回第一次出现的子字符串的索引
+INTERNAL_AUTO_INCREMENT() 限内部使用
+INTERNAL_AVG_ROW_LENGTH() 限内部使用
+INTERNAL_CHECK_TIME() 限内部使用
+INTERNAL_CHECKSUM() 限内部使用
+INTERNAL_DATA_FREE() 限内部使用
+INTERNAL_DATA_LENGTH() 限内部使用
+INTERNAL_DD_CHAR_LENGTH() 限内部使用
+INTERNAL_GET_COMMENT_OR_ERROR() 限内部使用
+INTERNAL_GET_ENABLED_ROLE_JSON() 限内部使用 8.0.19
+INTERNAL_GET_HOSTNAME() 限内部使用 8.0.19
+INTERNAL_GET_USERNAME() 限内部使用 8.0.19
+INTERNAL_GET_VIEW_WARNING_OR_ERROR() 限内部使用
+INTERNAL_INDEX_COLUMN_CARDINALITY() 限内部使用
+INTERNAL_INDEX_LENGTH() 限内部使用
+INTERNAL_IS_ENABLED_ROLE() 限内部使用 8.0.19
+INTERNAL_IS_MANDATORY_ROLE() 限内部使用 8.0.19
+INTERNAL_KEYS_DISABLED() 限内部使用
+INTERNAL_MAX_DATA_LENGTH() 限内部使用
+INTERNAL_TABLE_ROWS() 限内部使用
+INTERNAL_UPDATE_TIME() 限内部使用
+INTERVAL() 返回小于第一个参数的参数的索引
+IS 针对布尔值测试值
+IS_FREE_LOCK() 命名锁是否空闲
+IS_IPV4() 参数是否为 IPv4 地址
+IS_IPV4_COMPAT() 参数是否为 IPv4 兼容地址
+IS_IPV4_MAPPED() 参数是否为 IPv4 映射地址
+IS_IPV6() 参数是否为 IPv6 地址
+IS NOT 针对布尔值测试值
+IS NOT NULL NOT NULL 值测试
+IS NULL NULL 值测试
+IS_USED_LOCK() 命名锁是否正在使用；如果为真，则返回连接标识符
+IS_UUID() 参数是否是有效的 UUID
+ISNULL() 测试参数是否为 NULL
+JSON_ARRAY() 创建 JSON 数组
+JSON_ARRAY_APPEND() 将数据附加到 JSON 文档
+JSON_ARRAY_INSERT() 插入 JSON 数组
+JSON_ARRAYAGG() 将结果集作为单个 JSON 数组返回
+JSON_CONTAINS() JSON 文档是否包含路径中的特定对象
+JSON_CONTAINS_PATH() JSON 文档是否包含路径中的任何数据
+JSON_DEPTH() JSON文档的最大深度
+JSON_EXTRACT() 从 JSON 文档返回数据
+JSON_INSERT() 向 JSON 文档中插入数据
+JSON_KEYS() 来自 JSON 文档的键数组
+JSON_LENGTH() JSON 文档中的元素数量
+JSON_MERGE() 合并 JSON 文档，保留重复键。JSON_MERGE_PRESERVE() 的弃用同义词 是的
+JSON_MERGE_PATCH() 合并 JSON 文档，替换重复键的值
+JSON_MERGE_PRESERVE() 合并 JSON 文档，保留重复键
+JSON_OBJECT() 创建 JSON 对象
+JSON_OBJECTAGG() 将结果集作为单个 JSON 对象返回
+JSON_OVERLAPS() 比较两个 JSON 文档，如果它们具有任何共同的键值对或数组元素，则返回 TRUE (1)，否则返回 FALSE (0) 8.0.17
+JSON_PRETTY() 以人类可读的格式打印 JSON 文档
+JSON_QUOTE() 引用 JSON 文档
+JSON_REMOVE() 从 JSON 文档中删除数据
+JSON_REPLACE() 替换 JSON 文档中的值
+JSON_SCHEMA_VALID() 根据 JSON 模式验证 JSON 文档；如果文档针对架构进行验证，则返回 TRUE/1，否则返回 FALSE/0 8.0.17
+JSON_SCHEMA_VALIDATION_REPORT() 根据 JSON 模式验证 JSON 文档；返回 JSON 格式的验证结果报告，包括成功或失败以及失败原因 8.0.17
+JSON_SEARCH() JSON 文档中的值路径
+JSON_SET() 向 JSON 文档中插入数据
+JSON_STORAGE_FREE() 部分更新后 JSON 列值的二进制表示中的释放空间
+JSON_STORAGE_SIZE() 用于存储 JSON 文档的二进制表示的空间
+JSON_TABLE() 从 JSON 表达式返回数据作为关系表
+JSON_TYPE() JSON 值的类型
+JSON_UNQUOTE() 取消引用 JSON 值
+JSON_VALID() JSON值是否有效
+JSON_VALUE() 在提供的路径指向的位置从 JSON 文档中提取值；将此值作为 VARCHAR(512) 或指定类型返回 8.0.21
+LAG() 分区内滞后当前行的行的参数值
+LAST_DAY 返回参数月份的最后一天
+LAST_INSERT_ID() 最后一个 INSERT 的 AUTOINCREMENT 列的值
+LAST_VALUE() 窗口框架最后一行的参数值
+LCASE() LOWER() 的同义词
+LEAD() 分区内当前行前导行的参数值
+LEAST() 返回最小的参数
+LEFT() 返回指定的最左边的字符数
+LENGTH() 以字节为单位返回字符串的长度
+LIKE 简单模式匹配
+LineString() 从点值构造 LineString
+LN() 返回参数的自然对数
+LOAD_FILE() 加载命名文件
+LOCALTIME() , LOCALTIME NOW() 的同义词
+LOCALTIMESTAMP , LOCALTIMESTAMP() NOW() 的同义词
+LOCATE() 返回子串第一次​​出现的位置
+LOG() 返回第一个参数的自然对数
+LOG10() 返回参数的以 10 为底的对数
+LOG2() 返回参数的以 2 为底的对数
+LOWER() 以小写形式返回参数
+LPAD() 返回字符串参数，左填充指定的字符串
+LTRIM() 删除前导空格
+MAKE_SET() 返回一组以逗号分隔的字符串，这些字符串具有相应的位 in bits set
+MAKEDATE() 从年份和年份创建日期
+MAKETIME() 从小时、分钟、秒创建时间
+MASTER_POS_WAIT() 阻塞直到副本已读取并将所有更新应用到指定位置 8.0.26
+MATCH() 执行全文搜索
+MAX() 返回最大值
+MBRContains() 一个几何体的 MBR 是否包含另一个几何体的 MBR
+MBRCoveredBy() 一个 MBR 是否被另一个 MBR 覆盖
+MBRCovers() 一个 MBR 是否覆盖另一个
+MBRDisjoint() 两个几何形状的 MBR 是否不相交
+MBREquals() 两个几何结构的MBR是否相等
+MBRIntersects() 两个几何图形的 MBR 是否相交
+MBROverlaps() 两个几何形状的MBR是否重叠
+MBRTouches() 两个几何形状的 MBR 是否接触
+MBRWithin() 一个几何体的 MBR 是否在另一个几何体的 MBR 内
+MD5() 计算MD5校验和
+MEMBER OF() 如果第一个操作数与作为第二个操作数传递的 JSON 数组的任何元素匹配，则返回真 (1)，否则返回假 (0) 8.0.17
+MICROSECOND() 从参数返回微秒
+MID() 返回从指定位置开始的子串
+MIN() 返回最小值
+MINUTE() 从参数中返回分钟
+MOD() 退还余数
+MONTH() 从传递的日期返回月份
+MONTHNAME() 返回月份名称
+MultiLineString() 从 LineString 值构造 MultiLineString
+MultiPoint() 从点值构造多点
+MultiPolygon() 从 Polygon 值构造 MultiPolygon
+NAME_CONST() 使列具有给定的名称
+NOT , ! 否定价值
+NOT BETWEEN ... AND ... 值是否不在值范围内
+NOT IN() 一个值是否不在一组值中
+NOT LIKE 简单模式匹配的否定
+NOT REGEXP REGEXP 的否定
+NOW() 返回当前日期和时间
+NTH_VALUE() 来自窗口框架第 N 行的参数值
+NTILE() 当前行在其分区内的桶号。
+NULLIF() 如果 expr1 = expr2 则返回 NULL
+OCT() 返回包含数字的八进制表示的字符串
+OCTET_LENGTH() LENGTH() 的同义词
+OR , || 逻辑或
+ORD() 返回参数最左边字符的字符代码
+PERCENT_RANK() 百分比排名值
+PERIOD_ADD() 在年月中添加句点
+PERIOD_DIFF() 返回期间之间的月数
+PI() 返回 pi 的值
+Point() 从坐标构造点
+Polygon() 从 LineString 参数构造多边形
+POSITION() LOCATE() 的同义词
+POW() 返回参数的指定幂
+POWER() 返回参数的指定幂
+PS_CURRENT_THREAD_ID() 当前线程的 Performance Schema 线程 ID 8.0.16
+PS_THREAD_ID() 给定线程的性能架构线程 ID 8.0.16
+QUARTER() 从日期参数返回季度
+QUOTE() 转义参数以在 SQL 语句中使用
+RADIANS() 返回参数转换为弧度
+RAND() 返回一个随机浮点值
+RANDOM_BYTES() 返回一个随机字节向量
+RANK() 当前行在其分区内的排名，有间隙
+REGEXP 字符串是否匹配正则表达式
+REGEXP_INSTR() 子串匹配正则表达式的起始索引
+REGEXP_LIKE() 字符串是否匹配正则表达式
+REGEXP_REPLACE() 替换匹配正则表达式的子字符串
+REGEXP_SUBSTR() 返回匹配正则表达式的子串
+RELEASE_ALL_LOCKS() 释放所有当前命名锁
+RELEASE_LOCK() 释放命名锁
+REPEAT() 重复一个字符串指定的次数
+REPLACE() 替换指定字符串的出现
+REVERSE() 反转字符串中的字符
+RIGHT() 返回指定的最右边的字符数
+RLIKE 字符串是否匹配正则表达式
+ROLES_GRAPHML() 返回表示内存角色子图的 GraphML 文档
+ROUND() 绕过论点
+ROW_COUNT() 更新的行数
+ROW_NUMBER() 其分区内的当前行数
+RPAD() 追加字符串指定的次数
+RTRIM() 删除尾随空格
+SCHEMA() DATABASE() 的同义词
+SEC_TO_TIME() 将秒数转换为 'hh:mm:ss' 格式
+SECOND() 返回第二个 (0-59)
+SESSION_USER() USER() 的同义词
+SHA1() , SHA() 计算 SHA-1 160 位校验和
+SHA2() 计算 SHA-2 校验和
+SIGN() 返回参数的符号
+SIN() 返回参数的正弦
+SLEEP() 睡眠数秒
+SOUNDEX() 返回一个 soundex 字符串
+SOUNDS LIKE 比较声音
+SOURCE_POS_WAIT() 阻塞直到副本已读取并将所有更新应用到指定位置 8.0.26
+SPACE() 返回指定空格数的字符串
+SQRT() 返回参数的平方根
+ST_Area() 返回多边形或多边形区域
+ST_AsBinary() , ST_AsWKB() 从内部几何格式转换为 WKB
+ST_AsGeoJSON() 从几何生成 GeoJSON 对象
+ST_AsText() , ST_AsWKT() 从内部几何格式转换为 WKT
+ST_Buffer() 返回距几何体给定距离内的点的几何体
+ST_Buffer_Strategy() 为 ST_Buffer() 生成策略选项
+ST_Centroid() 将质心作为一个点返回
+ST_Collect() 将空间值聚合到集合中 8.0.24
+ST_Contains() 一个几何体是否包含另一个
+ST_ConvexHull() 返回几何的凸包
+ST_Crosses() 一个几何图形是否与另一个几何图形相交
+ST_Difference() 两个几何的返回点集差
+ST_Dimension() 几何尺寸
+ST_Disjoint() 一个几何图形是否与另一个几何图形不相交
+ST_Distance() 一个几何体与另一个几何体的距离
+ST_Distance_Sphere() 地球上两个几何之间的最小距离
+ST_EndPoint() 线串终点
+ST_Envelope() 返回几何的 MBR
+ST_Equals() 一个几何体是否等于另一个
+ST_ExteriorRing() 返回多边形的外环
+ST_FrechetDistance() 一个几何体与另一个几何体的离散 Fréchet 距离 8.0.23
+ST_GeoHash() 产生一个 geohash 值
+ST_GeomCollFromText() , ST_GeometryCollectionFromText() , ST_GeomCollFromTxt() 从 WKT 返回几何集合
+ST_GeomCollFromWKB() , ST_GeometryCollectionFromWKB() 从 WKB 返回几何集合
+ST_GeometryN() 从几何集合中返回第 N 个几何
+ST_GeometryType() 返回几何类型的名称
+ST_GeomFromGeoJSON() 从 GeoJSON 对象生成几何图形
+ST_GeomFromText() , ST_GeometryFromText() 从 WKT 返回几何
+ST_GeomFromWKB() , ST_GeometryFromWKB() 从 WKB 返回几何
+ST_HausdorffDistance() 一个几何体与另一个几何体的离散 Hausdorff 距离 8.0.23
+ST_InteriorRingN() 返回多边形的第 N 个内环
+ST_Intersection() 返回点集两个几何的交集
+ST_Intersects() 一个几何图形是否与另一个几何图形相交
+ST_IsClosed() 几何是否封闭且简单
+ST_IsEmpty() 几何是否为空
+ST_IsSimple() 几何是否简单
+ST_IsValid() 几何是否有效
+ST_LatFromGeoHash() 从 geohash 值返回纬度
+ST_Latitude() 点返回纬度 8.0.12
+ST_Length() 返回 LineString 的长度
+ST_LineFromText() , ST_LineStringFromText() 从 WKT 构建 LineString
+ST_LineFromWKB() , ST_LineStringFromWKB() 从 WKB 构造 LineString
+ST_LineInterpolatePoint() 沿 LineString 给定百分比的点 8.0.24
+ST_LineInterpolatePoints() 沿 LineString 给定百分比的点 8.0.24
+ST_LongFromGeoHash() 从 geohash 值返回经度
+ST_Longitude() 返回点的经度 8.0.12
+ST_MakeEnvelope() 围绕两点的矩形
+ST_MLineFromText() , ST_MultiLineStringFromText() 从 WKT 构建 MultiLineString
+ST_MLineFromWKB() , ST_MultiLineStringFromWKB() 从 WKB 构建 MultiLineString
+ST_MPointFromText() , ST_MultiPointFromText() 从 WKT 构造多点
+ST_MPointFromWKB() , ST_MultiPointFromWKB() 从 WKB 构造多点
+ST_MPolyFromText() , ST_MultiPolygonFromText() 从 WKT 构建多边形
+ST_MPolyFromWKB() , ST_MultiPolygonFromWKB() 从 WKB 构建多边形
+ST_NumGeometries() 返回几何集合中的几何数
+ST_NumInteriorRing() , ST_NumInteriorRings() 返回多边形中的内环数
+ST_NumPoints() 返回 LineString 中的点数
+ST_Overlaps() 一个几何图形是否与另一个几何图形重叠
+ST_PointAtDistance() 沿 LineString 给定距离的点 8.0.24
+ST_PointFromGeoHash() 将 geohash 值转换为 POINT 值
+ST_PointFromText() 从 WKT 构造点
+ST_PointFromWKB() 从 WKB 构造点
+ST_PointN() 从 LineString 返回第 N 个点
+ST_PolyFromText() , ST_PolygonFromText() 从 WKT 构造多边形
+ST_PolyFromWKB() , ST_PolygonFromWKB() 从 WKB 构建多边形
+ST_Simplify() 返回简化几何
+ST_SRID() 返回几何的空间参考系统 ID
+ST_StartPoint() 线串起点
+ST_SwapXY() 交换 X/Y 坐标的返回参数
+ST_SymDifference() 两个几何的返回点集对称差
+ST_Touches() 一个几何体是否接触另一个
+ST_Transform() 变换几何坐标 8.0.13
+ST_Union() 两个几何图形的返回点集并集
+ST_Validate() 返回验证几何
+ST_Within() 一个几何体是否在另一个几何体中
+ST_X() 返回 Point 的 X 坐标
+ST_Y() 返回 Point 的 Y 坐标
+STATEMENT_DIGEST() 计算语句摘要哈希值
+STATEMENT_DIGEST_TEXT() 计算规范化语句摘要
+STD() 返回总体标准差
+STDDEV() 返回总体标准差
+STDDEV_POP() 返回总体标准差
+STDDEV_SAMP() 返回样本标准差
+STR_TO_DATE() 将字符串转换为日期
+STRCMP() 比较两个字符串
+SUBDATE() 使用三个参数调用时 DATE_SUB() 的同义词
+SUBSTR() 返回指定的子字符串
+SUBSTRING() 返回指定的子字符串
+SUBSTRING_INDEX() 返回指定分隔符出现次数之前的字符串中的子字符串
+SUBTIME() 减去次数
+SUM() 返回总和
+SYSDATE() 返回函数执行的时间
+SYSTEM_USER() USER() 的同义词
+TAN() 返回参数的正切
+TIME() 提取传递的表达式的时间部分
+TIME_FORMAT() 格式化为时间
+TIME_TO_SEC() 返回转换为秒的参数
+TIMEDIFF() 减去时间
+TIMESTAMP() 使用单个参数，此函数返回日期或日期时间表达式；有两个参数，参数之和
+TIMESTAMPADD() 向日期时间表达式添加间隔
+TIMESTAMPDIFF() 从日期时间表达式中减去一个间隔
+TO_BASE64() 返回转换为 base-64 字符串的参数
+TO_DAYS() 返回转换为天数的日期参数
+TO_SECONDS() 返回自第 0 年以来转换为秒数的日期或日期时间参数
+TRIM() 删除前导和尾随空格
+TRUNCATE() 截断到指定的小数位数
+UCASE() UPPER() 的同义词
+UNCOMPRESS() 解压缩压缩的字符串
+UNCOMPRESSED_LENGTH() 返回压缩前字符串的长度
+UNHEX() 返回包含数字的十六进制表示的字符串
+UNIX_TIMESTAMP() 返回一个 Unix 时间戳
+UpdateXML() 返回替换的 XML 片段
+UPPER() 转换为大写
+USER() 客户端提供的用户名和主机名
+UTC_DATE() 返回当前 UTC 日期
+UTC_TIME() 返回当前 UTC 时间
+UTC_TIMESTAMP() 返回当前 UTC 日期和时间
+UUID() 返回通用唯一标识符 (UUID)
+UUID_SHORT() 返回一个整数值的通用标识符
+UUID_TO_BIN() 将字符串 UUID 转换为二进制
+VALIDATE_PASSWORD_STRENGTH() 确定密码强度
+VALUES() 定义要在 INSERT 期间使用的值
+VAR_POP() 返回总体标准方差
+VAR_SAMP() 返回样本方差
+VARIANCE() 返回总体标准方差
+VERSION() 返回一个表示 MySQL 服务器版本的字符串
+WAIT_FOR_EXECUTED_GTID_SET() 等到给定的 GTID 已在副本上执行。
+WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS() 使用 WAIT_FOR_EXECUTED_GTID_SET() 。 8.0.18
+WEEK() 返回周数
+WEEKDAY() 返回工作日索引
+WEEKOFYEAR() 返回日期的日历周 (1-53)
+WEIGHT_STRING() 返回字符串的权重字符串
+XOR 逻辑异或
+YEAR() 返回年份
+YEARWEEK() 返回年份和星期
+| 按位或
+~ 按位取反

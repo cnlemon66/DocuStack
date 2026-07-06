@@ -1,0 +1,222 @@
+15.6.5 重做日志_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.6 InnoDB 磁盘结构 / 
+15.6.5 重做日志
+15.6.5 重做日志
+重做日志是一种基于磁盘的数据结构，在崩溃恢复期间使用它来纠正由不完整的事务写入的数据。在正常操作期间，重做日志对 SQL 语句或低级 API 调用产生的更改表数据的请求进行编码。在意外关闭之前未完成更新数据文件的修改将在初始化期间和接受连接之前自动重播。有关重做日志在崩溃恢复中的作用的信息，请参阅 第 15.18.2 节，“InnoDB 恢复” 。
+重做日志在磁盘上由重做日志文件物理表示。写入重做日志文件的数据根据​​受影响的记录进行编码，这些数据统称为重做。通过重做日志文件的数据传递由不断增加的 LSN 值表示。随着数据修改的发生，重做日志数据被追加，最旧的数据随着检查点的进行而被截断。
+与重做日志相关的信息和过程在本节的以下主题下进行了描述：
+配置重做日志容量（MySQL 8.0.30 或更高版本）
+配置重做日志容量（MySQL 8.0.30之前）
+自动重做日志容量配置
+重做日志归档
+禁用重做日志记录
+相关话题
+配置重做日志容量（MySQL 8.0.30 或更高版本）
+从 MySQL 8.0.30 开始， innodb_redo_log_capacity 系统变量控制重做日志文件占用的磁盘空间量。您可以在启动时或运行时使用 SET
+GLOBAL 语句在选项文件中设置此变量；例如，以下语句将重做日志容量设置为 8GB：
+SET GLOBAL innodb_redo_log_capacity = 8589934592;
+在运行时设置时，配置更改会立即发生，但新限制可能需要一些时间才能完全实施。如果重做日志文件占用的空间少于指定的值，脏页从缓冲池刷新到表空间数据文件的积极性就会降低，最终会增加重做日志文件占用的磁盘空间。如果重做日志文件占用的空间超过指定值，则更积极地刷新脏页，最终减少重做日志文件占用的磁盘空间。
+该 innodb_redo_log_capacity 变量取代了
+不推荐使用的 innodb_log_files_in_group 和 innodb_log_file_size 变量。 innodb_redo_log_capacity 定义设置时
+，将忽略 innodb_log_files_in_group 和
+设置； innodb_log_file_size 否则，这些设置用于计算 innodb_redo_log_capacity 设置 ( innodb_log_files_in_group * innodb_log_file_size = innodb_redo_log_capacity )。如果没有设置这些变量，重做日志容量将设置为 innodb_redo_log_capacity 默认值，即 104857600 字节 (100MB)。最大重做日志容量为 128GB。
+重做日志文件驻留在 #innodb_redo 数据目录中的目录中，除非 innodb_log_group_home_dir 变量指定了不同的目录。如果 innodb_log_group_home_dir 已定义，则重做日志文件驻留在该 #innodb_redo 目录中的目录中。有两种类型的重做日志文件，普通的和备用的。普通重做日志文件是那些正在使用的。备用重做日志文件是那些等待使用的文件。 InnoDB 尝试维护总共 32 个重做日志文件，每个文件的大小等于 1/32 * innodb_redo_log_capacity ； innodb_redo_log_capacity 但是，修改设置
+后文件大小可能会暂时不同
+。
+重做日志文件使用
+命名约定，其中是重做日志文件编号。备用重做日志文件由
+后缀表示。以下示例显示了一个
+目录中的重做日志文件，其中有 21 个活动重做日志文件和 11 个备用重做日志文件，并按顺序编号。 #ib_redo N N _tmp #innodb_redo
+'#ib_redo582' '#ib_redo590' '#ib_redo598' '#ib_redo606_tmp'
+'#ib_redo583' '#ib_redo591' '#ib_redo599' '#ib_redo607_tmp'
+'#ib_redo584' '#ib_redo592' '#ib_redo600' '#ib_redo608_tmp'
+'#ib_redo585' '#ib_redo593' '#ib_redo601' '#ib_redo609_tmp'
+'#ib_redo586' '#ib_redo594' '#ib_redo602' '#ib_redo610_tmp'
+'#ib_redo587' '#ib_redo595' '#ib_redo603_tmp' '#ib_redo611_tmp'
+'#ib_redo588' '#ib_redo596' '#ib_redo604_tmp' '#ib_redo612_tmp'
+'#ib_redo589' '#ib_redo597' '#ib_redo605_tmp' '#ib_redo613_tmp'
+每个普通重做日志文件都与特定范围的 LSN 值相关联；例如，以下查询显示
+了前面示例中列出的活动重做日志文件的 START_LSN 和 END_LSN 值：
+mysql> SELECT FILE_NAME, START_LSN, END_LSN FROM performance_schema.innodb_redo_log_files;
++----------------------------+--------------+--------------+
+| FILE_NAME | START_LSN | END_LSN |
++----------------------------+--------------+--------------+
+| ./#innodb_redo/#ib_redo582 | 117654982144 | 117658256896 |
+| ./#innodb_redo/#ib_redo583 | 117658256896 | 117661531648 |
+| ./#innodb_redo/#ib_redo584 | 117661531648 | 117664806400 |
+| ./#innodb_redo/#ib_redo585 | 117664806400 | 117668081152 |
+| ./#innodb_redo/#ib_redo586 | 117668081152 | 117671355904 |
+| ./#innodb_redo/#ib_redo587 | 117671355904 | 117674630656 |
+| ./#innodb_redo/#ib_redo588 | 117674630656 | 117677905408 |
+| ./#innodb_redo/#ib_redo589 | 117677905408 | 117681180160 |
+| ./#innodb_redo/#ib_redo590 | 117681180160 | 117684454912 |
+| ./#innodb_redo/#ib_redo591 | 117684454912 | 117687729664 |
+| ./#innodb_redo/#ib_redo592 | 117687729664 | 117691004416 |
+| ./#innodb_redo/#ib_redo593 | 117691004416 | 117694279168 |
+| ./#innodb_redo/#ib_redo594 | 117694279168 | 117697553920 |
+| ./#innodb_redo/#ib_redo595 | 117697553920 | 117700828672 |
+| ./#innodb_redo/#ib_redo596 | 117700828672 | 117704103424 |
+| ./#innodb_redo/#ib_redo597 | 117704103424 | 117707378176 |
+| ./#innodb_redo/#ib_redo598 | 117707378176 | 117710652928 |
+| ./#innodb_redo/#ib_redo599 | 117710652928 | 117713927680 |
+| ./#innodb_redo/#ib_redo600 | 117713927680 | 117717202432 |
+| ./#innodb_redo/#ib_redo601 | 117717202432 | 117720477184 |
+| ./#innodb_redo/#ib_redo602 | 117720477184 | 117723751936 |
++----------------------------+--------------+--------------+
+执行检查点时， InnoDB 将检查点 LSN 存储在包含此 LSN 的文件的标头中。在恢复期间，检查所有重做日志文件并在最新的检查点 LSN 处开始恢复。
+提供了几个状态变量用于监视重做日志和重做日志容量调整操作；例如，您可以查询 Innodb_redo_log_resize_status 以查看调整大小操作的状态：
+mysql> SHOW STATUS LIKE 'Innodb_redo_log_resize_status';
++-------------------------------+-------+
+| Variable_name | Value |
++-------------------------------+-------+
+| Innodb_redo_log_resize_status | OK |
++-------------------------------+-------+
+状态变量显示当前 Innodb_redo_log_capacity_resized 重做日志容量限制：
+mysql> SHOW STATUS LIKE 'Innodb_redo_log_capacity_resized';
++----------------------------------+-----------+
+| Variable_name | Value |
++----------------------------------+-----------+
+| Innodb_redo_log_capacity_resized | 104857600 |
++----------------------------------+-----------+
+其他适用的状态变量包括：
+Innodb_redo_log_checkpoint_lsn
+Innodb_redo_log_current_lsn
+Innodb_redo_log_flushed_to_disk_lsn
+Innodb_redo_log_logical_size
+Innodb_redo_log_physical_size
+Innodb_redo_log_read_only
+Innodb_redo_log_uuid
+有关详细信息，请参阅状态变量说明。
+innodb_redo_log_files 您可以通过查询Performance Schema 表
+来查看有关活动重做日志文件的信息。以下查询从表的所有列中检索数据：
+SELECT FILE_ID, START_LSN, END_LSN, SIZE_IN_BYTES, IS_FULL, CONSUMER_LEVEL
+FROM performance_schema.innodb_redo_log_files;
+配置重做日志容量（MySQL 8.0.30之前）
+MySQL 8.0.30之前， InnoDB 默认在data目录下创建两个redo log文件，命名为 ib_logfile0 和 ib_logfile1 ，并循环写入这些文件。
+修改重做日志容量需要更改 重做日志 文件的数量和/或大小。
+停止 MySQL 服务器并确保它在没有错误的情况下关闭。
+编辑 my.cnf 以更改重做日志文件配置。要更改重做日志文件大小，请配置 innodb_log_file_size . 要增加重做日志文件的数量，请配置 innodb_log_files_in_group .
+再次启动 MySQL 服务器。
+如果 InnoDB 检测到 innodb_log_file_size 重做日志文件大小不同，它会写入一个日志检查点，关闭并删除旧日志文件，以请求的大小创建新日志文件，然后打开新日志文件。
+自动重做日志容量配置
+innodb_dedicated_server 启用时，
+自动 InnoDB 配置某些 InnoDB 参数，包括重做日志容量。自动配置适用于驻留在 MySQL 专用服务器上的 MySQL 实例，其中 MySQL 服务器可以使用所有可用的系统资源。有关详细信息，请参阅 第 15.8.12 节，“为专用 MySQL 服务器启用自动配置” 。
+重做日志归档
+当备份操作正在进行时，复制重做日志记录的备份实用程序有时可能无法跟上重做日志生成的步伐，从而导致由于重做日志记录被覆盖而丢失重做日志记录。当备份操作期间有大量 MySQL 服务器活动，并且重做日志文件存储介质以比备份存储介质更快的速度运行时，最常发生此问题。MySQL 8.0.17 中引入的重做日志归档功能解决了这个问题，除了重做日志文件之外，还通过将重做日志记录顺序写入存档文件。备份实用程序可以根据需要从归档文件中复制重做日志记录，从而避免潜在的数据丢失。
+如果在服务器上配置了重做日志归档
+，则 MySQL 企业版 可用的 MySQL Enterprise Backup 在备份 MySQL 服务器时使用重做日志归档功能。
+在服务器上启用重做日志归档需要为 innodb_redo_log_archive_dirs 系统变量设置一个值。该值被指定为以分号分隔的标记重做日志归档目录列表。该 label:directory 对由冒号 ( : ) 分隔。例如：
+mysql> SET GLOBAL innodb_redo_log_archive_dirs=' label1 : directory_path1 [; label2 : directory_path2 ;…]';
+label 是存档目录的任意标识符
+。它可以是任何字符串，但不允许使用冒号 (:)。也允许使用空标签，但在这种情况下仍需要冒号 (:)。 directory_path 必须指定一个
+。当激活重做日志归档时，为重做日志归档文件选择的目录必须存在，否则返回错误。路径可以包含冒号 (':')，但不允许包含分号 (;)。
+innodb_redo_log_archive_dirs 必须在激活重做​​日志归档之前配置
+该
+变量。默认值为 NULL ，不允许激活重做日志归档。
+笔记
+您指定的存档目录必须满足以下要求。（激活重做日志归档时会强制执行这些要求。）：
+目录必须存在。目录不是由重做日志归档过程创建的。否则，返回以下错误：
+ERROR 3844 (HY000): 重做日志存档目录 ' directory_path1 ' 不存在或不是目录
+目录不得是全球可访问的。这是为了防止重做日志数据暴露给系统上的未授权用户。否则，返回以下错误：
+错误 3846 (HY000): directory_path1 所有操作系统用户都可以访问重做日志存档目录“”
+目录不能是由 datadir , innodb_data_home_dir , innodb_directories , innodb_log_group_home_dir , innodb_temp_tablespaces_dir ,
+, 或
+定义的目录，也不能是这些目录的父目录或子目录。否则，将返回类似于以下的错误： innodb_tmpdir innodb_undo_directory secure_file_priv
+错误 3845 (HY000)：重做日志存档目录“ directory_path1 ”在服务器目录“datadir”中、下方或上方 -“ /path/to/data_directory ”
+当支持重做日志归档的备份实用程序启动备份时，备份实用程序通过调用该 innodb_redo_log_archive_start() 函数来激活重做日志归档。
+如果您没有使用支持重做日志归档的备份实用程序，也可以手动激活重做日志归档，如下所示：
+mysql> SELECT innodb_redo_log_archive_start(' label ', ' subdir ');
++------------------------------------------+
+| innodb_redo_log_archive_start(' label ') |
++------------------------------------------+
+| 0 |
++------------------------------------------+
+或者：
+mysql> DO innodb_redo_log_archive_start(' label ', ' subdir ');
+Query OK, 0 rows affected (0.09 sec)
+笔记
+激活重做日志归档（使用 innodb_redo_log_archive_start() ）的 MySQL 会话必须在归档期间保持打开状态。同一会话必须停用重做日志归档（使用 innodb_redo_log_archive_stop() ）。如果会话在显式停用重做日志归档之前终止，则服务器将隐式停用重做日志归档并删除重做日志归档文件。
+其中 label 是由 定义的标签 innodb_redo_log_archive_dirs ；
+是一个可选参数，用于指定用于保存存档文件 subdir 的目录的子目录
+； label 它必须是一个简单的目录名称（不允许使用斜杠 (/)、反斜杠 (\) 或冒号 (:)）。 subdir 可以为空、null 或省略。
+只有具有 INNODB_REDO_LOG_ARCHIVE 权限的用户才能通过调用激活重做日志归档 innodb_redo_log_archive_start() ，或使用 将其停用 innodb_redo_log_archive_stop() 。运行备份实用程序的 MySQL 用户或手动激活和停用重做日志归档的 MySQL 用户必须具有此权限。
+重做日志归档文件路径为
+，其中
+为参数
+
+标识的归档目录
+。
+是用于 的可选参数
+。 directory_identified_by_label /[ subdir /]archive. serverUUID .000001.log directory_identified_by_label label innodb_redo_log_archive_start() subdir innodb_redo_log_archive_start()
+例如，重做日志存档文件的完整路径和名称类似于以下内容：
+/ directory_path / subdirectory /archive.e71a47dc-61f8-11e9-a3cb-080027154b4d.000001.log
+备份实用程序完成复制 InnoDB 数据文件后，通过调用该 innodb_redo_log_archive_stop() 函数停用重做日志归档。
+如果您没有使用支持重做日志归档的备份实用程序，也可以手动停用重做日志归档，如下所示：
+mysql> SELECT innodb_redo_log_archive_stop();
++--------------------------------+
+| innodb_redo_log_archive_stop() |
++--------------------------------+
+| 0 |
++--------------------------------+
+或者：
+mysql> DO innodb_redo_log_archive_stop();
+Query OK, 0 rows affected (0.01 sec)
+停止功能成功完成后，备份实用程序从存档文件中查找重做日志数据的相关部分并将其复制到备份中。
+备份实用程序完成复制重做日志数据并且不再需要重做日志存档文件后，它会删除存档文件。
+在正常情况下，删除存档文件是备份实用程序的责任。 innodb_redo_log_archive_stop() 但是，如果重做日志归档操作在调用
+之前意外退出
+，则 MySQL 服务器将删除该文件。
+性能注意事项
+由于额外的写入活动，激活重做日志归档通常具有较小的性能成本。
+在 Unix 和类 Unix 操作系统上，假设没有持续的高更新率，性能影响通常很小。在 Windows 上，假设相同，性能影响通常会更高一些。
+如果存在持续的高更新率并且重做日志存档文件与重做日志文件位于同一存储介质上，则由于复合写入活动，性能影响可能会更加显着。
+如果存在持续的高更新率并且重做日志存档文件位于比重做日志文件慢的存储介质上，则性能会受到任意影响。
+写入重做日志归档文件不会妨碍正常的事务日志记录，除非重做日志归档文件存储介质以比重做日志文件存储介质慢得多的速度运行，并且存在大量持久化重做日志块积压等待写入重做日志归档文件。在这种情况下，事务日志率降低到可以由重做日志存档文件所在的较慢存储介质管理的级别。
+禁用重做日志记录
+从 MySQL 8.0.21 开始，您可以使用该 ALTER INSTANCE
+DISABLE INNODB REDO_LOG 语句禁用重做日志记录。此功能旨在将数据加载到新的 MySQL 实例中。禁用重做日志通过避免重做日志写入和双写缓冲来加速数据加载。
+警告
+此功能仅用于将数据加载到新的 MySQL 实例中。 不要在生产系统上禁用重做日志记录。 允许在禁用重做日志记录时关闭并重新启动服务器，但是在禁用重做日志记录时服务器意外停止可能会导致数据丢失和实例损坏。
+在禁用重做日志记录时服务器意外停止后尝试重新启动服务器会被拒绝，并出现以下错误：
+[ERROR] [MY-013598] [InnoDB] Server was killed when Innodb Redo
+logging was disabled. Data files could be corrupt. You can try
+to restart the database with innodb_force_recovery=6
+在这种情况下，初始化一个新的 MySQL 实例并重新开始数据加载过程。
+INNODB_REDO_LOG_ENABLE 启用和禁用重做日志记录需要权限
+
+。
+Innodb_redo_log_enabled status 变量允许监视重做日志状态
+
+。
+当禁用重做日志记录时，不允许克隆操作和重做日志归档，反之亦然。
+一个 ALTER
+INSTANCE [ENABLE|DISABLE] INNODB REDO_LOG 操作需要一个独占的备份元数据锁，这会阻止其他 ALTER INSTANCE 操作并发执行。其他 ALTER
+INSTANCE 操作必须等待锁释放后才能执行。
+以下过程演示了如何在将数据加载到新的 MySQL 实例时禁用重做日志记录。
+在新的 MySQL 实例上，将 INNODB_REDO_LOG_ENABLE 权限授予负责禁用重做日志记录的用户帐户。
+mysql> GRANT INNODB_REDO_LOG_ENABLE ON *.* to 'data_load_admin';
+作为 data_load_admin 用户，禁用重做日志记录：
+mysql> ALTER INSTANCE DISABLE INNODB REDO_LOG;
+检查 Innodb_redo_log_enabled 状态变量以确保禁用重做日志记录。
+mysql> SHOW GLOBAL STATUS LIKE 'Innodb_redo_log_enabled';
++-------------------------+-------+
+| Variable_name | Value |
++-------------------------+-------+
+| Innodb_redo_log_enabled | OFF |
++-------------------------+-------+
+运行数据加载操作。
+作为 data_load_admin 用户，在数据加载操作完成后启用重做日志记录：
+mysql> ALTER INSTANCE ENABLE INNODB REDO_LOG;
+检查 Innodb_redo_log_enabled 状态变量以确保启用重做日志记录。
+mysql> SHOW GLOBAL STATUS LIKE 'Innodb_redo_log_enabled';
++-------------------------+-------+
+| Variable_name | Value |
++-------------------------+-------+
+| Innodb_redo_log_enabled | ON |
++-------------------------+-------+
+相关话题
+重做日志配置
+第 8.5.4 节，“优化 InnoDB 重做日志记录”
+重做日志加密

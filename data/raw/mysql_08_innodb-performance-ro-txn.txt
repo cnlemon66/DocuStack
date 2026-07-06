@@ -1,0 +1,27 @@
+8.5.3 优化 InnoDB 只读事务_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.5 优化 InnoDB 表 / 
+8.5.3 优化 InnoDB 只读事务
+8.5.3 优化 InnoDB 只读事务
+InnoDB 可以避免为已知为只读的事务设置 事务 ID （字段）相关的开销。只有可能执行写操作或 锁定读取的 事务 TRX_ID 才需要事务 ID ，例如
+. 消除不必要的事务 ID 可以减少每次查询或数据更改语句构造 读取视图 时查询的内部数据结构的大小。 SELECT ... FOR UPDATE
+InnoDB 在以下情况下检测只读事务：
+事务以 START TRANSACTION
+READ ONLY 语句开始。在这种情况下，尝试对数据库进行更改（对于 InnoDB 、 MyISAM 或其他类型的表）会导致错误，并且事务将继续处于只读状态：
+ERROR 1792 (25006): Cannot execute statement in a READ ONLY transaction.
+您仍然可以在只读事务中更改特定于会话的临时表，或为它们发出锁定查询，因为这些更改和锁定对任何其他事务都是不可见的。
+开启设置， autocommit 保证事务是单语句，组成事务的单语句是 “ 非锁 ” SELECT 语句。即， SELECT 不使用 FOR
+UPDATE or LOCK IN SHARED MODE 子句的 a。
+事务在没有 READ
+ONLY 选项的情况下启动，但尚未执行明确锁定行的更新或语句。在需要更新或显式锁定之前，事务将保持只读模式。
+因此，对于诸如报告生成器之类的读取密集型应用程序，您可以 InnoDB 通过将它们分组在 START TRANSACTION READ
+ONLY and
+中来调整查询序列，或者通过
+在运行语句之前 COMMIT 打开设置，或者简单地避免任何数据更改语句散布在查询中. autocommit SELECT
+有关 START
+TRANSACTION 和
+的信息 autocommit ，请参阅 第 13.3.1 节，“START TRANSACTION、COMMIT 和 ROLLBACK 语句” 。
+笔记
+符合自动提交、非锁定和只读 (AC-NL-RO) 条件的事务被保留在某些内部 InnoDB 数据结构之外，因此不会在 SHOW ENGINE
+INNODB STATUS 输出中列出。

@@ -1,0 +1,260 @@
+12.17.8 空间算子函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.17空间分析函数 / 
+12.17.8 空间算子函数
+12.17.8 空间算子函数
+OpenGIS 提出了许多可以生成几何图形的函数。它们旨在实现空间运算符。 这些函数支持所有参数类型组合，但根据Open Geospatial Consortium 规范
+不适用的除外
+。
+MySQL 还实现了某些功能，这些功能是对 OpenGIS 的扩展，如功能描述中所述。此外， 第 12.17.7 节“几何属性函数” 讨论了几个从现有几何构造新几何的函数。有关这些功能的说明，请参阅该部分：
+ST_Envelope( g )
+ST_StartPoint( ls )
+ST_EndPoint( ls )
+ST_PointN( ls , N )
+ST_ExteriorRing( poly )
+ST_InteriorRingN( poly , N )
+ST_GeometryN( gc , N )
+除非另有说明，本节中的函数按如下方式处理它们的几何参数：
+如果任何参数是 NULL ，则返回值为 NULL 。
+如果任何几何参数不是语法上格式正确的几何， ER_GIS_INVALID_DATA 则会发生错误。
+如果任何几何参数是未定义空间参考系统 (SRS) 中语法上格式正确的几何， ER_SRS_NOT_FOUND 则会发生错误。
+对于采用多个几何参数的函数，如果这些参数不在同一个 SRS 中， ER_GIS_DIFFERENT_SRIDS 则会发生错误。
+如果任何几何参数具有地理 SRS 的 SRID 值并且该函数不处理地理几何图形， ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS 则会发生错误。
+对于地理 SRS 几何参数，如果任何参数的经度或纬度超出范围，则会发生错误：
+如果经度值不在 (−180, 180] 范围内， ER_GEOMETRY_PARAM_LONGITUDE_OUT_OF_RANGE 则会发生错误（ ER_LONGITUDE_OUT_OF_RANGE MySQL 8.0.12 之前）。
+如果纬度值不在 [−90, 90] 范围内， ER_GEOMETRY_PARAM_LATITUDE_OUT_OF_RANGE 则会发生错误（ ER_LATITUDE_OUT_OF_RANGE MySQL 8.0.12 之前）。
+显示的范围以度为单位。如果 SRS 使用另一个单位，则范围使用其单位中的相应值。由于浮点运算，确切的范围限制略有偏差。
+否则，返回值为非 NULL 。
+这些空间运算符函数可用：
+ST_Buffer( g , d [, strategy1 [, strategy2 [, strategy3 ]]])
+返回一个几何图形，该几何图形表示与几何值的距离 g 小于或等于 的距离的所有点 d 。结果在与几何参数相同的 SRS 中。
+如果几何参数为空，则 ST_Buffer() 返回一个空几何。
+如果距离为 0，则 ST_Buffer() 返回不变的几何参数：
+mysql> SET @pt = ST_GeomFromText('POINT(0 0)');
+mysql> SELECT ST_AsText(ST_Buffer(@pt, 0));
++------------------------------+
+| ST_AsText(ST_Buffer(@pt, 0)) |
++------------------------------+
+| POINT(0 0) |
++------------------------------+
+如果几何参数在笛卡尔 SRS 中：
+ST_Buffer() 支持 Polygon 和 MultiPolygon 值的负距离，以及包含 Polygon 或 MultiPolygon 值的几何集合。
+如果结果减少太多以至于消失，则结果是一个空几何体。
+对于、
+、
+和
+值
+的负距离，以及不包含任何或
+值的几何集合，会
+发生 ER_WRONG_ARGUMENTS 错误
+。 ST_Buffer() Point MultiPoint LineString MultiLineString Polygon MultiPolygon
+如果几何参数在地理 SRS 中：
+MySQL 8.0.26 之前的版本会 ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS 报错。
+从 MySQL 8.0.26 开始， Point 允许地理 SRS 中的几何图形。对于非 Point 几何图形， ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS 仍然会发生错误。
+对于允许地理 Point 几何的 MySQL 版本：
+如果距离不为负且未指定策略，则该函数返回 Point 其 SRS 中的地理缓冲区。距离参数必须采用 SRS 距离单位（目前始终为米）。
+如果距离为负数或 NULL 指定了任何策略（除了 ）， ER_WRONG_ARGUMENTS 则会发生错误。
+ST_Buffer() 在距离参数之后最多允许三个可选的策略参数。策略影响缓冲区计算。这些参数是由 ST_Buffer_Strategy() 函数生成的字节字符串值，用于点、连接和结束策略：
+点策略适用于 Point 和 MultiPoint 几何。如果未指定点策略，则默认为 ST_Buffer_Strategy('point_circle',
+32) .
+连接策略适用于 LineString 、 MultiLineString 、 Polygon 和 MultiPolygon 几何。如果未指定连接策略，则默认为 ST_Buffer_Strategy('join_round',
+32) .
+结束策略适用于 LineString 和 MultiLineString 几何。如果未指定结束策略，则默认为 ST_Buffer_Strategy('end_round',
+32) .
+每种类型最多可以指定一个策略，并且它们可以以任何顺序给出。
+如果缓冲策略无效， ER_WRONG_ARGUMENTS 则会发生错误。在任何这些情况下，策略都是无效的：
+指定了给定类型（点、连接或端点）的多个策略。
+不是策略的值（例如任意二进制字符串或数字）作为策略传递。
+策略已通过 Point ，几何不包含 Point 或 MultiPoint 值。
+传递了结束或连接策略，
+
+并且几何不包含 LineString 、
+或
+值。 Polygon MultiLinestring MultiPolygon
+mysql> SET @pt = ST_GeomFromText('POINT(0 0)');
+mysql> SET @pt_strategy = ST_Buffer_Strategy('point_square');
+mysql> SELECT ST_AsText(ST_Buffer(@pt, 2, @pt_strategy));
++--------------------------------------------+
+| ST_AsText(ST_Buffer(@pt, 2, @pt_strategy)) |
++--------------------------------------------+
+| POLYGON((-2 -2,2 -2,2 2,-2 2,-2 -2)) |
++--------------------------------------------+
+mysql> SET @ls = ST_GeomFromText('LINESTRING(0 0,0 5,5 5)');
+mysql> SET @end_strategy = ST_Buffer_Strategy('end_flat');
+mysql> SET @join_strategy = ST_Buffer_Strategy('join_round', 10);
+mysql> SELECT ST_AsText(ST_Buffer(@ls, 5, @end_strategy, @join_strategy))
++---------------------------------------------------------------+
+| ST_AsText(ST_Buffer(@ls, 5, @end_strategy, @join_strategy)) |
++---------------------------------------------------------------+
+| POLYGON((5 5,5 10,0 10,-3.5355339059327373 8.535533905932738, |
+| -5 5,-5 0,0 0,5 0,5 5)) |
++---------------------------------------------------------------+
+ST_Buffer_Strategy( strategy [, points_per_circle ])
+此函数返回一个策略字节字符串，用于 ST_Buffer() 影响缓冲区计算。
+有关策略的信息可在 Boost.org 上获得。
+第一个参数必须是表示策略选项的字符串：
+对于点策略，允许的值为 'point_circle' 和 'point_square' 。
+对于连接策略，允许的值为 'join_round' 和 'join_miter' 。
+对于结束策略，允许的值为 'end_round' 和 'end_flat' 。
+如果第一个参数是 'point_circle' 、 'join_round' 、 'join_miter' 或 'end_round' ，则该 points_per_circle 参数必须作为正数值给出。最大值 points_per_circle 是 max_points_in_geometry 系统变量的值。
+有关示例，请参阅 的说明 ST_Buffer() 。
+ST_Buffer_Strategy() 按照本节介绍中的描述处理其参数，但有以下例外：
+如果任何参数无效， ER_WRONG_ARGUMENTS 则会发生错误。
+如果第一个参数是 'point_square' or 'end_flat' ，则 points_per_circle 不能给出该参数
+，否则会 ER_WRONG_ARGUMENTS 发生错误。
+ST_ConvexHull( g )
+返回表示几何值的凸包的几何图形 g 。
+此函数通过首先检查几何的顶点是否共线来计算几何的凸包。如果是，该函数返回线性外壳，否则返回多边形外壳。此函数通过提取集合所有组件的所有顶点、 MultiPoint 从中创建值并计算其凸包来处理几何集合。
+ST_ConvexHull() 如本节介绍中所述处理其参数，但以下情况除外：
+返回值 NULL 用于参数为空几何集合的附加条件。
+mysql> SET @g = 'MULTIPOINT(5 0,25 0,15 10,15 25)';
+mysql> SELECT ST_AsText(ST_ConvexHull(ST_GeomFromText(@g)));
++-----------------------------------------------+
+| ST_AsText(ST_ConvexHull(ST_GeomFromText(@g))) |
++-----------------------------------------------+
+| POLYGON((5 0,25 0,15 25,5 0)) |
++-----------------------------------------------+
+ST_Difference( g1 , g2 )
+返回表示几何值 g1 和
+的点集差的几何 g2 。结果在与几何参数相同的 SRS 中。
+从 MySQL 8.0.26 开始， ST_Difference() 允许笛卡尔或地理 SRS 中的参数。在 MySQL 8.0.26 之前， ST_Difference() 仅允许笛卡尔 SRS 中的参数；对于地理 SRS 中的参数， ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS 会发生错误。
+ST_Difference() 如本节介绍中所述处理其参数。
+mysql> SET @g1 = Point(1,1), @g2 = Point(2,2);
+mysql> SELECT ST_AsText(ST_Difference(@g1, @g2));
++------------------------------------+
+| ST_AsText(ST_Difference(@g1, @g2)) |
++------------------------------------+
+| POINT(1 1) |
++------------------------------------+
+ST_Intersection( g1 , g2 )
+返回表示几何值 g1 和
+的点集交集的几何 g2 。结果在与几何参数相同的 SRS 中。
+从 MySQL 8.0.27 开始， ST_Intersection() 允许笛卡尔或地理 SRS 中的参数。在 MySQL 8.0.27 之前， ST_Intersection() 仅允许笛卡尔 SRS 中的参数；对于地理 SRS 中的参数， ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS 会发生错误。
+ST_Intersection() 如本节介绍中所述处理其参数。
+mysql> SET @g1 = ST_GeomFromText('LineString(1 1, 3 3)');
+mysql> SET @g2 = ST_GeomFromText('LineString(1 3, 3 1)');
+mysql> SELECT ST_AsText(ST_Intersection(@g1, @g2));
++--------------------------------------+
+| ST_AsText(ST_Intersection(@g1, @g2)) |
++--------------------------------------+
+| POINT(2 2) |
++--------------------------------------+
+ST_LineInterpolatePoint( ls , fractional_distance )
+此函数采用 LineString [0.0, 1.0] 范围内的几何和小数距离，并 Point 沿着 LineString 从起点到终点的给定距离的分数返回。它可以用来回答诸如哪 Point 条路位于几何论证所描述的道路的中途之类的问题。
+该功能适用 LineString ​​于所有空间参考系统中的几何图形，包括笛卡尔坐标系和地理坐标系。
+如果参数为 1.0，则由于近似值计算中的数值不准确 fractional_distance ，结果可能不完全是参数的最后一个点，
+而是接近它的一个点。 LineString
+一个相关的函数 ， ST_LineInterpolatePoints() 采用类似的参数，但返回一个
+值，该值 MultiPoint 由 Point 沿着 LineString 从起点到终点的距离的每个分数的值组成。有关这两个函数的示例，请参阅 ST_LineInterpolatePoints() 说明。
+ST_LineInterpolatePoint() 按照本节介绍中的描述处理其参数，但有以下例外：
+如果 geometry 参数不是 a LineString ， ER_UNEXPECTED_GEOMETRY_TYPE 则会发生错误。
+如果分数距离参数超出范围 [0.0, 1.0]， ER_DATA_OUT_OF_RANGE 则会发生错误。
+ST_LineInterpolatePoint() 是 OpenGIS 的 MySQL 扩展。这个函数是在 MySQL 8.0.24 中添加的。
+ST_LineInterpolatePoints( ls , fractional_distance )
+此函数采用 LineString (0.0, 1.0] 范围内的几何和分数距离，并返回 MultiPoint 由 LineString 起点
+组成的 Point 值
+，加上 LineString 从起点到终点的距离的每个分数处的值。它可用于回答诸如 Point 几何参数描述的道路沿途每隔 10% 有哪些值的问题。
+该功能适用 LineString ​​于所有空间参考系统中的几何图形，包括笛卡尔坐标系和地理坐标系。
+如果参数除以 1.0 且余数为零，则由于近似值计算中的数值不准确， fractional_distance 结果可能不包含参数的最后一个点，而是一个接近它的点。 LineString
+一个相关的函数 ， ST_LineInterpolatePoint() 采用类似的参数，但返回 Point 沿 LineString 从起点到终点的给定距离的分数。
+ST_LineInterpolatePoints() 按照本节介绍中的描述处理其参数，但有以下例外：
+如果 geometry 参数不是 a LineString ， ER_UNEXPECTED_GEOMETRY_TYPE 则会发生错误。
+如果分数距离参数超出范围 [0.0, 1.0]， ER_DATA_OUT_OF_RANGE 则会发生错误。
+mysql> SET @ls1 = ST_GeomFromText('LINESTRING(0 0,0 5,5 5)');
+mysql> SELECT ST_AsText(ST_LineInterpolatePoint(@ls1, .5));
++----------------------------------------------+
+| ST_AsText(ST_LineInterpolatePoint(@ls1, .5)) |
++----------------------------------------------+
+| POINT(0 5) |
++----------------------------------------------+
+mysql> SELECT ST_AsText(ST_LineInterpolatePoint(@ls1, .75));
++-----------------------------------------------+
+| ST_AsText(ST_LineInterpolatePoint(@ls1, .75)) |
++-----------------------------------------------+
+| POINT(2.5 5) |
++-----------------------------------------------+
+mysql> SELECT ST_AsText(ST_LineInterpolatePoint(@ls1, 1));
++---------------------------------------------+
+| ST_AsText(ST_LineInterpolatePoint(@ls1, 1)) |
++---------------------------------------------+
+| POINT(5 5) |
++---------------------------------------------+
+mysql> SELECT ST_AsText(ST_LineInterpolatePoints(@ls1, .25));
++------------------------------------------------+
+| ST_AsText(ST_LineInterpolatePoints(@ls1, .25)) |
++------------------------------------------------+
+| MULTIPOINT((0 2.5),(0 5),(2.5 5),(5 5)) |
++------------------------------------------------+
+ST_LineInterpolatePoints() 是 OpenGIS 的 MySQL 扩展。这个函数是在 MySQL 8.0.24 中添加的。
+ST_PointAtDistance( ls , distance )
+此函数采用 LineString 几何和 [0.0, ] 范围内的距离（以
+的空间参考系 (SRS) 为单位测量） ，并沿着
+距离起点的该距离返回
+。它可用于回答诸如
+从几何参数描述的道路起点算起 400 米的值是多少等问题。 ST_Length( ls ) LineString Point LineString Point
+该功能适用 LineString ​​于所有空间参考系统中的几何图形，包括笛卡尔坐标系和地理坐标系。
+ST_PointAtDistance() 按照本节介绍中的描述处理其参数，但有以下例外：
+如果 geometry 参数不是 a LineString ， ER_UNEXPECTED_GEOMETRY_TYPE 则会发生错误。
+如果小数距离参数超出 [0.0,
+] 范围，
+则会发生错误。 ST_Length( ls ) ER_DATA_OUT_OF_RANGE
+ST_PointAtDistance() 是 OpenGIS 的 MySQL 扩展。这个函数是在 MySQL 8.0.24 中添加的。
+ST_SymDifference( g1 , g2 )
+返回表示几何值 g1 和
+的点集对称差的几何 g2 ，其定义为：
+g1 symdifference g2 := ( g1 union g2 ) difference ( g1 intersection g2 )
+或者，在函数调用符号中：
+ST_SymDifference( g1 , g2 ) = ST_Difference(ST_Union( g1 , g2 ), ST_Intersection( g1 , g2 ))
+结果在与几何参数相同的 SRS 中。
+从 MySQL 8.0.27 开始， ST_SymDifference() 允许笛卡尔或地理 SRS 中的参数。在 MySQL 8.0.27 之前， ST_SymDifference() 仅允许笛卡尔 SRS 中的参数；对于地理 SRS 中的参数， ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS 会发生错误。
+ST_SymDifference() 如本节介绍中所述处理其参数。
+mysql> SET @g1 = ST_GeomFromText('MULTIPOINT(5 0,15 10,15 25)');
+mysql> SET @g2 = ST_GeomFromText('MULTIPOINT(1 1,15 10,15 25)');
+mysql> SELECT ST_AsText(ST_SymDifference(@g1, @g2));
++---------------------------------------+
+| ST_AsText(ST_SymDifference(@g1, @g2)) |
++---------------------------------------+
+| MULTIPOINT((1 1),(5 0)) |
++---------------------------------------+
+ST_Transform( g , target_srid )
+将几何图形从一个空间参照系 (SRS) 变换到另一个空间参照系。返回值是一个与输入几何相同类型的几何，所有坐标都转换为目标 SRID target_srid ，. 转换支持仅限于地理 SRS，除非几何参数的 SRID 与目标 SRID 值相同，在这种情况下，返回值是任何有效 SRS 的输入几何。
+在 MySQL 8.0.30 之前，此功能不支持笛卡尔 SRS。从 MySQL 8.0.30 开始，支持流行的可视化伪墨卡托 (EPSG 1024) 投影方法，用于 WGS 84 伪墨卡托 (SRID 3857)。
+ST_Transform() 按照本节介绍中的描述处理其参数，但有以下例外：
+具有地理 SRS 的 SRID 值的几何参数不会产生错误。
+如果几何或目标 SRID 参数具有引用未定义空间参考系统 (SRS) 的 SRID 值， ER_SRS_NOT_FOUND 则会发生错误。
+如果几何位于 ST_Transform() 无法从中转换的 SRS 中， ER_TRANSFORM_SOURCE_SRS_NOT_SUPPORTED 则会发生错误。
+如果目标 SRID 在 ST_Transform() 无法转换为的 SRS 中， ER_TRANSFORM_TARGET_SRS_NOT_SUPPORTED 则会发生错误。
+如果几何图形位于不是 WGS 84 且没有 TOWGS84 子句的 SRS 中， ER_TRANSFORM_SOURCE_SRS_MISSING_TOWGS84 则会发生错误。
+如果目标 SRID 在不是 WGS 84 且没有 TOWGS84 子句的 SRS 中， ER_TRANSFORM_TARGET_SRS_MISSING_TOWGS84 则会发生错误。
+ST_SRID( g , target_srid ) 区别
+如下： ST_Transform( g , target_srid )
+ST_SRID() 更改几何 SRID 值而不转换其坐标。
+ST_Transform() 除了更改其 SRID 值外，还会变换几何坐标。
+mysql> SET @p = ST_GeomFromText('POINT(52.381389 13.064444)', 4326);
+mysql> SELECT ST_AsText(@p);
++----------------------------+
+| ST_AsText(@p) |
++----------------------------+
+| POINT(52.381389 13.064444) |
++----------------------------+
+mysql> SET @p = ST_Transform(@p, 4230);
+mysql> SELECT ST_AsText(@p);
++---------------------------------------------+
+| ST_AsText(@p) |
++---------------------------------------------+
+| POINT(52.38208611407426 13.065520672345304) |
++---------------------------------------------+
+ST_Union( g1 , g2 )
+返回表示几何值 g1 和
+的点集并集的几何 g2 。结果在与几何参数相同的 SRS 中。
+从 MySQL 8.0.26 开始， ST_Union() 允许笛卡尔或地理 SRS 中的参数。在 MySQL 8.0.26 之前， ST_Union() 仅允许笛卡尔 SRS 中的参数；对于地理 SRS 中的参数， ER_NOT_IMPLEMENTED_FOR_GEOGRAPHIC_SRS 会发生错误。
+ST_Union() 如本节介绍中所述处理其参数。
+mysql> SET @g1 = ST_GeomFromText('LineString(1 1, 3 3)');
+mysql> SET @g2 = ST_GeomFromText('LineString(1 3, 3 1)');
+mysql> SELECT ST_AsText(ST_Union(@g1, @g2));
++--------------------------------------+
+| ST_AsText(ST_Union(@g1, @g2)) |
++--------------------------------------+
+| MULTILINESTRING((1 1,3 3),(1 3,3 1)) |
++--------------------------------------+

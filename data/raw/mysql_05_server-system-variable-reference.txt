@@ -1,0 +1,1021 @@
+5.1.5 服务器系统变量引用_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.1 MySQL 服务器 / 
+5.1.5 服务器系统变量引用
+5.1.5 服务器系统变量引用
+下表列出了适用于 mysqld .
+该表在一个统一列表中列出命令行选项 (Cmd-line)、配置文件中有效的选项 (Option file)、服务器系统变量 (System Var) 和状态变量 (Status var)，并指示每个选项的位置或变量有效。如果在命令行或选项文件中设置的服务器选项与相应系统变量的名称不同，则会在相应选项的正下方注明变量名称。变量的范围 (Var Scope) 是 Global、Session 或两者兼而有之。设置和使用变量的详细信息请参见相应的项目说明。在适当的情况下，提供了指向有关这些项目的更多信息的直接链接。
+表 5.2 系统变量汇总
+姓名 命令行 选项文件 系统变量 可变范围 动态的
+activate_all_roles_on_login 是的 是的 是的 全球的 是的
+管理员地址 是的 是的 是的 全球的 不
+管理端口 是的 是的 是的 全球的 不
+admin_ssl_ca 是的 是的 是的 全球的 是的
+admin_ssl_capath 是的 是的 是的 全球的 是的
+admin_ssl_cert 是的 是的 是的 全球的 是的
+admin_ssl_cipher 是的 是的 是的 全球的 是的
+admin_ssl_crl 是的 是的 是的 全球的 是的
+admin_ssl_crlpath 是的 是的 是的 全球的 是的
+admin_ssl_key 是的 是的 是的 全球的 是的
+admin_tls_ciphersuites 是的 是的 是的 全球的 是的
+admin_tls_version 是的 是的 是的 全球的 是的
+audit_log_buffer_size 是的 是的 是的 全球的 不
+审计日志压缩 是的 是的 是的 全球的 不
+audit_log_connection_policy 是的 是的 是的 全球的 是的
+audit_log_current_session 是的 两个都 不
+audit_log_disable 是的 是的 是的 全球的 是的
+审计日志加密 是的 是的 是的 全球的 不
+audit_log_exclude_accounts 是的 是的 是的 全球的 是的
+审计日志文件 是的 是的 是的 全球的 不
+audit_log_filter_id 是的 两个都 不
+audit_log_flush 是的 全球的 是的
+审计日志格式 是的 是的 是的 全球的 不
+audit_log_format_unix_timestamp 是的 是的 是的 全球的 是的
+audit_log_include_accounts 是的 是的 是的 全球的 是的
+audit_log_max_size 是的 是的 是的 全球的 是的
+audit_log_password_history_keep_days 是的 是的 是的 全球的 是的
+audit_log_policy 是的 是的 是的 全球的 不
+audit_log_prune_seconds 是的 是的 是的 全球的 是的
+audit_log_read_buffer_size 是的 是的 是的 变化 变化
+audit_log_rotate_on_size 是的 是的 是的 全球的 是的
+audit_log_statement_policy 是的 是的 是的 全球的 是的
+审计日志策略 是的 是的 是的 全球的 不
+authentication_fido_rp_id 是的 是的 是的 全球的 是的
+authentication_kerberos_service_key_tab 是的 是的 是的 全球的 不
+authentication_kerberos_service_principal 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_auth_method_name 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_bind_base_dn 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_bind_root_dn 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_bind_root_pwd 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_ca_path 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_group_search_attr 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_group_search_filter 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_init_pool_size 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_log_status 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_max_pool_size 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_referral 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_server_host 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_server_port 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_tls 是的 是的 是的 全球的 是的
+authentication_ldap_sasl_user_search_attr 是的 是的 是的 全球的 是的
+authentication_ldap_simple_auth_method_name 是的 是的 是的 全球的 是的
+authentication_ldap_simple_bind_base_dn 是的 是的 是的 全球的 是的
+authentication_ldap_simple_bind_root_dn 是的 是的 是的 全球的 是的
+authentication_ldap_simple_bind_root_pwd 是的 是的 是的 全球的 是的
+authentication_ldap_simple_ca_path 是的 是的 是的 全球的 是的
+authentication_ldap_simple_group_search_attr 是的 是的 是的 全球的 是的
+authentication_ldap_simple_group_search_filter 是的 是的 是的 全球的 是的
+authentication_ldap_simple_init_pool_size 是的 是的 是的 全球的 是的
+authentication_ldap_simple_log_status 是的 是的 是的 全球的 是的
+authentication_ldap_simple_max_pool_size 是的 是的 是的 全球的 是的
+authentication_ldap_simple_referral 是的 是的 是的 全球的 是的
+authentication_ldap_simple_server_host 是的 是的 是的 全球的 是的
+authentication_ldap_simple_server_port 是的 是的 是的 全球的 是的
+authentication_ldap_simple_tls 是的 是的 是的 全球的 是的
+authentication_ldap_simple_user_search_attr 是的 是的 是的 全球的 是的
+身份验证策略 是的 是的 是的 全球的 是的
+authentication_windows_log_level 是的 是的 是的 全球的 不
+authentication_windows_use_principal_name 是的 是的 是的 全球的 不
+自动生成证书 是的 是的 是的 全球的 不
+自动增量增量 是的 是的 是的 两个都 是的
+auto_increment_offset 是的 是的 是的 两个都 是的
+自动提交 是的 是的 是的 两个都 是的
+automatic_sp_privileges 是的 是的 是的 全球的 是的
+avoid_temporal_upgrade 是的 是的 是的 全球的 是的
+积压日志 是的 是的 是的 全球的 不
+基于目录 是的 是的 是的 全球的 不
+大表 是的 是的 是的 两个都 是的
+绑定地址 是的 是的 是的 全球的 不
+binlog_cache_size 是的 是的 是的 全球的 是的
+binlog_checksum 是的 是的 是的 全球的 是的
+binlog_direct_non_transactional_updates 是的 是的 是的 两个都 是的
+二进制日志加密 是的 是的 是的 全球的 是的
+binlog_error_action 是的 是的 是的 全球的 是的
+binlog_expire_logs_auto_purge 是的 是的 是的 全球的 是的
+binlog_expire_logs_seconds 是的 是的 是的 全球的 是的
+二进制日志格式 是的 是的 是的 两个都 是的
+binlog_group_commit_sync_delay 是的 是的 是的 全球的 是的
+binlog_group_commit_sync_no_delay_count 是的 是的 是的 全球的 是的
+binlog_gtid_simple_recovery 是的 是的 是的 全球的 不
+binlog_max_flush_queue_time 是的 是的 是的 全球的 是的
+binlog_order_commits 是的 是的 是的 全球的 是的
+binlog_rotate_encryption_master_key_at_startup 是的 是的 是的 全球的 不
+binlog_row_event_max_size 是的 是的 是的 全球的 不
+binlog_row_image 是的 是的 是的 两个都 是的
+binlog_row_metadata 是的 是的 是的 全球的 是的
+binlog_row_value_options 是的 是的 是的 两个都 是的
+binlog_rows_query_log_events 是的 是的 是的 两个都 是的
+binlog_stmt_cache_size 是的 是的 是的 全球的 是的
+binlog_transaction_compression 是的 是的 是的 两个都 是的
+binlog_transaction_compression_level_zstd 是的 是的 是的 两个都 是的
+binlog_transaction_dependency_history_size 是的 是的 是的 全球的 是的
+binlog_transaction_dependency_tracking 是的 是的 是的 全球的 是的
+块加密模式 是的 是的 是的 两个都 是的
+build_id 是的 全球的 不
+bulk_insert_buffer_size 是的 是的 是的 两个都 是的
+caching_sha2_password_auto_generate_rsa_keys 是的 是的 是的 全球的 不
+caching_sha2_password_digest_rounds 是的 是的 是的 全球的 不
+caching_sha2_password_private_key_path 是的 是的 是的 全球的 不
+caching_sha2_password_public_key_path 是的 是的 是的 全球的 不
+字符集客户端 是的 两个都 是的
+字符集连接 是的 两个都 是的
+字符集数据库 （注 1） 是的 两个都 是的
+字符集文件系统 是的 是的 是的 两个都 是的
+字符集结果 是的 两个都 是的
+字符集服务器 是的 是的 是的 两个都 是的
+字符集系统 是的 全球的 不
+字符集目录 是的 是的 是的 全球的 不
+检查代理用户 是的 是的 是的 全球的 是的
+clone_autotune_concurrency 是的 是的 是的 全球的 是的
+clone_block_ddl 是的 是的 是的 全球的 是的
+克隆缓冲区大小 是的 是的 是的 全球的 是的
+clone_ddl_timeout 是的 是的 是的 全球的 是的
+clone_delay_after_data_drop 是的 是的 是的 全球的 是的
+clone_donor_timeout_after_network_failure 是的 是的 是的 全球的 是的
+克隆启用压缩 是的 是的 是的 全球的 是的
+clone_max_concurrency 是的 是的 是的 全球的 是的
+克隆最大数据带宽 是的 是的 是的 全球的 是的
+克隆最大网络带宽 是的 是的 是的 全球的 是的
+clone_ssl_ca 是的 是的 是的 全球的 是的
+克隆证书 是的 是的 是的 全球的 是的
+clone_ssl_key 是的 是的 是的 全球的 是的
+clone_valid_donor_list 是的 是的 是的 全球的 是的
+排序规则连接 是的 两个都 是的
+collat​​ion_database （注释 1） 是的 两个都 是的
+整理服务器 是的 是的 是的 两个都 是的
+完成类型 是的 是的 是的 两个都 是的
+并发插入 是的 是的 是的 全球的 是的
+连接超时 是的 是的 是的 全球的 是的
+connection_control_failed_connections_threshold 是的 是的 是的 全球的 是的
+connection_control_max_connection_delay 是的 是的 是的 全球的 是的
+connection_control_min_connection_delay 是的 是的 是的 全球的 是的
+连接内存块大小 是的 是的 是的 两个都 是的
+连接内存限制 是的 是的 是的 两个都 是的
+核心文件 是的 全球的 不
+创建_admin_listener_thread 是的 是的 是的 全球的 不
+cte_max_recursion_depth 是的 是的 是的 两个都 是的
+daemon_memcached_enable_binlog 是的 是的 是的 全球的 不
+daemon_memcached_engine_lib_name 是的 是的 是的 全球的 不
+daemon_memcached_engine_lib_path 是的 是的 是的 全球的 不
+daemon_memcached_option 是的 是的 是的 全球的 不
+daemon_memcached_r_batch_size 是的 是的 是的 全球的 不
+daemon_memcached_w_batch_size 是的 是的 是的 全球的 不
+数据目录 是的 是的 是的 全球的 不
+调试 是的 是的 是的 两个都 是的
+调试同步 是的 会议 是的
+默认身份验证插件 是的 是的 是的 全球的 不
+default_collat​​ion_for_utf8mb4 是的 两个都 是的
+default_password_lifetime 是的 是的 是的 全球的 是的
+默认存储引擎 是的 是的 是的 两个都 是的
+默认表加密 是的 是的 是的 两个都 是的
+default_tmp_storage_engine 是的 是的 是的 两个都 是的
+默认周格式 是的 是的 是的 两个都 是的
+延迟_密钥_写入 是的 是的 是的 全球的 是的
+延迟插入限制 是的 是的 是的 全球的 是的
+延迟插入超时 是的 是的 是的 全球的 是的
+delayed_queue_size 是的 是的 是的 全球的 是的
+disabled_storage_engines 是的 是的 是的 全球的 不
+disconnect_on_expired_pa​​ssword 是的 是的 是的 全球的 不
+div_precision_increment 是的 是的 是的 两个都 是的
+dragnet.log_error_filter_rules 是的 是的 是的 全球的 是的
+end_markers_in_json 是的 是的 是的 两个都 是的
+enforce_gtid_consistency 是的 是的 是的 全球的 是的
+enterprise_encryption.maximum_rsa_key_size 是的 是的 是的 全球的 是的
+enterprise_encryption.rsa_support_legacy_padding 是的 是的 是的 全球的 是的
+eq_range_index_dive_limit 是的 是的 是的 两个都 是的
+错误计数 是的 会议 不
+事件调度器 是的 是的 是的 全球的 是的
+expire_logs_days 是的 是的 是的 全球的 是的
+explicit_defaults_for_timestamp 是的 是的 是的 两个都 是的
+外部用户 是的 会议 不
+齐平 是的 是的 是的 全球的 是的
+冲洗时间 是的 是的 是的 全球的 是的
+foreign_key_checks 是的 两个都 是的
+ft_boolean_syntax 是的 是的 是的 全球的 是的
+ft_max_word_len 是的 是的 是的 全球的 不
+ft_min_word_len 是的 是的 是的 全球的 不
+ft_query_expansion_limit 是的 是的 是的 全球的 不
+ft_stopword_file 是的 是的 是的 全球的 不
+一般日志 是的 是的 是的 全球的 是的
+一般日志文件 是的 是的 是的 全球的 是的
+generated_random_password_length 是的 是的 是的 两个都 是的
+全局连接内存限制 是的 是的 是的 全球的 是的
+global_connection_memory_tracking 是的 是的 是的 两个都 是的
+group_concat_max_len 是的 是的 是的 两个都 是的
+group_replication_advertise_recovery_endpoints 是的 是的 是的 全球的 是的
+group_replication_allow_local_lower_version_join 是的 是的 是的 全球的 是的
+group_replication_auto_increment_increment 是的 是的 是的 全球的 是的
+group_replication_autorejoin_tries 是的 是的 是的 全球的 是的
+group_replication_bootstrap_group 是的 是的 是的 全球的 是的
+group_replication_clone_threshold 是的 是的 是的 全球的 是的
+group_replication_communication_debug_options 是的 是的 是的 全球的 是的
+group_replication_communication_max_message_size 是的 是的 是的 全球的 是的
+group_replication_communication_stack 是的 全球的 不
+group_replication_components_stop_timeout 是的 是的 是的 全球的 是的
+group_replication_compression_threshold 是的 是的 是的 全球的 是的
+group_replication_consistency 是的 是的 是的 两个都 是的
+group_replication_enforce_update_everywhere_checks 是的 是的 是的 全球的 是的
+group_replication_exit_state_action 是的 是的 是的 全球的 是的
+group_replication_flow_control_applier_threshold 是的 是的 是的 全球的 是的
+group_replication_flow_control_certifier_threshold 是的 是的 是的 全球的 是的
+group_replication_flow_control_hold_percent 是的 是的 是的 全球的 是的
+group_replication_flow_control_max_commit_quota 是的 是的 是的 全球的 是的
+group_replication_flow_control_member_quota_percent 是的 是的 是的 全球的 是的
+group_replication_flow_control_min_quota 是的 是的 是的 全球的 是的
+group_replication_flow_control_min_recovery_quota 是的 是的 是的 全球的 是的
+group_replication_flow_control_mode 是的 是的 是的 全球的 是的
+group_replication_flow_control_period 是的 是的 是的 全球的 是的
+group_replication_flow_control_release_percent 是的 是的 是的 全球的 是的
+group_replication_force_members 是的 是的 是的 全球的 是的
+group_replication_group_name 是的 是的 是的 全球的 是的
+group_replication_group_seeds 是的 是的 是的 全球的 是的
+group_replication_gtid_assignment_block_size 是的 是的 是的 全球的 是的
+group_replication_ip_allowlist 是的 是的 是的 全球的 是的
+group_replication_ip_whitelist 是的 是的 是的 全球的 是的
+group_replication_local_address 是的 是的 是的 全球的 是的
+group_replication_member_expel_timeout 是的 是的 是的 全球的 是的
+group_replication_member_weight 是的 是的 是的 全球的 是的
+group_replication_message_cache_size 是的 是的 是的 全球的 是的
+group_replication_paxos_single_leader 是的 是的 是的 全球的 是的
+group_replication_poll_spin_loops 是的 是的 是的 全球的 是的
+group_replication_recovery_complete_at 是的 是的 是的 全球的 是的
+group_replication_recovery_compression_algorithms 是的 是的 是的 全球的 是的
+group_replication_recovery_get_public_key 是的 是的 是的 全球的 是的
+group_replication_recovery_public_key_path 是的 是的 是的 全球的 是的
+group_replication_recovery_reconnect_interval 是的 是的 是的 全球的 是的
+group_replication_recovery_retry_count 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_ca 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_capath 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_cert 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_cipher 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_crl 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_crlpath 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_key 是的 是的 是的 全球的 是的
+group_replication_recovery_ssl_verify_server_cert 是的 是的 是的 全球的 是的
+group_replication_recovery_tls_ciphersuites 是的 是的 是的 全球的 是的
+group_replication_recovery_tls_version 是的 是的 是的 全球的 是的
+group_replication_recovery_use_ssl 是的 是的 是的 全球的 是的
+group_replication_recovery_zstd_compression_level 是的 是的 是的 全球的 是的
+group_replication_single_primary_mode 是的 是的 是的 全球的 是的
+group_replication_ssl_mode 是的 是的 是的 全球的 是的
+group_replication_start_on_boot 是的 是的 是的 全球的 是的
+group_replication_tls_source 是的 是的 是的 全球的 是的
+group_replication_transaction_size_limit 是的 是的 是的 全球的 是的
+group_replication_unreachable_majority_timeout 是的 是的 是的 全球的 是的
+group_replication_view_change_uuid 是的 是的 是的 全球的 是的
+gtid_executed 是的 全球的 不
+gtid_executed_compression_period 是的 是的 是的 全球的 是的
+gtid_mode 是的 是的 是的 全球的 是的
+gtid_next 是的 会议 是的
+gtid_owned 是的 两个都 不
+gtid_purged 是的 全球的 是的
+压缩 是的 全球的 不
+have_dynamic_loading 是的 全球的 不
+有_几何 是的 全球的 不
+有_openssl 是的 全球的 不
+有_profiling 是的 全球的 不
+有查询缓存 是的 全球的 不
+有_rtree_keys 是的 全球的 不
+有_ssl 是的 全球的 不
+have_statement_timeout 是的 全球的 不
+有符号链接 是的 全球的 不
+histogram_generation_max_mem_size 是的 是的 是的 两个都 是的
+主机缓存大小 是的 是的 是的 全球的 是的
+主机名 是的 全球的 不
+身份 是的 会议 是的
+立即服务器版本 是的 会议 是的
+information_schema_stats_expiry 是的 是的 是的 两个都 是的
+初始化连接 是的 是的 是的 全球的 是的
+初始化文件 是的 是的 是的 全球的 不
+初始副本 是的 是的 是的 全球的 是的
+init_slave 是的 是的 是的 全球的 是的
+innodb_adaptive_flushing 是的 是的 是的 全球的 是的
+innodb_adaptive_flushing_lwm 是的 是的 是的 全球的 是的
+innodb_adaptive_hash_index 是的 是的 是的 全球的 是的
+innodb_adaptive_hash_index_parts 是的 是的 是的 全球的 不
+innodb_adaptive_max_sleep_delay 是的 是的 是的 全球的 是的
+innodb_api_bk_commit_interval 是的 是的 是的 全球的 是的
+innodb_api_disable_rowlock 是的 是的 是的 全球的 不
+innodb_api_enable_binlog 是的 是的 是的 全球的 不
+innodb_api_enable_mdl 是的 是的 是的 全球的 不
+innodb_api_trx_level 是的 是的 是的 全球的 是的
+innodb_autoextend_increment 是的 是的 是的 全球的 是的
+innodb_autoinc_lock_mode 是的 是的 是的 全球的 不
+innodb_background_drop_list_empty 是的 是的 是的 全球的 是的
+innodb_buffer_pool_chunk_size 是的 是的 是的 全球的 不
+innodb_buffer_pool_debug 是的 是的 是的 全球的 不
+innodb_buffer_pool_dump_at_shutdown 是的 是的 是的 全球的 是的
+innodb_buffer_pool_dump_now 是的 是的 是的 全球的 是的
+innodb_buffer_pool_dump_pct 是的 是的 是的 全球的 是的
+innodb_buffer_pool_filename 是的 是的 是的 全球的 是的
+innodb_buffer_pool_in_core_file 是的 是的 是的 全球的 是的
+innodb_buffer_pool_instances 是的 是的 是的 全球的 不
+innodb_buffer_pool_load_abort 是的 是的 是的 全球的 是的
+innodb_buffer_pool_load_at_startup 是的 是的 是的 全球的 不
+innodb_buffer_pool_load_now 是的 是的 是的 全球的 是的
+innodb_buffer_pool_size 是的 是的 是的 全球的 是的
+innodb_change_buffer_max_size 是的 是的 是的 全球的 是的
+innodb_change_buffering 是的 是的 是的 全球的 是的
+innodb_change_buffering_debug 是的 是的 是的 全球的 是的
+innodb_checkpoint_disabled 是的 是的 是的 全球的 是的
+innodb_checksum_algorithm 是的 是的 是的 全球的 是的
+innodb_cmp_per_index_enabled 是的 是的 是的 全球的 是的
+innodb_commit_concurrency 是的 是的 是的 全球的 是的
+innodb_compress_debug 是的 是的 是的 全球的 是的
+innodb_compression_failure_threshold_pct 是的 是的 是的 全球的 是的
+innodb_compression_level 是的 是的 是的 全球的 是的
+innodb_compression_pad_pct_max 是的 是的 是的 全球的 是的
+innodb_concurrency_tickets 是的 是的 是的 全球的 是的
+innodb_data_file_path 是的 是的 是的 全球的 不
+innodb_data_home_dir 是的 是的 是的 全球的 不
+innodb_ddl_buffer_size 是的 是的 是的 两个都 是的
+innodb_ddl_log_crash_reset_debug 是的 是的 是的 全球的 是的
+innodb_ddl_threads 是的 是的 是的 两个都 是的
+innodb_deadlock_detect 是的 是的 是的 全球的 是的
+innodb_dedicated_server 是的 是的 是的 全球的 不
+innodb_default_row_format 是的 是的 是的 全球的 是的
+innodb_directories 是的 是的 是的 全球的 不
+innodb_disable_sort_file_cache 是的 是的 是的 全球的 是的
+innodb_doublewrite 是的 是的 是的 全球的 变化
+innodb_doublewrite_batch_size 是的 是的 是的 全球的 不
+innodb_doublewrite_dir 是的 是的 是的 全球的 不
+innodb_doublewrite_files 是的 是的 是的 全球的 不
+innodb_doublewrite_pages 是的 是的 是的 全球的 不
+innodb_extend_and_initialize 是的 是的 是的 全球的 是的
+innodb_fast_shutdown 是的 是的 是的 全球的 是的
+innodb_fil_make_page_dirty_debug 是的 是的 是的 全球的 是的
+innodb_file_per_table 是的 是的 是的 全球的 是的
+innodb_fill_factor 是的 是的 是的 全球的 是的
+innodb_flush_log_at_timeout 是的 是的 是的 全球的 是的
+innodb_flush_log_at_trx_commit 是的 是的 是的 全球的 是的
+innodb_flush_method 是的 是的 是的 全球的 不
+innodb_flush_neighbors 是的 是的 是的 全球的 是的
+innodb_flush_sync 是的 是的 是的 全球的 是的
+innodb_flushing_avg_loops 是的 是的 是的 全球的 是的
+innodb_force_load_corrupted 是的 是的 是的 全球的 不
+innodb_force_recovery 是的 是的 是的 全球的 不
+innodb_fsync_threshold 是的 是的 是的 全球的 是的
+innodb_ft_aux_table 是的 全球的 是的
+innodb_ft_cache_size 是的 是的 是的 全球的 不
+innodb_ft_enable_diag_print 是的 是的 是的 全球的 是的
+innodb_ft_enable_stopword 是的 是的 是的 两个都 是的
+innodb_ft_max_token_size 是的 是的 是的 全球的 不
+innodb_ft_min_token_size 是的 是的 是的 全球的 不
+innodb_ft_num_word_optimize 是的 是的 是的 全球的 是的
+innodb_ft_result_cache_limit 是的 是的 是的 全球的 是的
+innodb_ft_server_stopword_table 是的 是的 是的 全球的 是的
+innodb_ft_sort_pll_degree 是的 是的 是的 全球的 不
+innodb_ft_total_cache_size 是的 是的 是的 全球的 不
+innodb_ft_user_stopword_table 是的 是的 是的 两个都 是的
+innodb_idle_flush_pct 是的 是的 是的 全球的 是的
+innodb_io_capacity 是的 是的 是的 全球的 是的
+innodb_io_capacity_max 是的 是的 是的 全球的 是的
+innodb_limit_optimistic_insert_debug 是的 是的 是的 全球的 是的
+innodb_lock_wait_timeout 是的 是的 是的 两个都 是的
+innodb_log_buffer_size 是的 是的 是的 全球的 变化
+innodb_log_checkpoint_fuzzy_now 是的 是的 是的 全球的 是的
+innodb_log_checkpoint_now 是的 是的 是的 全球的 是的
+innodb_log_checksums 是的 是的 是的 全球的 是的
+innodb_log_compressed_pa​​ges 是的 是的 是的 全球的 是的
+innodb_log_file_size 是的 是的 是的 全球的 不
+innodb_log_files_in_group 是的 是的 是的 全球的 不
+innodb_log_group_home_dir 是的 是的 是的 全球的 不
+innodb_log_spin_cpu_abs_lwm 是的 是的 是的 全球的 是的
+innodb_log_spin_cpu_pct_hwm 是的 是的 是的 全球的 是的
+innodb_log_wait_for_flush_spin_hwm 是的 是的 是的 全球的 是的
+innodb_log_write_ahead_size 是的 是的 是的 全球的 是的
+innodb_log_writer_threads 是的 是的 是的 全球的 是的
+innodb_lru_scan_depth 是的 是的 是的 全球的 是的
+innodb_max_dirty_pages_pct 是的 是的 是的 全球的 是的
+innodb_max_dirty_pages_pct_lwm 是的 是的 是的 全球的 是的
+innodb_max_purge_lag 是的 是的 是的 全球的 是的
+innodb_max_purge_lag_delay 是的 是的 是的 全球的 是的
+innodb_max_undo_log_size 是的 是的 是的 全球的 是的
+innodb_merge_threshold_set_all_debug 是的 是的 是的 全球的 是的
+innodb_monitor_disable 是的 是的 是的 全球的 是的
+innodb_monitor_enable 是的 是的 是的 全球的 是的
+innodb_monitor_reset 是的 是的 是的 全球的 是的
+innodb_monitor_reset_all 是的 是的 是的 全球的 是的
+innodb_numa_interleave 是的 是的 是的 全球的 不
+innodb_old_blocks_pct 是的 是的 是的 全球的 是的
+innodb_old_blocks_time 是的 是的 是的 全球的 是的
+innodb_online_alter_log_max_size 是的 是的 是的 全球的 是的
+innodb_open_files 是的 是的 是的 全球的 变化
+innodb_optimize_fulltext_only 是的 是的 是的 全球的 是的
+innodb_page_cleaners 是的 是的 是的 全球的 不
+innodb_page_size 是的 是的 是的 全球的 不
+innodb_parallel_read_threads 是的 是的 是的 会议 是的
+innodb_print_all_deadlocks 是的 是的 是的 全球的 是的
+innodb_print_ddl_logs 是的 是的 是的 全球的 是的
+innodb_purge_batch_size 是的 是的 是的 全球的 是的
+innodb_purge_rseg_truncate_frequency 是的 是的 是的 全球的 是的
+innodb_purge_threads 是的 是的 是的 全球的 不
+innodb_random_read_ahead 是的 是的 是的 全球的 是的
+innodb_read_ahead_threshold 是的 是的 是的 全球的 是的
+innodb_read_io_threads 是的 是的 是的 全球的 不
+innodb_read_only 是的 是的 是的 全球的 不
+innodb_redo_log_archive_dirs 是的 是的 是的 全球的 是的
+innodb_redo_log_capacity 是的 是的 是的 全球的 是的
+innodb_redo_log_encrypt 是的 是的 是的 全球的 是的
+innodb_replication_delay 是的 是的 是的 全球的 是的
+innodb_rollback_on_timeout 是的 是的 是的 全球的 不
+innodb_rollback_segments 是的 是的 是的 全球的 是的
+innodb_saved_pa​​ge_number_debug 是的 是的 是的 全球的 是的
+innodb_segment_reserve_factor 是的 是的 是的 全球的 是的
+innodb_sort_buffer_size 是的 是的 是的 全球的 不
+innodb_spin_wait_delay 是的 是的 是的 全球的 是的
+innodb_spin_wait_pause_multiplier 是的 是的 是的 全球的 是的
+innodb_stats_auto_recalc 是的 是的 是的 全球的 是的
+innodb_stats_include_delete_marked 是的 是的 是的 全球的 是的
+innodb_stats_method 是的 是的 是的 全球的 是的
+innodb_stats_on_metadata 是的 是的 是的 全球的 是的
+innodb_stats_persistent 是的 是的 是的 全球的 是的
+innodb_stats_persistent_sample_pages 是的 是的 是的 全球的 是的
+innodb_stats_transient_sample_pages 是的 是的 是的 全球的 是的
+innodb_status_output 是的 是的 是的 全球的 是的
+innodb_status_output_locks 是的 是的 是的 全球的 是的
+innodb_strict_mode 是的 是的 是的 两个都 是的
+innodb_sync_array_size 是的 是的 是的 全球的 不
+innodb_sync_debug 是的 是的 是的 全球的 不
+innodb_sync_spin_loops 是的 是的 是的 全球的 是的
+innodb_table_locks 是的 是的 是的 两个都 是的
+innodb_temp_data_file_path 是的 是的 是的 全球的 不
+innodb_temp_tablespaces_dir 是的 是的 是的 全球的 不
+innodb_thread_concurrency 是的 是的 是的 全球的 是的
+innodb_thread_sleep_delay 是的 是的 是的 全球的 是的
+innodb_tmpdir 是的 是的 是的 两个都 是的
+innodb_trx_purge_view_update_only_debug 是的 是的 是的 全球的 是的
+innodb_trx_rseg_n_slots_debug 是的 是的 是的 全球的 是的
+innodb_undo_directory 是的 是的 是的 全球的 不
+innodb_undo_log_encrypt 是的 是的 是的 全球的 是的
+innodb_undo_log_truncate 是的 是的 是的 全球的 是的
+innodb_undo_tablespaces 是的 是的 是的 全球的 变化
+innodb_use_fdatasync 是的 是的 是的 全球的 是的
+innodb_use_native_aio 是的 是的 是的 全球的 不
+innodb_validate_tablespace_paths 是的 是的 是的 全球的 不
+innodb_version 是的 全球的 不
+innodb_write_io_threads 是的 是的 是的 全球的 不
+insert_id 是的 会议 是的
+交互超时 是的 是的 是的 两个都 是的
+internal_tmp_disk_storage_engine 是的 是的 是的 全球的 是的
+internal_tmp_mem_storage_engine 是的 是的 是的 两个都 是的
+join_buffer_size 是的 是的 是的 两个都 是的
+keep_files_on_create 是的 是的 是的 两个都 是的
+key_buffer_size 是的 是的 是的 全球的 是的
+key_cache_age_threshold 是的 是的 是的 全球的 是的
+key_cache_block_size 是的 是的 是的 全球的 是的
+key_cache_division_limit 是的 是的 是的 全球的 是的
+keyring_aws_cmk_id 是的 是的 是的 全球的 是的
+keyring_aws_conf_file 是的 是的 是的 全球的 不
+keyring_aws_data_file 是的 是的 是的 全球的 不
+keyring_aws_region 是的 是的 是的 全球的 是的
+keyring_encrypted_file_data 是的 是的 是的 全球的 是的
+keyring_encrypted_file_password 是的 是的 是的 全球的 是的
+密钥环文件数据 是的 是的 是的 全球的 是的
+keyring_hashicorp_auth_path 是的 是的 是的 全球的 是的
+keyring_hashicorp_ca_path 是的 是的 是的 全球的 是的
+keyring_hashicorp_caching 是的 是的 是的 全球的 是的
+keyring_hashicorp_commit_auth_path 是的 全球的 不
+keyring_hashicorp_commit_ca_path 是的 全球的 不
+keyring_hashicorp_commit_caching 是的 全球的 不
+keyring_hashicorp_commit_role_id 是的 全球的 不
+keyring_hashicorp_commit_server_url 是的 全球的 不
+keyring_hashicorp_commit_store_path 是的 全球的 不
+keyring_hashicorp_role_id 是的 是的 是的 全球的 是的
+keyring_hashicorp_secret_id 是的 是的 是的 全球的 是的
+keyring_hashicorp_server_url 是的 是的 是的 全球的 是的
+keyring_hashicorp_store_path 是的 是的 是的 全球的 是的
+keyring_oci_ca_certificate 是的 是的 是的 全球的 不
+keyring_oci_compartment 是的 是的 是的 全球的 不
+keyring_oci_encryption_endpoint 是的 是的 是的 全球的 不
+keyring_oci_key_file 是的 是的 是的 全球的 不
+keyring_oci_key_fingerprint 是的 是的 是的 全球的 不
+keyring_oci_management_endpoint 是的 是的 是的 全球的 不
+keyring_oci_master_key 是的 是的 是的 全球的 不
+keyring_oci_secrets_endpoint 是的 是的 是的 全球的 不
+keyring_oci_tenancy 是的 是的 是的 全球的 不
+keyring_oci_user 是的 是的 是的 全球的 不
+keyring_oci_vaults_endpoint 是的 是的 是的 全球的 不
+keyring_oci_virtual_vault 是的 是的 是的 全球的 不
+keyring_okv_conf_dir 是的 是的 是的 全球的 是的
+密钥环操作 是的 全球的 是的
+语 是的 是的 是的 全球的 不
+大文件支持 是的 全球的 不
+大页大小 是的 全球的 不
+大页 是的 是的 是的 全球的 不
+last_insert_id 是的 会议 是的
+lc_消息 是的 是的 是的 两个都 是的
+lc_messages_dir 是的 是的 是的 全球的 不
+lc_time_names 是的 是的 是的 两个都 是的
+执照 是的 全球的 不
+本地文件 是的 是的 是的 全球的 是的
+锁单 是的 是的 是的 全球的 不
+lock_order_debug_loop 是的 是的 是的 全球的 不
+lock_order_debug_missing_arc 是的 是的 是的 全球的 不
+lock_order_debug_missing_key 是的 是的 是的 全球的 不
+lock_order_debug_missing_unlock 是的 是的 是的 全球的 不
+lock_order_dependencies 是的 是的 是的 全球的 不
+lock_order_extra_dependencies 是的 是的 是的 全球的 不
+lock_order_output_directory 是的 是的 是的 全球的 不
+lock_order_print_txt 是的 是的 是的 全球的 不
+lock_order_trace_loop 是的 是的 是的 全球的 不
+lock_order_trace_missing_arc 是的 是的 是的 全球的 不
+lock_order_trace_missing_key 是的 是的 是的 全球的 不
+lock_order_trace_missing_unlock 是的 是的 是的 全球的 不
+锁定等待超时 是的 是的 是的 两个都 是的
+locked_in_memory 是的 全球的 不
+log_bin 是的 全球的 不
+log_bin_basename 是的 全球的 不
+log_bin_index 是的 是的 是的 全球的 不
+log_bin_trust_function_creators 是的 是的 是的 全球的 是的
+log_bin_use_v1_row_events 是的 是的 是的 全球的 是的
+日志错误 是的 是的 是的 全球的 不
+日志错误服务 是的 是的 是的 全球的 是的
+log_error_suppression_list 是的 是的 是的 全球的 是的
+log_error_verbosity 是的 是的 是的 全球的 是的
+日志输出 是的 是的 是的 全球的 是的
+log_queries_not_using_indexes 是的 是的 是的 全球的 是的
+log_raw 是的 是的 是的 全球的 是的
+log_replica_updates 是的 是的 是的 全球的 不
+log_slave_updates 是的 是的 是的 全球的 不
+log_slow_admin_statements 是的 是的 是的 全球的 是的
+log_slow_extra 是的 是的 是的 全球的 是的
+log_slow_replica_statements 是的 是的 是的 全球的 是的
+log_slow_slave_statements 是的 是的 是的 全球的 是的
+log_statements_unsafe_for_binlog 是的 是的 是的 全球的 是的
+log_syslog 是的 是的 是的 全球的 是的
+log_syslog_facility 是的 是的 是的 全球的 是的
+log_syslog_include_pid 是的 是的 是的 全球的 是的
+log_syslog_tag 是的 是的 是的 全球的 是的
+log_throttle_queries_not_using_indexes 是的 是的 是的 全球的 是的
+log_timestamps 是的 是的 是的 全球的 是的
+long_query_time 是的 是的 是的 两个都 是的
+低优先级更新 是的 是的 是的 两个都 是的
+小写字母文件系统 是的 全球的 不
+lower_case_table_names 是的 是的 是的 全球的 不
+强制角色 是的 是的 是的 全球的 是的
+master_info_repository 是的 是的 是的 全球的 是的
+master_verify_checksum 是的 是的 是的 全球的 是的
+最大允许数据包 是的 是的 是的 两个都 是的
+最大二进制日志缓存大小 是的 是的 是的 全球的 是的
+最大二进制日志大小 是的 是的 是的 全球的 是的
+max_binlog_stmt_cache_size 是的 是的 是的 全球的 是的
+最大连接错误 是的 是的 是的 全球的 是的
+最大连接数 是的 是的 是的 全球的 是的
+最大延迟线程数 是的 是的 是的 两个都 是的
+最大摘要长度 是的 是的 是的 全球的 不
+最大错误计数 是的 是的 是的 两个都 是的
+最大执行时间 是的 是的 是的 两个都 是的
+最大堆表大小 是的 是的 是的 两个都 是的
+max_insert_delayed_threads 是的 两个都 是的
+最大连接大小 是的 是的 是的 两个都 是的
+max_length_for_sort_data 是的 是的 是的 两个都 是的
+max_points_in_geometry 是的 是的 是的 两个都 是的
+max_prepared_stmt_count 是的 是的 是的 全球的 是的
+最大中继日志大小 是的 是的 是的 全球的 是的
+max_seeks_for_key 是的 是的 是的 两个都 是的
+最大排序长度 是的 是的 是的 两个都 是的
+max_sp_recursion_depth 是的 是的 是的 两个都 是的
+最大用户连接数 是的 是的 是的 两个都 是的
+max_write_lock_count 是的 是的 是的 全球的 是的
+mecab_rc_file 是的 是的 是的 全球的 不
+metadata_locks_cache_size 是的 是的 是的 全球的 不
+metadata_locks_hash_instances 是的 是的 是的 全球的 不
+min_examined_row_limit 是的 是的 是的 两个都 是的
+myisam_data_pointer_size 是的 是的 是的 全球的 是的
+myisam_max_sort_file_size 是的 是的 是的 全球的 是的
+myisam_mmap_size 是的 是的 是的 全球的 不
+myisam_recover_options 是的 是的 是的 全球的 不
+myisam_repair_threads 是的 是的 是的 两个都 是的
+myisam_sort_buffer_size 是的 是的 是的 两个都 是的
+myisam_stats_method 是的 是的 是的 两个都 是的
+myisam_use_mmap 是的 是的 是的 全球的 是的
+mysql_firewall_mode 是的 是的 是的 全球的 是的
+mysql_firewall_trace 是的 是的 是的 全球的 是的
+mysql_native_password_proxy_users 是的 是的 是的 全球的 是的
+mysqlx_bind_address 是的 是的 是的 全球的 不
+mysqlx_compression_algorithms 是的 是的 是的 全球的 是的
+mysqlx_connect_timeout 是的 是的 是的 全球的 是的
+mysqlx_deflate_default_compression_level 是的 是的 是的 全球的 是的
+mysqlx_deflate_max_client_compression_level 是的 是的 是的 全球的 是的
+mysqlx_document_id_unique_prefix 是的 是的 是的 全球的 是的
+mysqlx_enable_hello_notice 是的 是的 是的 全球的 是的
+mysqlx_idle_worker_thread_timeout 是的 是的 是的 全球的 是的
+mysqlx_interactive_timeout 是的 是的 是的 全球的 是的
+mysqlx_lz4_default_compression_level 是的 是的 是的 全球的 是的
+mysqlx_lz4_max_client_compression_level 是的 是的 是的 全球的 是的
+mysqlx_max_allowed_pa​​cket 是的 是的 是的 全球的 是的
+mysqlx_max_connections 是的 是的 是的 全球的 是的
+mysqlx_min_worker_threads 是的 是的 是的 全球的 是的
+mysqlx_port 是的 是的 是的 全球的 不
+mysqlx_port_open_timeout 是的 是的 是的 全球的 不
+mysqlx_read_timeout 是的 是的 是的 会议 是的
+mysqlx_socket 是的 是的 是的 全球的 不
+mysqlx_ssl_ca 是的 是的 是的 全球的 不
+mysqlx_ssl_capath 是的 是的 是的 全球的 不
+mysqlx_ssl_cert 是的 是的 是的 全球的 不
+mysqlx_ssl_cipher 是的 是的 是的 全球的 不
+mysqlx_ssl_crl 是的 是的 是的 全球的 不
+mysqlx_ssl_crlpath 是的 是的 是的 全球的 不
+mysqlx_ssl_key 是的 是的 是的 全球的 不
+mysqlx_wait_timeout 是的 是的 是的 会议 是的
+mysqlx_write_timeout 是的 是的 是的 会议 是的
+mysqlx_zstd_default_compression_level 是的 是的 是的 全球的 是的
+mysqlx_zstd_max_client_compression_level 是的 是的 是的 全球的 是的
+命名管道 是的 是的 是的 全球的 不
+named_pipe_full_access_group 是的 是的 是的 全球的 不
+ndb_allow_copying_alter_table 是的 是的 是的 两个都 是的
+ndb_applier_allow_skip_epoch 是的 是的 是的 全球的 不
+ndb_autoincrement_prefetch_sz 是的 是的 是的 两个都 是的
+ndb_batch_size 是的 是的 是的 全球的 不
+ndb_blob_read_batch_bytes 是的 是的 是的 两个都 是的
+ndb_blob_write_batch_bytes 是的 是的 是的 两个都 是的
+ndb_cache_check_time 是的 是的 是的 全球的 是的
+ndb_clear_apply_status 是的 是的 全球的 是的
+ndb_cluster_connection_pool 是的 是的 是的 全球的 不
+ndb_cluster_connection_pool_nodeids 是的 是的 是的 全球的 不
+ndb_conflict_role 是的 是的 是的 全球的 是的
+ndb_data_node_neighbor 是的 是的 是的 全球的 是的
+ndb_dbg_check_shares 是的 是的 是的 两个都 是的
+ndb_default_column_format 是的 是的 是的 全球的 是的
+ndb_default_column_format 是的 是的 是的 全球的 是的
+ndb_deferred_constraints 是的 是的 是的 两个都 是的
+ndb_deferred_constraints 是的 是的 是的 两个都 是的
+ndb_distribution 是的 是的 是的 全球的 是的
+ndb_distribution 是的 是的 是的 全球的 是的
+ndb_eventbuffer_free_percent 是的 是的 是的 全球的 是的
+ndb_eventbuffer_max_alloc 是的 是的 是的 全球的 是的
+ndb_extra_logging 是的 是的 是的 全球的 是的
+ndb_force_send 是的 是的 是的 两个都 是的
+ndb_fully_replicated 是的 是的 是的 两个都 是的
+ndb_index_stat_enable 是的 是的 是的 两个都 是的
+ndb_index_stat_option 是的 是的 是的 两个都 是的
+ndb_join_pushdown 是的 两个都 是的
+ndb_log_apply_status 是的 是的 是的 全球的 不
+ndb_log_apply_status 是的 是的 是的 全球的 不
+ndb_log_bin 是的 是的 两个都 不
+ndb_log_binlog_index 是的 是的 全球的 是的
+ndb_log_empty_epochs 是的 是的 是的 全球的 是的
+ndb_log_empty_epochs 是的 是的 是的 全球的 是的
+ndb_log_empty_update 是的 是的 是的 全球的 是的
+ndb_log_empty_update 是的 是的 是的 全球的 是的
+ndb_log_exclusive_reads 是的 是的 是的 两个都 是的
+ndb_log_exclusive_reads 是的 是的 是的 两个都 是的
+ndb_log_fail_terminate 是的 是的 是的 全球的 不
+ndb_log_orig 是的 是的 是的 全球的 不
+ndb_log_orig 是的 是的 是的 全球的 不
+ndb_log_transaction_compression 是的 是的 是的 全球的 是的
+ndb_log_transaction_compression_level_zstd 是的 是的 是的 全球的 是的
+ndb_log_transaction_id 是的 是的 是的 全球的 不
+ndb_log_transaction_id 是的 全球的 不
+ndb_log_update_as_write 是的 是的 是的 全球的 是的
+ndb_log_update_minimal 是的 是的 是的 全球的 是的
+ndb_log_updated_only 是的 是的 是的 全球的 是的
+ndb_metadata_check 是的 是的 是的 全球的 是的
+ndb_metadata_check_interval 是的 是的 是的 全球的 是的
+ndb_metadata_sync 是的 全球的 是的
+ndb_optimization_delay 是的 是的 是的 全球的 是的
+ndb_optimized_node_selection 是的 是的 是的 全球的 不
+ndb_read_backup 是的 是的 是的 全球的 是的
+ndb_recv_thread_activation_threshold 是的 是的 是的 全球的 是的
+ndb_recv_thread_cpu_mask 是的 是的 是的 全球的 是的
+ndb_replica_batch_size 是的 是的 是的 全球的 是的
+ndb_replica_blob_write_batch_bytes 是的 是的 是的 全球的 是的
+Ndb_replica_max_replicated_epoch 是的 全球的 不
+ndb_report_thresh_binlog_epoch_slip 是的 是的 是的 全球的 是的
+ndb_report_thresh_binlog_mem_usage 是的 是的 是的 全球的 是的
+ndb_row_checksum 是的 两个都 是的
+ndb_schema_dist_lock_wait_timeout 是的 是的 是的 全球的 是的
+ndb_schema_dist_timeout 是的 是的 是的 全球的 不
+ndb_schema_dist_timeout 是的 是的 是的 全球的 不
+ndb_schema_dist_upgrade_allowed 是的 是的 是的 全球的 不
+ndb_show_foreign_key_mock_tables 是的 是的 是的 全球的 是的
+ndb_slave_conflict_role 是的 是的 是的 全球的 是的
+Ndb_system_name 是的 全球的 不
+ndb_table_no_logging 是的 会议 是的
+ndb_table_temporary 是的 会议 是的
+ndb_use_copying_alter_table 是的 两个都 不
+ndb_use_exact_count 是的 两个都 是的
+ndb_use_transactions 是的 是的 是的 两个都 是的
+ndb_version 是的 全球的 不
+ndb_version_string 是的 全球的 不
+ndb_wait_connected 是的 是的 是的 全球的 不
+ndb_wait_setup 是的 是的 是的 全球的 不
+ndbinfo_数据库 是的 全球的 不
+ndbinfo_max_bytes 是的 是的 两个都 是的
+ndbinfo_max_rows 是的 是的 两个都 是的
+ndbinfo_offline 是的 全球的 是的
+ndbinfo_show_hidden 是的 是的 两个都 是的
+ndbinfo_table_prefix 是的 全球的 不
+ndbinfo_version 是的 全球的 不
+净缓冲区长度 是的 是的 是的 两个都 是的
+网络读取超时 是的 是的 是的 两个都 是的
+net_retry_count 是的 是的 是的 两个都 是的
+网络写入超时 是的 是的 是的 两个都 是的
+新的 是的 是的 是的 两个都 是的
+ngram_token_size 是的 是的 是的 全球的 不
+离线模式 是的 是的 是的 全球的 是的
+老的 是的 是的 是的 全球的 不
+old_alter_table 是的 是的 是的 两个都 是的
+open_files_limit 是的 是的 是的 全球的 不
+optimizer_prune_level 是的 是的 是的 两个都 是的
+优化器搜索深度 是的 是的 是的 两个都 是的
+优化器开关 是的 是的 是的 两个都 是的
+优化器跟踪 是的 是的 是的 两个都 是的
+优化器_trace_features 是的 是的 是的 两个都 是的
+optimizer_trace_limit 是的 是的 是的 两个都 是的
+optimizer_trace_max_mem_size 是的 是的 是的 两个都 是的
+optimizer_trace_offset 是的 是的 是的 两个都 是的
+original_commit_timestamp 是的 会议 是的
+原始服务器版本 是的 会议 是的
+parser_max_mem_size 是的 是的 是的 两个都 是的
+部分撤销 是的 是的 是的 全球的 是的
+密码历史 是的 是的 是的 全球的 是的
+password_require_current 是的 是的 是的 全球的 是的
+password_reuse_interval 是的 是的 是的 全球的 是的
+性能模式 是的 是的 是的 全球的 不
+performance_schema_accounts_size 是的 是的 是的 全球的 不
+performance_schema_digests_size 是的 是的 是的 全球的 不
+performance_schema_error_size 是的 是的 是的 全球的 不
+performance_schema_events_stages_history_long_size 是的 是的 是的 全球的 不
+performance_schema_events_stages_history_size 是的 是的 是的 全球的 不
+performance_schema_events_statements_history_long_size 是的 是的 是的 全球的 不
+performance_schema_events_statements_history_size 是的 是的 是的 全球的 不
+performance_schema_events_transactions_history_long_size 是的 是的 是的 全球的 不
+performance_schema_events_transactions_history_size 是的 是的 是的 全球的 不
+performance_schema_events_waits_history_long_size 是的 是的 是的 全球的 不
+performance_schema_events_waits_history_size 是的 是的 是的 全球的 不
+performance_schema_hosts_size 是的 是的 是的 全球的 不
+performance_schema_max_cond_classes 是的 是的 是的 全球的 不
+performance_schema_max_cond_instances 是的 是的 是的 全球的 不
+performance_schema_max_digest_length 是的 是的 是的 全球的 不
+performance_schema_max_digest_sample_age 是的 是的 是的 全球的 是的
+performance_schema_max_file_classes 是的 是的 是的 全球的 不
+performance_schema_max_file_handles 是的 是的 是的 全球的 不
+performance_schema_max_file_instances 是的 是的 是的 全球的 不
+performance_schema_max_index_stat 是的 是的 是的 全球的 不
+performance_schema_max_memory_classes 是的 是的 是的 全球的 不
+performance_schema_max_metadata_locks 是的 是的 是的 全球的 不
+performance_schema_max_mutex_classes 是的 是的 是的 全球的 不
+performance_schema_max_mutex_instances 是的 是的 是的 全球的 不
+performance_schema_max_prepared_statements_instances 是的 是的 是的 全球的 不
+performance_schema_max_program_instances 是的 是的 是的 全球的 不
+performance_schema_max_rwlock_classes 是的 是的 是的 全球的 不
+performance_schema_max_rwlock_instances 是的 是的 是的 全球的 不
+performance_schema_max_socket_classes 是的 是的 是的 全球的 不
+performance_schema_max_socket_instances 是的 是的 是的 全球的 不
+performance_schema_max_sql_text_length 是的 是的 是的 全球的 不
+performance_schema_max_stage_classes 是的 是的 是的 全球的 不
+performance_schema_max_statement_classes 是的 是的 是的 全球的 不
+performance_schema_max_statement_stack 是的 是的 是的 全球的 不
+performance_schema_max_table_handles 是的 是的 是的 全球的 不
+performance_schema_max_table_instances 是的 是的 是的 全球的 不
+performance_schema_max_table_lock_stat 是的 是的 是的 全球的 不
+performance_schema_max_thread_classes 是的 是的 是的 全球的 不
+performance_schema_max_thread_instances 是的 是的 是的 全球的 不
+performance_schema_session_connect_attrs_size 是的 是的 是的 全球的 不
+performance_schema_setup_actors_size 是的 是的 是的 全球的 不
+performance_schema_setup_objects_size 是的 是的 是的 全球的 不
+performance_schema_show_processlist 是的 是的 是的 全球的 是的
+performance_schema_users_size 是的 是的 是的 全球的 不
+persist_only_admin_x509_subject 是的 是的 是的 全球的 不
+persist_sensitive_variables_in_plaintext 是的 是的 是的 全球的 不
+persisted_globals_load 是的 是的 是的 全球的 不
+pid_文件 是的 是的 是的 全球的 不
+插件目录 是的 是的 是的 全球的 不
+插件加载 是的 是的 是的 全球的 不
+plugin_load_add 是的 是的 是的 全球的 不
+港口 是的 是的 是的 全球的 不
+预加载缓冲区大小 是的 是的 是的 两个都 是的
+print_identified_with_as_hex 是的 是的 是的 两个都 是的
+剖析 是的 两个都 是的
+profiling_history_size 是的 是的 是的 两个都 是的
+协议压缩算法 是的 是的 是的 全球的 是的
+协议版本 是的 全球的 不
+代理用户 是的 会议 不
+伪副本模式 是的 会议 是的
+伪从机模式 是的 会议 是的
+伪线程标识 是的 会议 是的
+query_alloc_block_size 是的 是的 是的 两个都 是的
+query_prealloc_size 是的 是的 是的 两个都 是的
+rand_seed1 是的 会议 是的
+rand_seed2 是的 会议 是的
+范围分配块大小 是的 是的 是的 两个都 是的
+range_optimizer_max_mem_size 是的 是的 是的 两个都 是的
+rbr_exec_mode 是的 会议 是的
+读缓冲区大小 是的 是的 是的 两个都 是的
+只读 是的 是的 是的 全球的 是的
+read_rnd_buffer_size 是的 是的 是的 两个都 是的
+regexp_stack_limit 是的 是的 是的 全球的 是的
+regexp_time_limit 是的 是的 是的 全球的 是的
+中继日志 是的 是的 是的 全球的 不
+relay_log_basename 是的 全球的 不
+中继日志索引 是的 是的 是的 全球的 不
+中继日志信息文件 是的 是的 是的 全球的 不
+中继日志信息存储库 是的 是的 是的 全球的 是的
+中继日志清除 是的 是的 是的 全球的 是的
+中继日志恢复 是的 是的 是的 全球的 不
+中继日志空间限制 是的 是的 是的 全球的 不
+replica_allow_batching 是的 是的 是的 全球的 是的
+replica_checkpoint_group 是的 是的 是的 全球的 是的
+replica_checkpoint_period 是的 是的 是的 全球的 是的
+副本压缩协议 是的 是的 是的 全球的 是的
+replica_exec_mode 是的 是的 是的 全球的 是的
+replica_load_tmpdir 是的 是的 是的 全球的 不
+replica_max_allowed_pa​​cket 是的 是的 是的 全球的 是的
+replica_net_timeout 是的 是的 是的 全球的 是的
+replica_parallel_type 是的 是的 是的 全球的 是的
+replica_parallel_workers 是的 是的 是的 全球的 是的
+replica_pending_jobs_size_max 是的 是的 是的 全球的 是的
+replica_preserve_commit_order 是的 是的 是的 全球的 是的
+副本跳过错误 是的 是的 是的 全球的 不
+replica_sql_verify_checksum 是的 是的 是的 全球的 是的
+副本交易重试 是的 是的 是的 全球的 是的
+replica_type_conversions 是的 是的 是的 全球的 是的
+replication_optimize_for_static_plugin_config 是的 是的 是的 全球的 是的
+replication_sender_observe_commit_only 是的 是的 是的 全球的 是的
+报告主机 是的 是的 是的 全球的 不
+报告密码 是的 是的 是的 全球的 不
+报告端口 是的 是的 是的 全球的 不
+报告用户 是的 是的 是的 全球的 不
+要求行格式 是的 会议 是的
+要求安全传输 是的 是的 是的 全球的 是的
+结果集元数据 是的 会议 是的
+启用重写器 是的 全球的 是的
+rewriter_enabled_for_threads_without_privilege_checks 是的 全球的 是的
+重写器_详细 是的 全球的 是的
+rpl_read_size 是的 是的 是的 全球的 是的
+rpl_semi_sync_master_enabled 是的 是的 是的 全球的 是的
+rpl_semi_sync_master_timeout 是的 是的 是的 全球的 是的
+rpl_semi_sync_master_trace_level 是的 是的 是的 全球的 是的
+rpl_semi_sync_master_wait_for_slave_count 是的 是的 是的 全球的 是的
+rpl_semi_sync_master_wait_no_slave 是的 是的 是的 全球的 是的
+rpl_semi_sync_master_wait_point 是的 是的 是的 全球的 是的
+rpl_semi_sync_replica_enabled 是的 是的 是的 全球的 是的
+rpl_semi_sync_replica_trace_level 是的 是的 是的 全球的 是的
+rpl_semi_sync_slave_enabled 是的 是的 是的 全球的 是的
+rpl_semi_sync_slave_trace_level 是的 是的 是的 全球的 是的
+rpl_semi_sync_source_enabled 是的 是的 是的 全球的 是的
+rpl_semi_sync_source_timeout 是的 是的 是的 全球的 是的
+rpl_semi_sync_source_trace_level 是的 是的 是的 全球的 是的
+rpl_semi_sync_source_wait_for_replica_count 是的 是的 是的 全球的 是的
+rpl_semi_sync_source_wait_no_replica 是的 是的 是的 全球的 是的
+rpl_semi_sync_source_wait_point 是的 是的 是的 全球的 是的
+rpl_stop_replica_timeout 是的 是的 是的 全球的 是的
+rpl_stop_slave_timeout 是的 是的 是的 全球的 是的
+模式定义缓存 是的 是的 是的 全球的 是的
+secondary_engine_cost_threshold 是的 会议 是的
+secure_file_priv 是的 是的 是的 全球的 不
+选择进入缓冲区大小 是的 是的 是的 两个都 是的
+选择进入磁盘同步 是的 是的 是的 两个都 是的
+select_into_disk_sync_delay 是的 是的 是的 两个都 是的
+服务器编号 是的 是的 是的 全球的 是的
+server_id_bits 是的 是的 是的 全球的 不
+服务器_uuid 是的 全球的 不
+session_track_gtids 是的 是的 是的 两个都 是的
+session_track_schema 是的 是的 是的 两个都 是的
+session_track_state_change 是的 是的 是的 两个都 是的
+session_track_system_variables 是的 是的 是的 两个都 是的
+session_track_transaction_info 是的 是的 是的 两个都 是的
+sha256_password_auto_generate_rsa_keys 是的 是的 是的 全球的 不
+sha256_password_private_key_path 是的 是的 是的 全球的 不
+sha256_password_proxy_users 是的 是的 是的 全球的 是的
+sha256_password_public_key_path 是的 是的 是的 全球的 不
+共享内存 是的 是的 是的 全球的 不
+共享内存库名称 是的 是的 是的 全球的 不
+show_create_table_skip_secondary_engine 是的 是的 是的 会议 是的
+show_create_table_verbosity 是的 是的 是的 两个都 是的
+show_gipk_in_create_table_and_information_schema 是的 是的 是的 两个都 是的
+显示旧时间 是的 是的 是的 两个都 是的
+skip_external_locking 是的 是的 是的 全球的 不
+skip_name_resolve 是的 是的 是的 全球的 不
+跳过网络 是的 是的 是的 全球的 不
+skip_replica_start 是的 是的 是的 全球的 不
+跳过显示数据库 是的 是的 是的 全球的 不
+skip_slave_start 是的 是的 是的 全球的 不
+slave_allow_batching 是的 是的 是的 全球的 是的
+slave_checkpoint_group 是的 是的 是的 全球的 是的
+slave_checkpoint_period 是的 是的 是的 全球的 是的
+slave_compressed_protocol 是的 是的 是的 全球的 是的
+slave_exec_mode 是的 是的 是的 全球的 是的
+slave_load_tmpdir 是的 是的 是的 全球的 不
+slave_max_allowed_pa​​cket 是的 是的 是的 全球的 是的
+slave_net_timeout 是的 是的 是的 全球的 是的
+slave_parallel_type 是的 是的 是的 全球的 是的
+slave_parallel_workers 是的 是的 是的 全球的 是的
+slave_pending_jobs_size_max 是的 是的 是的 全球的 是的
+slave_preserve_commit_order 是的 是的 是的 全球的 是的
+slave_rows_search_algorithms 是的 是的 是的 全球的 是的
+slave_skip_errors 是的 是的 是的 全球的 不
+slave_sql_verify_checksum 是的 是的 是的 全球的 是的
+slave_transaction_retries 是的 是的 是的 全球的 是的
+slave_type_conversions 是的 是的 是的 全球的 是的
+慢启动时间 是的 是的 是的 全球的 是的
+慢查询日志 是的 是的 是的 全球的 是的
+慢查询日志文件 是的 是的 是的 全球的 是的
+插座 是的 是的 是的 全球的 不
+排序缓冲区大小 是的 是的 是的 两个都 是的
+source_verify_checksum 是的 是的 是的 全球的 是的
+sql_auto_is_null 是的 两个都 是的
+sql_big_selects 是的 两个都 是的
+sql_buffer_result 是的 两个都 是的
+sql_generate_invisible_primary_key 是的 是的 是的 两个都 是的
+sql_log_bin 是的 会议 是的
+sql_log_off 是的 两个都 是的
+sql_mode 是的 是的 是的 两个都 是的
+sql_notes 是的 两个都 是的
+sql_quote_show_create 是的 两个都 是的
+sql_replica_skip_counter 是的 全球的 是的
+sql_require_primary_key 是的 是的 是的 两个都 是的
+sql_safe_updates 是的 两个都 是的
+sql_select_limit 是的 两个都 是的
+sql_slave_skip_counter 是的 全球的 是的
+sql_警告 是的 两个都 是的
+ssl_ca 是的 是的 是的 全球的 变化
+ssl_capath 是的 是的 是的 全球的 变化
+ssl_cert 是的 是的 是的 全球的 变化
+ssl_密码 是的 是的 是的 全球的 变化
+ssl_crl 是的 是的 是的 全球的 变化
+ssl_crlpath 是的 是的 是的 全球的 变化
+ssl_fips_mode 是的 是的 是的 全球的 是的
+ssl_key 是的 是的 是的 全球的 变化
+ssl_session_cache_mode 是的 是的 是的 全球的 是的
+ssl_session_cache_timeout 是的 是的 是的 全球的 是的
+存储程序缓存 是的 是的 是的 全球的 是的
+存储程序定义缓存 是的 是的 是的 全球的 是的
+超级只读 是的 是的 是的 全球的 是的
+sync_binlog 是的 是的 是的 全球的 是的
+sync_master_info 是的 是的 是的 全球的 是的
+同步中继日志 是的 是的 是的 全球的 是的
+sync_relay_log_info 是的 是的 是的 全球的 是的
+同步源信息 是的 是的 是的 全球的 是的
+系统事件日志工具 是的 是的 是的 全球的 是的
+syseventlog.include_pid 是的 是的 是的 全球的 是的
+系统事件日志标签 是的 是的 是的 全球的 是的
+系统时区 是的 全球的 不
+表定义缓存 是的 是的 是的 全球的 是的
+table_encryption_privilege_check 是的 是的 是的 全球的 是的
+表打开缓存 是的 是的 是的 全球的 是的
+table_open_cache_instances 是的 是的 是的 全球的 不
+表空间定义缓存 是的 是的 是的 全球的 是的
+temptable_max_mmap 是的 是的 是的 全球的 是的
+temptable_max_ram 是的 是的 是的 全球的 是的
+temptable_use_mmap 是的 是的 是的 全球的 是的
+terminology_use_previous 是的 是的 是的 两个都 是的
+线程缓存大小 是的 是的 是的 全球的 是的
+线程处理 是的 是的 是的 全球的 不
+线程池算法 是的 是的 是的 全球的 不
+thread_pool_dedicated_listeners 是的 是的 是的 全球的 不
+thread_pool_high_priority_connection 是的 是的 是的 两个都 是的
+thread_pool_max_active_query_threads 是的 是的 是的 全球的 是的
+thread_pool_max_transactions_limit 是的 是的 是的 全球的 是的
+thread_pool_max_unused_threads 是的 是的 是的 全球的 是的
+thread_pool_prio_kickup_timer 是的 是的 是的 全球的 是的
+thread_pool_query_threads_per_group 是的 是的 是的 全球的 是的
+线程池大小 是的 是的 是的 全球的 不
+thread_pool_stall_limit 是的 是的 是的 全球的 是的
+thread_pool_transaction_delay 是的 是的 是的 全球的 是的
+线程堆栈 是的 是的 是的 全球的 不
+时区 是的 两个都 是的
+时间戳 是的 会议 是的
+tls_ciphersuites 是的 是的 是的 全球的 是的
+tls_version 是的 是的 是的 全球的 变化
+tmp_table_size 是的 是的 是的 两个都 是的
+tmp目录 是的 是的 是的 全球的 不
+transaction_alloc_block_size 是的 是的 是的 两个都 是的
+transaction_allow_batching 是的 会议 是的
+事务隔离 是的 是的 是的 两个都 是的
+transaction_prealloc_size 是的 是的 是的 两个都 是的
+transaction_read_only 是的 是的 是的 两个都 是的
+transaction_write_set_extraction 是的 是的 是的 两个都 是的
+独特的检查 是的 两个都 是的
+updatable_views_with_limit 是的 是的 是的 两个都 是的
+使用_secondary_engine 是的 会议 是的
+validate_password_check_user_name 是的 是的 是的 全球的 是的
+验证密码字典文件 是的 是的 是的 全球的 是的
+验证密码长度 是的 是的 是的 全球的 是的
+validate_password_mixed_case_count 是的 是的 是的 全球的 是的
+validate_password_number_count 验证密码 是的 是的 是的 全球的 是的
+验证密码政策 是的 是的 是的 全球的 是的
+validate_password_special_char_count 是的 是的 是的 全球的 是的
+validate_password.check_user_name 是的 是的 是的 全球的 是的
+验证密码.dictionary_file 是的 是的 是的 全球的 是的
+验证密码长度 是的 是的 是的 全球的 是的
+validate_password.mixed_case_count 是的 是的 是的 全球的 是的
+验证密码.number_count 是的 是的 是的 全球的 是的
+validate_password.policy 是的 是的 是的 全球的 是的
+validate_password.special_char_count 是的 是的 是的 全球的 是的
+版本 是的 全球的 不
+版本评论 是的 全球的 不
+version_compile_machine 是的 全球的 不
+version_compile_os 是的 全球的 不
+version_compile_zlib 是的 全球的 不
+version_tokens_session 是的 是的 是的 两个都 是的
+version_tokens_session_number 是的 是的 是的 两个都 不
+等待超时 是的 是的 是的 两个都 是的
+警告计数 是的 会议 不
+windowing_use_high_precision 是的 是的 是的 两个都 是的
+xa_detach_on_prepare 是的 是的 是的 两个都 是的
+笔记：
+1. 此选项是动态的，但只能由服务器设置。您不应手动设置此变量。

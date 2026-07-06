@@ -1,0 +1,7 @@
+13.8 效用语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 
+13.8 效用语句
+13.8 效用语句
+13.8.1 描述语句 13.8.2 EXPLAIN 语句 13.8.3 帮助声明 13.8.4 USE 语句

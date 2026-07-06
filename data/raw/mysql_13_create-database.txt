@@ -1,0 +1,27 @@
+13.1.12 CREATE DATABASE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.12 CREATE DATABASE 语句
+13.1.12 CREATE DATABASE 语句
+CREATE {DATABASE | SCHEMA} [IF NOT EXISTS] db_name [ create_option ] ... create_option : [DEFAULT] {
+CHARACTER SET [=] charset_name | COLLATE [=] collation_name | ENCRYPTION [=] {'Y' | 'N'}
+}
+CREATE DATABASE 使用给定的名称创建一个数据库。要使用此语句，您需要 CREATE 数据库的权限。 CREATE
+SCHEMA 是的同义词 CREATE
+DATABASE 。
+如果数据库存在而您没有指定 ，则会发生错误 IF NOT EXISTS 。
+CREATE DATABASE LOCK
+TABLES 在具有活动语句
+的会话中不允许。
+每个 create_option 指定一个数据库特征。数据库特征存储在数据字典中。
+该 CHARACTER SET 选项指定默认数据库字符集。该 COLLATE 选项指定默认数据库排序规则。有关字符集和排序规则名称的信息，请参阅 第 10 章， 字符集、排序规则、Unicode 。
+要查看可用的字符集和排序规则，请分别使用 the SHOW CHARACTER SET 和 SHOW COLLATION 语句。请参阅 第 13.7.7.3 节，“SHOW CHARACTER SET 语句” 和 第 13.7.7.4 节，“SHOW COLLATION 语句” 。
+该 ENCRYPTION 选项在 MySQL 8.0.16 中引入，定义了默认的数据库加密，由数据库中创建的表继承。允许的值为 'Y' （启用加密）和 'N' （禁用加密）。如果 ENCRYPTION 未指定该选项，则 default_table_encryption 系统变量的值定义默认数据库加密。如果 table_encryption_privilege_check 启用了系统变量， TABLE_ENCRYPTION_ADMIN 则需要指定与该设置不同的默认加密设置的权限 default_table_encryption 。有关详细信息，请参阅 为架构和通用表空间定义加密默认值 .
+MySQL 中的数据库被实现为包含与数据库中的表相对应的文件的目录。因为最初创建数据库时没有表，所以该 CREATE DATABASE 语句只在MySQL数据目录下创建一个目录。允许的数据库名称的规则在 第 9.2 节“模式对象名称” 中给出。如果数据库名称包含特殊字符，则数据库目录的名称包含这些字符的编码版本，如 第 9.2.4 节“标识符到文件名的映射”中 所述。
+MySQL 8.0 不支持
+
+通过在数据目录下手动创建目录（例如使用 mkdir ）来创建数据库目录。
+创建数据库时，让服务器管理目录和其中的文件。直接操作数据库目录和文件可能会导致不一致和意外结果。
+MySQL 对数据库的数量没有限制。底层文件系统可能对目录数量有限制。
+您还可以使用 mysqladmin 程序来创建数据库。请参阅 第 4.5.2 节，“mysqladmin — 一个 MySQL 服务器管理程序” 。

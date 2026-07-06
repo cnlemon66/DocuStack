@@ -1,0 +1,76 @@
+Redis PING 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis PING 命令
+PING 测试与 Redis 服务器的连接是否存活，常用于心跳检测和延迟测量。
+* 语法
+PING [message]
+* 参数说明
+参数 类型 必填 说明
+message String 否 自定义消息内容
+* 返回值
+无参数时返回 PONG
+有参数时返回传入的 message（String 或 Bulk String）
+* 时间复杂度
+O(1)
+*
+* 示例
+* 基本心跳检测
+> PING
+PONG
+* 携带自定义消息
+> PING "hello redis"
+"hello redis"
+> PING hello
+"hello"
+* 在脚本中检测连接
+> PING
+PONG
+> PING healthcheck
+"healthcheck"
+* 常见错误
+PING 命令通常不会报错。在特定场景下可能出现：
+错误 原因 解决
+连接断开 网络问题或服务器关闭 检查网络连接和 Redis 服务状态
+LOADING Redis 正在加载数据 等待加载完成
+* 最佳实践
+客户端连接池的心跳检测首选 PING，轻量且可靠
+监控脚本中使用 PING 测量 Redis 响应延迟（ redis-cli --latency 内部使用 PING）
+集群模式下，PING 可用于检测节点健康状态
+订阅模式下（ SUBSCRIBE ），PING 仍然可用，返回 PONG 保持连接活跃
+* FAQ
+Q1: PING 和 ECHO 有什么区别？ A: PING 无参数返回 PONG，有参数返回参数值； ECHO 必须带参数，返回参数值。PING 更常用于连接检测， ECHO 用于消息回显。
+Q2: 为什么连接池要用 PING 做心跳？ A: PING 是 O(1) 复杂度的极轻量命令，不会消耗服务器资源，且能准确检测连接是否存活。相比其他命令，PING 是最安全的选择。
+Q3: 订阅模式下能使用 PING 吗？ A: 可以。在 SUBSCRIBE 状态下，PING 仍然返回 PONG，不会干扰订阅通道。这是 Redis 设计用于保持订阅连接活跃的方式。
+相关命令
+AUTH
+CLIENT
+CLIENT CACHING
+CLIENT GETNAME
+CLIENT GETREDIR
+CLIENT HELP
+CLIENT ID
+CLIENT INFO
+CLIENT KILL
+CLIENT LIST
+CLIENT NO-EVICT
+CLIENT NO-TOUCH
+CLIENT PAUSE
+CLIENT REPLY
+CLIENT SETINFO
+CLIENT SETNAME
+CLIENT TRACKING
+CLIENT TRACKINGINFO
+CLIENT UNBLOCK
+CLIENT UNPAUSE
+ECHO
+HELLO
+PING
+QUIT
+RESET
+SELECT

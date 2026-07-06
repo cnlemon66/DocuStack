@@ -1,0 +1,8 @@
+13.7.2 资源组管理语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.7 数据库管理语句 / 
+13.7.2 资源组管理语句
+13.7.2 资源组管理语句
+13.7.2.1 ALTER RESOURCE GROUP 语句 13.7.2.2 CREATE RESOURCE GROUP 语句 13.7.2.3 DROP RESOURCE GROUP 语句 13.7.2.4 SET RESOURCE GROUP 语句
+MySQL 支持创建和管理资源组，并允许将服务器中运行的线程分配给特定的组，以便线程根据组可用的资源执行。本节介绍可用于资源组管理的 SQL 语句。有关资源组功能的一般讨论，请参阅 第 5.1.16 节，“资源组” 。

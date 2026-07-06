@@ -1,0 +1,102 @@
+12.17.1 空间函数参考_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.17空间分析函数 / 
+12.17.1 空间函数参考
+12.17.1 空间函数参考
+下表列出了每个空间函数并提供了每个函数的简短描述。
+表 12.21 空间函数
+姓名 描述 介绍
+GeomCollection() 从几何构造几何集合
+GeometryCollection() 从几何构造几何集合
+LineString() 从点值构造 LineString
+MBRContains() 一个几何体的 MBR 是否包含另一个几何体的 MBR
+MBRCoveredBy() 一个 MBR 是否被另一个 MBR 覆盖
+MBRCovers() 一个 MBR 是否覆盖另一个
+MBRDisjoint() 两个几何形状的 MBR 是否不相交
+MBREquals() 两个几何结构的MBR是否相等
+MBRIntersects() 两个几何图形的 MBR 是否相交
+MBROverlaps() 两个几何形状的MBR是否重叠
+MBRTouches() 两个几何形状的 MBR 是否接触
+MBRWithin() 一个几何体的 MBR 是否在另一个几何体的 MBR 内
+MultiLineString() 从 LineString 值构造 MultiLineString
+MultiPoint() 从点值构造多点
+MultiPolygon() 从 Polygon 值构造 MultiPolygon
+Point() 从坐标构造点
+Polygon() 从 LineString 参数构造多边形
+ST_Area() 返回多边形或多边形区域
+ST_AsBinary() , ST_AsWKB() 从内部几何格式转换为 WKB
+ST_AsGeoJSON() 从几何生成 GeoJSON 对象
+ST_AsText() , ST_AsWKT() 从内部几何格式转换为 WKT
+ST_Buffer() 返回距几何体给定距离内的点的几何体
+ST_Buffer_Strategy() 为 ST_Buffer() 生成策略选项
+ST_Centroid() 将质心作为一个点返回
+ST_Collect() 将空间值聚合到集合中 8.0.24
+ST_Contains() 一个几何体是否包含另一个
+ST_ConvexHull() 返回几何的凸包
+ST_Crosses() 一个几何图形是否与另一个几何图形相交
+ST_Difference() 两个几何的返回点集差
+ST_Dimension() 几何尺寸
+ST_Disjoint() 一个几何图形是否与另一个几何图形不相交
+ST_Distance() 一个几何体与另一个几何体的距离
+ST_Distance_Sphere() 地球上两个几何之间的最小距离
+ST_EndPoint() 线串终点
+ST_Envelope() 返回几何的 MBR
+ST_Equals() 一个几何体是否等于另一个
+ST_ExteriorRing() 返回多边形的外环
+ST_FrechetDistance() 一个几何体与另一个几何体的离散 Fréchet 距离 8.0.23
+ST_GeoHash() 产生一个 geohash 值
+ST_GeomCollFromText() , ST_GeometryCollectionFromText() , ST_GeomCollFromTxt() 从 WKT 返回几何集合
+ST_GeomCollFromWKB() , ST_GeometryCollectionFromWKB() 从 WKB 返回几何集合
+ST_GeometryN() 从几何集合中返回第 N 个几何
+ST_GeometryType() 返回几何类型的名称
+ST_GeomFromGeoJSON() 从 GeoJSON 对象生成几何图形
+ST_GeomFromText() , ST_GeometryFromText() 从 WKT 返回几何
+ST_GeomFromWKB() , ST_GeometryFromWKB() 从 WKB 返回几何
+ST_HausdorffDistance() 一个几何体与另一个几何体的离散 Hausdorff 距离 8.0.23
+ST_InteriorRingN() 返回多边形的第 N 个内环
+ST_Intersection() 返回点集两个几何的交集
+ST_Intersects() 一个几何图形是否与另一个几何图形相交
+ST_IsClosed() 几何是否封闭且简单
+ST_IsEmpty() 几何是否为空
+ST_IsSimple() 几何是否简单
+ST_IsValid() 几何是否有效
+ST_LatFromGeoHash() 从 geohash 值返回纬度
+ST_Latitude() 点返回纬度 8.0.12
+ST_Length() 返回 LineString 的长度
+ST_LineFromText() , ST_LineStringFromText() 从 WKT 构建 LineString
+ST_LineFromWKB() , ST_LineStringFromWKB() 从 WKB 构造 LineString
+ST_LineInterpolatePoint() 沿 LineString 给定百分比的点 8.0.24
+ST_LineInterpolatePoints() 沿 LineString 给定百分比的点 8.0.24
+ST_LongFromGeoHash() 从 geohash 值返回经度
+ST_Longitude() 返回点的经度 8.0.12
+ST_MakeEnvelope() 围绕两点的矩形
+ST_MLineFromText() , ST_MultiLineStringFromText() 从 WKT 构建 MultiLineString
+ST_MLineFromWKB() , ST_MultiLineStringFromWKB() 从 WKB 构建 MultiLineString
+ST_MPointFromText() , ST_MultiPointFromText() 从 WKT 构造多点
+ST_MPointFromWKB() , ST_MultiPointFromWKB() 从 WKB 构造多点
+ST_MPolyFromText() , ST_MultiPolygonFromText() 从 WKT 构建多边形
+ST_MPolyFromWKB() , ST_MultiPolygonFromWKB() 从 WKB 构建多边形
+ST_NumGeometries() 返回几何集合中的几何数
+ST_NumInteriorRing() , ST_NumInteriorRings() 返回多边形中的内环数
+ST_NumPoints() 返回 LineString 中的点数
+ST_Overlaps() 一个几何图形是否与另一个几何图形重叠
+ST_PointAtDistance() 沿 LineString 给定距离的点 8.0.24
+ST_PointFromGeoHash() 将 geohash 值转换为 POINT 值
+ST_PointFromText() 从 WKT 构造点
+ST_PointFromWKB() 从 WKB 构造点
+ST_PointN() 从 LineString 返回第 N 个点
+ST_PolyFromText() , ST_PolygonFromText() 从 WKT 构造多边形
+ST_PolyFromWKB() , ST_PolygonFromWKB() 从 WKB 构建多边形
+ST_Simplify() 返回简化几何
+ST_SRID() 返回几何的空间参考系统 ID
+ST_StartPoint() 线串起点
+ST_SwapXY() 交换 X/Y 坐标的返回参数
+ST_SymDifference() 两个几何的返回点集对称差
+ST_Touches() 一个几何体是否接触另一个
+ST_Transform() 变换几何坐标 8.0.13
+ST_Union() 两个几何图形的返回点集并集
+ST_Validate() 返回验证几何
+ST_Within() 一个几何体是否在另一个几何体中
+ST_X() 返回 Point 的 X 坐标
+ST_Y() 返回 Point 的 Y 坐标

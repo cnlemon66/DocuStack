@@ -1,0 +1,78 @@
+Redis HGETALL 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis HGETALL 命令
+返回 Hash 中所有的 field 和 value。
+* 语法
+HGETALL key
+* 参数说明
+参数 类型 必填 说明
+key String 是 Hash 的键名
+* 返回值
+条件 返回值
+key 存在 返回 field 和 value 交替的数组 [field1, value1, field2, value2, ...]
+key 不存在 空数组 []
+key 非 Hash WRONGTYPE 错误
+* 时间复杂度
+O(N)，N 为 Hash 中 field 的数量。
+⚠️ 生产环境警告 ：Hash 过大时 HGETALL 会阻塞 Redis 单线程，造成延迟飙升。field 超过 5000 时禁用 HGETALL，改用 HSCAN 或按需 HGET/HMGET。
+* 示例
+> HSET user:1001 name "Alice" age "30" city "Beijing"
+(integer) 3
+
+> HGETALL user:1001
+1) "name"
+2) "Alice"
+3) "age"
+4) "30"
+5) "city"
+6) "Beijing"
+
+# 不存在
+> HGETALL nokey
+(empty array)
+* 常见错误
+阻塞服务 ：HGETALL 大 Hash 是最常见的 Redis 性能事故之一，平均可造成 10ms-100ms 阻塞。
+内存峰值 ：返回结果全部加载到客户端内存，大 Hash 可能导致客户端 OOM。
+* 最佳实践
+生产禁用大 Hash HGETALL ：field > 5000 时，改用 HSCAN key 0 COUNT 100 渐进式遍历。
+按需读取 ：只需要部分 field 时用 HMGET key f1 f2 f3 。
+拆分大 Hash ：按业务维度拆分为多个小 Hash，如 user:1001:profile 、 user:1001:orders 。
+* FAQ
+Q: HGETALL 返回的顺序是固定的吗？ A: 不保证。Redis Hash 底层实现（ziplist / hashtable）的遍历顺序与插入顺序无关。
+Q: 如何替代 HGETALL 读取大 Hash？ A: 使用 HSCAN key cursor [MATCH pattern] [COUNT count] 分批读取，或使用 HMGET 指定需要的 field。
+Q: HGETALL 返回空数组和 nil 的区别？ A: key 不存在返回空数组 [] ；key 存在但无 field 也返回 [] （不可能出现，Hash 至少有一个 field）。
+相关命令
+HDEL
+HEXISTS
+HEXPIRE
+HEXPIREAT
+HEXPIRETIME
+HGET
+HGETALL
+HGETDEL
+HGETEX
+HINCRBY
+HINCRBYFLOAT
+HKEYS
+HLEN
+HMGET
+HMSET
+HPERSIST
+HPEXPIRE
+HPEXPIREAT
+HPEXPIRETIME
+HPTTL
+HRANDFIELD
+HSCAN
+HSET
+HSETEX
+HSETNX
+HSTRLEN
+HTTL
+HVALS

@@ -1,0 +1,367 @@
+13.2.8 加载 XML 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 
+13.2.8 加载 XML 语句
+13.2.8 加载 XML 语句
+LOAD XML
+[LOW_PRIORITY | CONCURRENT] [LOCAL]
+INFILE ' file_name '
+[REPLACE | IGNORE]
+INTO TABLE [ db_name .] tbl_name [CHARACTER SET charset_name ]
+[ROWS IDENTIFIED BY '< tagname >']
+[IGNORE number {LINES | ROWS}]
+[( field_name_or_user_var [, field_name_or_user_var ] ...)]
+[SET col_name ={ expr | DEFAULT}
+[, col_name ={ expr | DEFAULT}] ...]
+该 LOAD XML 语句将数据从 XML 文件读取到表中。 file_name 必须作为文字字符串给出。 tagname 可选子句中的 the
+也 ROWS IDENTIFIED BY 必须作为文字字符串给出，并且必须用尖括号 ( < 和 > ) 括起来。
+LOAD XML 作为以 XML 输出模式运行 mysql 客户端的补充（即以 --xml 选项启动客户端）。要将表中的数据写入 XML 文件，您可以使用系统 shell 中的和
+选项调用 mysql 客户端，如下所示： --xml -e
+$> mysql --xml -e 'SELECT * FROM mydb.mytable' > file.xml
+要将文件读回表中，请使用 LOAD
+XML . 默认情况下，该 <row> 元素被认为等同于数据库表行；这可以使用 ROWS IDENTIFIED
+BY 子句更改。
+该语句支持三种不同的 XML 格式：
+列名作为属性，列值作为属性值：
+< row column1 =" value1 " column2 =" value2 " .../>
+列名作为标签，列值作为这些标签的内容：
+< row >
+< column1 > value1 </ column1 >
+< column2 > value2 </ column2 >
+</ row >
+列名是标签的 name 属性 <field> ，值是这些标签的内容：
+<row>
+<field name=' column1 '> value1 </field>
+<field name=' column2 '> value2 </field>
+</row>
+这是其他 MySQL 工具使用的格式，例如 mysqldump 。
+所有三种格式都可以在同一个 XML 文件中使用；导入例程自动检测每一行的格式并正确解释它。标签根据标签或属性名称和列名称进行匹配。
+在 MySQL 8.0.21 之前， LOAD XML 不支持 CDATA 源 XML 中的部分。（错误#30753708，错误#98199）
+以下子句 for 的工作方式与 for 的工作方式基本 LOAD XML 相同 LOAD DATA ：
+LOW_PRIORITY 或者 CONCURRENT
+LOCAL
+REPLACE 或者 IGNORE
+CHARACTER SET
+SET
+有关这些子句的更多信息，
+
+请参阅 第 13.2.7 节，“加载数据语句” 。
+( field_name_or_user_var ,
+...) 是一个或多个逗号分隔的 XML 字段或用户变量的列表。用于此目的的用户变量的名称必须与 XML 文件中的字段名称匹配，前缀为 @ . 您可以使用字段名称来仅选择所需的字段。可以使用用户变量来存储相应的字段值以供后续重新使用。
+or子句导致跳过 XML 文件中
+的第一行。它类似于语句的
+子句。 IGNORE number LINES IGNORE number ROWS number LOAD
+DATA IGNORE ... LINES
+假设我们有一个名为 的表 person ，创建如下所示：
+USE test;
+
+CREATE TABLE person (
+person_id INT NOT NULL PRIMARY KEY,
+fname VARCHAR(40) NULL,
+lname VARCHAR(40) NULL,
+created TIMESTAMP
+);
+进一步假设该表最初是空的。
+现在假设我们有一个简单的 XML 文件 person.xml ，其内容如下所示：
+<list>
+<person person_id="1" fname="Kapek" lname="Sainnouine"/>
+<person person_id="2" fname="Sajon" lname="Rondela"/>
+<person person_id="3"><fname>Likame</fname><lname>Örrtmons</lname></person>
+<person person_id="4"><fname>Slar</fname><lname>Manlanth</lname></person>
+<person><field name="person_id">5</field><field name="fname">Stoma</field>
+<field name="lname">Milu</field></person>
+<person><field name="person_id">6</field><field name="fname">Nirtam</field>
+<field name="lname">Sklöd</field></person>
+<person person_id="7"><fname>Sungam</fname><lname>Dulbåd</lname></person>
+<person person_id="8" fname="Sraref" lname="Encmelt"/>
+</list>
+前面讨论的每种允许的 XML 格式都在这个示例文件中表示。
+要将数据导入 person.xml 表 person 中，可以使用以下语句：
+mysql> LOAD XML LOCAL INFILE 'person.xml'
+-> INTO TABLE person
+-> ROWS IDENTIFIED BY '<person>';
+
+Query OK, 8 rows affected (0.00 sec)
+Records: 8 Deleted: 0 Skipped: 0 Warnings: 0
+在这里，我们假设 person.xml 位于 MySQL 数据目录中。如果找不到该文件，将导致以下错误：
+ERROR 2 (HY000): File '/person.xml' not found (Errcode: 2)
+该 ROWS IDENTIFIED BY '<person>' 子句意味着 <person> XML 文件中的每个元素都被视为等同于数据要导入到的表中的一行。在本例中，这是数据库中的 person 表 test 。
+从服务器的响应可以看出，表中导入了 8 行 test.person 。这可以通过一个简单的 SELECT 语句来验证：
+mysql> SELECT * FROM person;
++-----------+--------+------------+---------------------+
+| person_id | fname | lname | created |
++-----------+--------+------------+---------------------+
+| 1 | Kapek | Sainnouine | 2007-07-13 16:18:47 |
+| 2 | Sajon | Rondela | 2007-07-13 16:18:47 |
+| 3 | Likame | Örrtmons | 2007-07-13 16:18:47 |
+| 4 | Slar | Manlanth | 2007-07-13 16:18:47 |
+| 5 | Stoma | Nilu | 2007-07-13 16:18:47 |
+| 6 | Nirtam | Sklöd | 2007-07-13 16:18:47 |
+| 7 | Sungam | Dulbåd | 2007-07-13 16:18:47 |
+| 8 | Sreraf | Encmelt | 2007-07-13 16:18:47 |
++-----------+--------+------------+---------------------+
+8 rows in set (0.00 sec)
+如本节前面所述，这表明 3 种允许的 XML 格式中的任何一种或全部都可以出现在单个文件中，并可以使用 LOAD XML .
+刚才显示的导入操作的逆过程——即将 MySQL 表数据转储到 XML 文件中——可以使用系统 shell 中的 mysql 客户端来完成，如下所示：
+$> mysql --xml -e "SELECT * FROM test.person" > person-dump.xml
+$> cat person-dump.xml
+<?xml version="1.0"?>
+
+<resultset statement="SELECT * FROM test.person" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<row>
+	<field name="person_id">1</field>
+	<field name="fname">Kapek</field>
+	<field name="lname">Sainnouine</field>
+</row>
+
+<row>
+	<field name="person_id">2</field>
+	<field name="fname">Sajon</field>
+	<field name="lname">Rondela</field>
+</row>
+
+<row>
+	<field name="person_id">3</field>
+	<field name="fname">Likema</field>
+	<field name="lname">Örrtmons</field>
+</row>
+
+<row>
+	<field name="person_id">4</field>
+	<field name="fname">Slar</field>
+	<field name="lname">Manlanth</field>
+</row>
+
+<row>
+	<field name="person_id">5</field>
+	<field name="fname">Stoma</field>
+	<field name="lname">Nilu</field>
+</row>
+
+<row>
+	<field name="person_id">6</field>
+	<field name="fname">Nirtam</field>
+	<field name="lname">Sklöd</field>
+</row>
+
+<row>
+	<field name="person_id">7</field>
+	<field name="fname">Sungam</field>
+	<field name="lname">Dulbåd</field>
+</row>
+
+<row>
+	<field name="person_id">8</field>
+	<field name="fname">Sreraf</field>
+	<field name="lname">Encmelt</field>
+</row>
+</resultset>
+笔记
+该 --xml 选项使 mysql 客户端对其输出使用 XML 格式；该 -e 选项使客户端立即执行该选项之后的 SQL 语句。请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。
+person 您可以通过创建表的副本并将转储文件导入新表
+
+来验证转储是否有效
+，如下所示：
+mysql> USE test;
+mysql> CREATE TABLE person2 LIKE person;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> LOAD XML LOCAL INFILE 'person-dump.xml'
+-> INTO TABLE person2;
+Query OK, 8 rows affected (0.01 sec)
+Records: 8 Deleted: 0 Skipped: 0 Warnings: 0
+
+mysql> SELECT * FROM person2;
++-----------+--------+------------+---------------------+
+| person_id | fname | lname | created |
++-----------+--------+------------+---------------------+
+| 1 | Kapek | Sainnouine | 2007-07-13 16:18:47 |
+| 2 | Sajon | Rondela | 2007-07-13 16:18:47 |
+| 3 | Likema | Örrtmons | 2007-07-13 16:18:47 |
+| 4 | Slar | Manlanth | 2007-07-13 16:18:47 |
+| 5 | Stoma | Nilu | 2007-07-13 16:18:47 |
+| 6 | Nirtam | Sklöd | 2007-07-13 16:18:47 |
+| 7 | Sungam | Dulbåd | 2007-07-13 16:18:47 |
+| 8 | Sreraf | Encmelt | 2007-07-13 16:18:47 |
++-----------+--------+------------+---------------------+
+8 rows in set (0.00 sec)
+不要求 XML 文件中的每个字段都与相应表中的列相匹配。没有对应列的字段将被跳过。您可以通过首先清空 person2 表并删除列，然后使用我们之前 created 使用的相同
+语句来看到这一点，如下所示： LOAD XML
+mysql> TRUNCATE person2;
+Query OK, 8 rows affected (0.26 sec)
+
+mysql> ALTER TABLE person2 DROP COLUMN created;
+Query OK, 0 rows affected (0.52 sec)
+Records: 0 Duplicates: 0 Warnings: 0
+
+mysql> SHOW CREATE TABLE person2\G
+*************************** 1. row ***************************
+Table: person2
+Create Table: CREATE TABLE `person2` (
+`person_id` int NOT NULL,
+`fname` varchar(40) DEFAULT NULL,
+`lname` varchar(40) DEFAULT NULL,
+PRIMARY KEY (`person_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+1 row in set (0.00 sec)
+
+mysql> LOAD XML LOCAL INFILE 'person-dump.xml'
+-> INTO TABLE person2;
+Query OK, 8 rows affected (0.01 sec)
+Records: 8 Deleted: 0 Skipped: 0 Warnings: 0
+
+mysql> SELECT * FROM person2;
++-----------+--------+------------+
+| person_id | fname | lname |
++-----------+--------+------------+
+| 1 | Kapek | Sainnouine |
+| 2 | Sajon | Rondela |
+| 3 | Likema | Örrtmons |
+| 4 | Slar | Manlanth |
+| 5 | Stoma | Nilu |
+| 6 | Nirtam | Sklöd |
+| 7 | Sungam | Dulbåd |
+| 8 | Sreraf | Encmelt |
++-----------+--------+------------+
+8 rows in set (0.00 sec)
+XML 文件每一行中字段的排列顺序不影响 ; 的操作 LOAD
+XML 。字段顺序可以因行而异，并且不需要与表中相应列的顺序相同。
+如前所述，您可以使用
+一个或多个 XML 字段的列表（仅选择所需的字段）或用户变量（存储相应的字段值供以后使用）。当您要将 XML 文件中的数据插入名称与 XML 字段名称不匹配的表列时，用户变量尤其有用。为了了解这是如何工作的，我们首先创建一个表，其结构与表
+的结构匹配
+，但其列的名称不同： ( field_name_or_user_var ,
+...) individual person
+mysql> CREATE TABLE individual (
+-> individual_id INT NOT NULL PRIMARY KEY,
+-> name1 VARCHAR(40) NULL,
+-> name2 VARCHAR(40) NULL,
+-> made TIMESTAMP
+-> );
+Query OK, 0 rows affected (0.42 sec)
+在这种情况下，您不能简单地将 XML 文件直接加载到表中，因为字段名和列名不匹配：
+mysql> LOAD XML INFILE '../bin/person-dump.xml' INTO TABLE test.individual;
+ERROR 1263 (22004): Column set to default value; NULL supplied to NOT NULL column 'individual_id' at row 1
+发生这种情况是因为 MySQL 服务器查找与目标表的列名匹配的字段名。您可以通过将字段值选择到用户变量中来解决此问题，然后使用 将目标表的列设置为等于这些变量的值 SET 。您可以在一条语句中执行这两项操作，如下所示：
+mysql> LOAD XML INFILE '../bin/person-dump.xml'
+-> INTO TABLE test.individual (@person_id, @fname, @lname, @created)
+-> SET individual_id=@person_id, name1=@fname, name2=@lname, made=@created;
+Query OK, 8 rows affected (0.05 sec)
+Records: 8 Deleted: 0 Skipped: 0 Warnings: 0
+
+mysql> SELECT * FROM individual;
++---------------+--------+------------+---------------------+
+| individual_id | name1 | name2 | made |
++---------------+--------+------------+---------------------+
+| 1 | Kapek | Sainnouine | 2007-07-13 16:18:47 |
+| 2 | Sajon | Rondela | 2007-07-13 16:18:47 |
+| 3 | Likema | Örrtmons | 2007-07-13 16:18:47 |
+| 4 | Slar | Manlanth | 2007-07-13 16:18:47 |
+| 5 | Stoma | Nilu | 2007-07-13 16:18:47 |
+| 6 | Nirtam | Sklöd | 2007-07-13 16:18:47 |
+| 7 | Sungam | Dulbåd | 2007-07-13 16:18:47 |
+| 8 | Srraf | Encmelt | 2007-07-13 16:18:47 |
++---------------+--------+------------+---------------------+
+8 rows in set (0.00 sec)
+用户变量的名称 必须 与 XML 文件中相应字段的名称相匹配，并添加所需的 @ 前缀以表明它们是变量。用户变量不需要按照与相应字段相同的顺序列出或分配。
+使用子句，可以将同一 XML 文件中的数据导入具有不同定义的数据库表中。对于此示例，假设您有一个名为的文件，其中包含以下 XML： ROWS IDENTIFIED BY
+'< tagname >' address.xml
+<?xml version="1.0"?>
+
+<list>
+<person person_id="1">
+<fname>Robert</fname>
+<lname>Jones</lname>
+<address address_id="1" street="Mill Creek Road" zip="45365" city="Sidney"/>
+<address address_id="2" street="Main Street" zip="28681" city="Taylorsville"/>
+</person>
+
+<person person_id="2">
+<fname>Mary</fname>
+<lname>Smith</lname>
+<address address_id="3" street="River Road" zip="80239" city="Denver"/>
+<!-- <address address_id="4" street="North Street" zip="37920" city="Knoxville"/> -->
+</person>
+
+</list>
+在从表中清除所有现有记录并显示其结构后，您可以再次使用 test.person 本节之前定义的表，如下所示：
+mysql< TRUNCATE person;
+Query OK, 0 rows affected (0.04 sec)
+
+mysql< SHOW CREATE TABLE person\G
+*************************** 1. row ***************************
+Table: person
+Create Table: CREATE TABLE `person` (
+`person_id` int(11) NOT NULL,
+`fname` varchar(40) DEFAULT NULL,
+`lname` varchar(40) DEFAULT NULL,
+`created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+PRIMARY KEY (`person_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4
+1 row in set (0.00 sec)
+现在使用以下
+语句
+在数据库中
+创建一个 address 表
+： test CREATE TABLE
+CREATE TABLE address (
+address_id INT NOT NULL PRIMARY KEY,
+person_id INT NULL,
+street VARCHAR(40) NULL,
+zip INT NULL,
+city VARCHAR(40) NULL,
+created TIMESTAMP
+);
+要将 XML 文件中的数据导入 person 表中，请执行以下 LOAD XML 语句，该语句指定要由 <person> 元素指定的行，如下所示；
+mysql> LOAD XML LOCAL INFILE 'address.xml'
+-> INTO TABLE person
+-> ROWS IDENTIFIED BY '<person>';
+Query OK, 2 rows affected (0.00 sec)
+Records: 2 Deleted: 0 Skipped: 0 Warnings: 0
+SELECT 您可以使用以下语句
+
+验证记录是否已导入
+：
+mysql> SELECT * FROM person;
++-----------+--------+-------+---------------------+
+| person_id | fname | lname | created |
++-----------+--------+-------+---------------------+
+| 1 | Robert | Jones | 2007-07-24 17:37:06 |
+| 2 | Mary | Smith | 2007-07-24 17:37:06 |
++-----------+--------+-------+---------------------+
+2 rows in set (0.00 sec)
+由于 <address> XML 文件中的元素在表中没有对应的列 person ，因此将跳过它们。
+要将 <address> 元素中的数据导入 address 表中，请使用 LOAD XML 此处显示的语句：
+mysql> LOAD XML LOCAL INFILE 'address.xml'
+-> INTO TABLE address
+-> ROWS IDENTIFIED BY '<address>';
+Query OK, 3 rows affected (0.00 sec)
+Records: 3 Deleted: 0 Skipped: 0 Warnings: 0
+您可以看到数据是使用 SELECT 如下语句导入的：
+mysql> SELECT * FROM address;
++------------+-----------+-----------------+-------+--------------+---------------------+
+| address_id | person_id | street | zip | city | created |
++------------+-----------+-----------------+-------+--------------+---------------------+
+| 1 | 1 | Mill Creek Road | 45365 | Sidney | 2007-07-24 17:37:37 |
+| 2 | 1 | Main Street | 28681 | Taylorsville | 2007-07-24 17:37:37 |
+| 3 | 2 | River Road | 80239 | Denver | 2007-07-24 17:37:37 |
++------------+-----------+-----------------+-------+--------------+---------------------+
+3 rows in set (0.00 sec)
+<address> 不导入
+来自包含在 XML 注释中的元素的数据。但是，由于表中有一 person_id 列，
+每个父
+元素 address 的属性值
+都 被 导入到表中。 person_id <person> <address> address
+安全注意事项。 与 LOAD DATA 声明一样，XML 文件从客户端主机到服务器主机的传输是由 MySQL 服务器发起的。理论上，可以构建一个补丁服务器，告诉客户端程序传输服务器选择的文件，而不是客户端在 LOAD
+XML 声明中指定的文件。这样的服务器可以访问客户端用户具有读取权限的客户端主机上的任何文件。
+在 Web 环境中，客户端通常从 Web 服务器连接到 MySQL。可以对 MySQL 服务器运行任何命令的用户可以 LOAD XML
+LOCAL 用来读取 Web 服务器进程具有读取权限的任何文件。在这种环境下，MySQL服务器的客户端实际上是Web服务器，而不是连接到Web服务器的用户正在运行的远程程序。
+--local-infile=0 您可以通过使用或
+
+启动服务器来禁止从客户端加载 XML 文件 --local-infile=OFF 。 当启动mysql LOAD XML 客户端以在客户端会话期间
+禁用时，也可以使用此选项。
+为防止客户端从服务器加载XML文件，请不要将 FILE 权限授予相应的MySQL用户帐户，或者如果客户端用户帐户已经拥有该权限，则撤销该权限。
+重要的
+撤销 FILE 权限（或一开始不授予权限）只会让用户无法执行 LOAD XML 语句（以及 LOAD_FILE() 函数；它不会 阻止 用户执行 LOAD XML
+LOCAL 。要禁止此语句，您必须启动服务器或客户端与 --local-infile=OFF 。
+也就是说， FILE 权限只影响客户端是否可以读取服务器上的文件；它与客户端是否可以读取本地文件系统上的文件无关。

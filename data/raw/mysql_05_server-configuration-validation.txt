@@ -1,0 +1,43 @@
+5.1.3 服务器配置验证_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.1 MySQL 服务器 / 
+5.1.3 服务器配置验证
+5.1.3 服务器配置验证
+从 MySQL 8.0.16 开始，MySQL Server 支持一个 --validate-config 选项，可以在不以正常操作模式运行服务器的情况下检查启动配置是否存在问题：
+mysqld --validate-config
+如果未发现任何错误，服务器将以退出代码 0 终止。如果发现错误，服务器将显示一条诊断消息并以退出代码 1 终止。例如：
+$> mysqld --validate-config --no-such-option
+2018-11-05T17:50:12.738919Z 0 [ERROR] [MY-000068] [Server] unknown
+option '--no-such-option'.
+2018-11-05T17:50:12.738962Z 0 [ERROR] [MY-010119] [Server] Aborting
+一旦发现任何错误，服务器就会终止。要进行其他检查，请更正最初的问题并 --validate-config 再次运行服务器。
+对于前面的示例， --validate-config 在显示错误消息时使用 results，服务器退出代码为 1。也可能会显示警告和信息消息，具体取决于 log_error_verbosity 值，但不会产生立即验证终止或退出代码 1 . 例如，此命令会产生多个警告，同时显示这两个警告。但没有发生错误，所以退出代码为 0：
+$> mysqld --validate-config --log_error_verbosity=2
+--read-only=s --transaction_read_only=s
+2018-11-05T15:43:18.445863Z 0 [Warning] [MY-000076] [Server] option
+'read_only': boolean value 's' was not recognized. Set to OFF.
+2018-11-05T15:43:18.445882Z 0 [Warning] [MY-000076] [Server] option
+'transaction-read-only': boolean value 's' was not recognized. Set to OFF.
+此命令会产生相同的警告，但也会产生错误，因此错误消息会与警告一起显示，退出代码为 1：
+$> mysqld --validate-config --log_error_verbosity=2
+--no-such-option --read-only=s --transaction_read_only=s
+2018-11-05T15:43:53.152886Z 0 [Warning] [MY-000076] [Server] option
+'read_only': boolean value 's' was not recognized. Set to OFF.
+2018-11-05T15:43:53.152913Z 0 [Warning] [MY-000076] [Server] option
+'transaction-read-only': boolean value 's' was not recognized. Set to OFF.
+2018-11-05T15:43:53.164889Z 0 [ERROR] [MY-000068] [Server] unknown
+option '--no-such-option'.
+2018-11-05T15:43:53.165053Z 0 [ERROR] [MY-010119] [Server] Aborting
+该 --validate-config 选项的范围仅限于服务器可以在不经过其正常启动过程的情况下执行的配置检查。因此，配置检查不会初始化存储引擎和其他插件、组件等，也不会验证与那些未初始化的子系统关联的选项。
+--validate-config 可以随时使用，但在升级后特别有用，用于检查升级后的服务器是否认为以前用于旧服务器的任何选项已弃用或过时。例如， tx_read_only 系统变量在 MySQL 5.7 中被弃用，在 8.0 中被移除。假设 MySQL 5.7 服务器在其 my.cnf 文件中使用该系统变量运行，然后升级到 MySQL 8.0。运行升级后的服务器 --validate-config 以检查配置会产生以下结果：
+$> mysqld --validate-config
+2018-11-05T10:40:02.712141Z 0 [ERROR] [MY-000067] [Server] unknown variable
+'tx_read_only=ON'.
+2018-11-05T10:40:02.712178Z 0 [ERROR] [MY-010119] [Server] Aborting
+--validate-config 可以与 --defaults-file 选项一起使用以仅验证特定文件中的选项：
+$> mysqld --defaults-file=./my.cnf-test --validate-config
+2018-11-05T10:40:02.712141Z 0 [ERROR] [MY-000067] [Server] unknown variable
+'tx_read_only=ON'.
+2018-11-05T10:40:02.712178Z 0 [ERROR] [MY-010119] [Server] Aborting
+请记住 --defaults-file ，如果指定，则必须是命令行上的第一个选项。（以相反的选项顺序执行前面的示例会产生一条 --defaults-file 本身未知的消息。）

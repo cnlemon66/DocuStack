@@ -1,0 +1,97 @@
+Redis SETBIT 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SETBIT 命令
+SETBIT 设置或清除指定键对应字符串值中某偏移位置的位（bit）。
+* 语法
+SETBIT key offset value
+* 参数说明
+参数 类型 必填 说明
+key String 是 Bitmap 键名
+offset Integer 是 位偏移量，从 0 开始，最大 2 32-1（即 0 ~ 4294967295）
+value Integer 是 位值，只能为 0 或 1
+* 返回值
+Integer ：返回该偏移位置原来存储的位值（0 或 1）
+* 时间复杂度
+O(1)
+*
+* 示例
+* 基本用法
+> SETBIT user:login:20240101 1001 1
+(integer) 0
+
+> SETBIT user:login:20240101 1002 1
+(integer) 0
+
+> SETBIT user:login:20240101 1001 0
+(integer) 1
+
+> GETBIT user:login:20240101 1001
+(integer) 0
+* 日活统计
+> SETBIT dau:2024-01-01 42 1
+(integer) 0
+> SETBIT dau:2024-01-01 100 1
+(integer) 0
+> BITCOUNT dau:2024-01-01
+(integer) 2
+* 用户特征标记
+> SETBIT user:feature:vip 10001 1
+(integer) 0
+> SETBIT user:feature:bind_phone 10001 1
+(integer) 0
+> GETBIT user:feature:vip 10001
+(integer) 1
+* 常见错误
+错误 原因 解决
+ERR bit offset is not an integer or out of range offset 非整数或超过 2 32-1 检查 offset 范围，确保在 0 ~ 4294967295 之间
+ERR bit is not an integer or out of range value 不是 0 或 1 确保 value 只能是 0 或 1
+WRONGTYPE Operation against a key holding the wrong kind of value key 已存在但类型不是 String Bitmap 底层是 String，但其他类型（如 List、Hash）会报错
+* 最佳实践
+日活/留存统计 ：每个用户 ID 对应一个位偏移，当天登录 SETBIT 为 1， BITCOUNT 统计日活
+特征标记 ：用 Bitmap 存储用户布尔特征（是否会员、是否绑定手机），相比多个 key 内存极省
+稀疏 Bitmap 注意 ：偏移量很大时 Redis 会分配相应内存，极端稀疏的 Bitmap 可评估改用 HyperLogLog
+配合 BITCOUNT / BITOP ：SETBIT 存储后，常用 BITCOUNT 统计、 BITOP 做交集并集运算
+* FAQ
+Q1: Bitmap 占用多少内存？ A: 偏移为 N 时，理论占用约 N/8 字节。Redis 内部使用 String 紧凑存储，但极端稀疏的大偏移 Bitmap 仍可能占用较多内存。
+Q2: SETBIT 的 key 类型是什么？ A: 底层是 String 类型，SETBIT / GETBIT 是 String 的位操作。 TYPE 命令返回 string 。
+Q3: SETBIT 的 offset 最大支持多少？ A: 最大 2 32-1（4294967295）。单个 Bitmap 最大约 512 MB。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

@@ -1,0 +1,8 @@
+8.10 缓冲和缓存_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 
+8.10 缓冲和缓存
+8.10 缓冲和缓存
+8.10.1 InnoDB缓冲池优化 8.10.2 MyISAM 键缓存 8.10.3 准备语句和存储程序的缓存
+MySQL 使用多种策略在内存缓冲区中缓存信息以提高性能。

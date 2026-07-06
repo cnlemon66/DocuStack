@@ -1,0 +1,73 @@
+Redis AUTH 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis AUTH 命令
+使用密码验证 Redis 连接身份。
+* 语法
+AUTH [username] password
+Redis 6.0+ 支持 ACL 用户名，旧版本只支持密码。
+* 参数说明
+参数 类型 必填 说明
+username String 否 ACL 用户名（Redis 6.0+）
+password String 是 密码
+* 返回值
+条件 返回值
+验证成功 OK
+验证失败 错误 ERR invalid password 或 WRONGPASS
+* 时间复杂度
+O(1)
+*
+* 示例
+# 无用户名（Redis < 6.0 或未启用 ACL）
+> AUTH mypassword
+OK
+
+# ACL 用户名（Redis 6.0+）
+> AUTH default mypassword
+OK
+
+# 错误密码
+> AUTH wrongpass
+(error) ERR invalid password
+* 常见错误
+未设置密码但发送 AUTH ：返回 ERR Client sent AUTH, but no password is set 。
+ACL 用户名错误 ：Redis 6.0+ 返回 WRONGPASS invalid username-password pair 。
+* 最佳实践
+requirepass 或 ACL ：生产环境必须设置密码，Redis 6.0+ 推荐 ACL 细粒度权限控制。
+连接池配置 ：密码在连接池初始化时配置，避免每次操作发送 AUTH。
+TLS 加密 ：密码明文传输，内网或配合 TLS/SSL 防止嗅探。
+* FAQ
+Q: AUTH 每次操作都要发吗？ A: 不是。连接建立时 AUTH 一次即可，后续命令无需重复验证。
+Q: Redis 6.0 ACL 和旧版 requirepass 冲突吗？ A: 不冲突。未启用 ACL 时 requirepass 生效；启用 ACL （aclfile/acllog）后 requirepass 被忽略。
+相关命令
+AUTH
+CLIENT
+CLIENT CACHING
+CLIENT GETNAME
+CLIENT GETREDIR
+CLIENT HELP
+CLIENT ID
+CLIENT INFO
+CLIENT KILL
+CLIENT LIST
+CLIENT NO-EVICT
+CLIENT NO-TOUCH
+CLIENT PAUSE
+CLIENT REPLY
+CLIENT SETINFO
+CLIENT SETNAME
+CLIENT TRACKING
+CLIENT TRACKINGINFO
+CLIENT UNBLOCK
+CLIENT UNPAUSE
+ECHO
+HELLO
+PING
+QUIT
+RESET
+SELECT

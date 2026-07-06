@@ -1,0 +1,12 @@
+11.4.9 优化空间分析_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.4 空间数据类型 / 
+11.4.9 优化空间分析
+11.4.9 优化空间分析
+对于 MyISAM 和 InnoDB 表，可以使用 SPATIAL 索引优化包含空间数据的列中的搜索操作。最典型的操作是：
+搜索包含给定点的所有对象的点查询
+搜索与给定区域重叠的所有对象的区域查询
+MySQL 使用 R-Trees 对空间列上的 SPATIAL 索引进行二次分割。 SPATIAL 索引是使用几何的最小边界矩形 (MBR) 构建的。对于大多数几何图形，MBR 是围绕几何图形的最小矩形。对于水平或垂直线串，MBR 是退化为线串的矩形。对于一个点，MBR是一个退化为点的矩形。
+也可以在空间列上创建普通索引。在非 SPATIAL 索引中，您必须为除列之外的任何空间列声明前缀 POINT 。
+MyISAM 并同时 InnoDB 支持 SPATIAL 和非 SPATIAL 索引。其他存储引擎支持非 SPATIAL 索引，如 第 13.1.15 节“CREATE INDEX 语句” 中所述。

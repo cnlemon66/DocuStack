@@ -1,0 +1,9 @@
+13.1.26 DROP FUNCTION 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.26 DROP FUNCTION 语句
+13.1.26 DROP FUNCTION 语句
+该 DROP FUNCTION 语句用于删除存储函数和可加载函数：
+有关删除存储函数的信息，请参阅 第 13.1.29 节，“DROP PROCEDURE 和 DROP FUNCTION 语句” 。
+有关删除可加载函数的信息，请参阅 第 13.7.4.2 节，“可加载函数的 DROP FUNCTION 语句” 。

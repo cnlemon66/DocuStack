@@ -1,0 +1,133 @@
+8.2.3 优化 INFORMATION_SCHEMA 查询_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 8.2 优化SQL语句 / 
+8.2.3 优化 INFORMATION_SCHEMA 查询
+8.2.3 优化 INFORMATION_SCHEMA 查询
+监控数据库的应用程序可能会频繁使用 INFORMATION_SCHEMA 表。要最有效地为这些表编写查询，请使用以下一般准则：
+尝试仅查询 INFORMATION_SCHEMA 作为数据字典表视图的表。
+尝试仅查询静态元数据。为动态元数据和静态元数据选择列或使用检索条件会增加处理动态元数据的开销。
+笔记
+查询中数据库和表名称的比较行为 INFORMATION_SCHEMA 可能与您的预期不同。有关详细信息，请参阅 第 10.8.7 节，“在 INFORMATION_SCHEMA 搜索中使用排序规则” 。
+这些 INFORMATION_SCHEMA 表被实现为数据字典表的视图，因此对它们的查询从数据字典中检索信息：
+CHARACTER_SETS
+CHECK_CONSTRAINTS
+COLLATIONS
+COLLATION_CHARACTER_SET_APPLICABILITY
+COLUMNS
+EVENTS
+FILES
+INNODB_COLUMNS
+INNODB_DATAFILES
+INNODB_FIELDS
+INNODB_FOREIGN
+INNODB_FOREIGN_COLS
+INNODB_INDEXES
+INNODB_TABLES
+INNODB_TABLESPACES
+INNODB_TABLESPACES_BRIEF
+INNODB_TABLESTATS
+KEY_COLUMN_USAGE
+PARAMETERS
+PARTITIONS
+REFERENTIAL_CONSTRAINTS
+RESOURCE_GROUPS
+ROUTINES
+SCHEMATA
+STATISTICS
+TABLES
+TABLE_CONSTRAINTS
+TRIGGERS
+VIEWS
+VIEW_ROUTINE_USAGE
+VIEW_TABLE_USAGE
+某些类型的值，即使对于非视图 INFORMATION_SCHEMA 表，也是通过从数据字典中查找来检索的。这包括数据库和表名称、表类型和存储引擎等值。
+一些 INFORMATION_SCHEMA 表包含提供表统计信息的列：
+STATISTICS.CARDINALITY
+TABLES.AUTO_INCREMENT
+TABLES.AVG_ROW_LENGTH
+TABLES.CHECKSUM
+TABLES.CHECK_TIME
+TABLES.CREATE_TIME
+TABLES.DATA_FREE
+TABLES.DATA_LENGTH
+TABLES.INDEX_LENGTH
+TABLES.MAX_DATA_LENGTH
+TABLES.TABLE_ROWS
+TABLES.UPDATE_TIME
+这些列代表动态表元数据；也就是说，信息随着表内容的变化而变化。
+默认情况下，MySQL 在查询列时从字典表中检索这些列的缓存值 mysql.index_stats ， mysql.table_stats 这比直接从存储引擎中检索统计信息更有效。如果缓存的统计信息不可用或已过期，MySQL 会从存储引擎中检索最新的统计信息并将它们缓存在 mysql.index_stats 字典 mysql.table_stats 表中。后续查询会检索缓存的统计信息，直到缓存的统计信息过期。服务器重新启动或第一次打开 mysql.index_stats 和 mysql.table_stats 表不会自动更新缓存的统计信息。
+会话变量定义缓存统计数据过期之前的 information_schema_stats_expiry 时间段。默认值为 86400 秒（24 小时），但时间段最多可延长至一年。
+要随时更新给定表的缓存值，请使用 ANALYZE TABLE .
+mysql.index_stats 在这些情况下，
+
+查询统计列不会在 mysql.table_stats 字典表中存储或更新统计信息：
+当缓存的统计信息尚未过期时。
+什么时候 information_schema_stats_expiry 设置为0。
+当服务器处于 read_only 、 super_read_only 、 transaction_read_only 或 innodb_read_only 模式时。
+当查询还获取 Performance Schema 数据时。
+information_schema_stats_expiry 是一个会话变量，每个客户端会话都可以定义自己的过期值。从存储引擎检索并由一个会话缓存的统计信息可供其他会话使用。
+笔记
+如果 innodb_read_only 启用了系统变量， ANALYZE
+TABLE 可能会失败，因为它无法更新数据字典中使用 InnoDB . 对于 ANALYZE
+TABLE 更新键分布的操作，即使操作更新表本身（例如，如果它是一个 MyISAM 表）也可能会失败。要获取更新的分布统计信息，请设置 information_schema_stats_expiry=0 .
+对于 INFORMATION_SCHEMA 作为数据字典表视图实现的表，底层数据字典表上的索引允许优化器构建高效的查询执行计划。要查看优化器所做的选择，请使用 EXPLAIN . 要同时查看服务器用于执行查询的 INFORMATION_SCHEMA 查询，请使用 SHOW WARNINGS 紧随其后的 EXPLAIN 。
+考虑以下语句，它标识 utf8mb4 字符集的排序规则：
+mysql> SELECT COLLATION_NAME
+FROM INFORMATION_SCHEMA.COLLATION_CHARACTER_SET_APPLICABILITY
+WHERE CHARACTER_SET_NAME = 'utf8mb4';
++----------------------------+
+| COLLATION_NAME |
++----------------------------+
+| utf8mb4_general_ci |
+| utf8mb4_bin |
+| utf8mb4_unicode_ci |
+| utf8mb4_icelandic_ci |
+| utf8mb4_latvian_ci |
+| utf8mb4_romanian_ci |
+| utf8mb4_slovenian_ci |
+...
+服务器如何处理该语句？要找出答案，请使用 EXPLAIN ：
+mysql> EXPLAIN SELECT COLLATION_NAME
+FROM INFORMATION_SCHEMA.COLLATION_CHARACTER_SET_APPLICABILITY
+WHERE CHARACTER_SET_NAME = 'utf8mb4'\G
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+table: cs
+partitions: NULL
+type: const
+possible_keys: PRIMARY,name
+key: name
+key_len: 194
+ref: const
+rows: 1
+filtered: 100.00
+Extra: Using index
+*************************** 2. row ***************************
+id: 1
+select_type: SIMPLE
+table: col
+partitions: NULL
+type: ref
+possible_keys: character_set_id
+key: character_set_id
+key_len: 8
+ref: const
+rows: 68
+filtered: 100.00
+Extra: NULL
+2 rows in set, 1 warning (0.01 sec)
+要查看用于满足该语句的查询，请使用 SHOW WARNINGS ：
+mysql> SHOW WARNINGS\G
+*************************** 1. row ***************************
+Level: Note
+Code: 1003
+Message: /* select#1 */ select `mysql`.`col`.`name` AS `COLLATION_NAME`
+from `mysql`.`character_sets` `cs`
+join `mysql`.`collations` `col`
+where ((`mysql`.`col`.`character_set_id` = '45')
+and ('utf8mb4' = 'utf8mb4'))
+如 所示 SHOW WARNINGS ，服务器将查询处理 COLLATION_CHARACTER_SET_APPLICABILITY 为对系统数据库
+中的 character_sets 和 collations 数据字典表的
+查询。 mysql

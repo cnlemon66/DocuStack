@@ -1,0 +1,120 @@
+11.2.5 TIMESTAMP 和 DATETIME 的自动初始化和更新_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.2 日期和时间数据类型 / 
+11.2.5 TIMESTAMP 和 DATETIME 的自动初始化和更新
+11.2.5 TIMESTAMP 和 DATETIME 的自动初始化和更新
+TIMESTAMP 和 DATETIME 列可以自动初始化并更新为当前日期和时间（即当前时间戳）。
+对于表中的任何 TIMESTAMP 或 DATETIME 列，您可以将当前时间戳指定为默认值、自动更新值或两者：
+对于没有为该列指定值的插入行，自动初始化列设置为当前时间戳。
+当行中任何其他列的值从其当前值更改时，自动更新列将自动更新为当前时间戳。如果所有其他列都设置为其当前值，则自动更新的列将保持不变。要防止自动更新的列在其他列更改时更新，请将其显式设置为其当前值。要更新自动更新的列，即使其他列没有更改，请将其显式设置为应有的值（例如，将其设置为 CURRENT_TIMESTAMP ）。
+此外，如果 explicit_defaults_for_timestamp 系统变量被禁用，您可以通过为其分配一个值来将任何 TIMESTAMP （但不是 DATETIME ）列初始化或更新为当前日期和时间 NULL ，除非它已被定义 NULL 为允许 NULL 值的属性。
+要指定自动属性，请在列定义中使用 DEFAULT
+CURRENT_TIMESTAMP and子句。 ON UPDATE
+CURRENT_TIMESTAMP 子句的顺序无关紧要。如果两者都存在于列定义中，则其中一个可以先出现。的任何同义词 CURRENT_TIMESTAMP 都与 具有相同的含义 CURRENT_TIMESTAMP 。这些是 CURRENT_TIMESTAMP() , NOW() , LOCALTIME , LOCALTIME() , LOCALTIMESTAMP 和 LOCALTIMESTAMP() 。
+DEFAULT CURRENT_TIMESTAMP and
+的
+使用 ON UPDATE CURRENT_TIMESTAMP 特定于 TIMESTAMP and DATETIME 。该 DEFAULT 子句还可用于指定常量（非自动）默认值（例如， DEFAULT 0 or DEFAULT '2000-01-01
+00:00:00' ）。
+笔记
+以下示例使用 DEFAULT 0 , 一个默认值，它可以产生警告或错误，具体取决于是否 NO_ZERO_DATE 启用了严格 SQL 模式或 SQL 模式。请注意， TRADITIONAL SQL 模式包括严格模式和 NO_ZERO_DATE . 请参阅 第 5.1.11 节，“服务器 SQL 模式” 。
+TIMESTAMP 或 DATETIME 列定义可以为默认值和自动更新值指定当前时间戳，为一个而不为另一个指定当前时间戳，或者两者都不指定。不同的列可以有不同的自动属性组合。以下规则描述了可能性：
+对于 DEFAULT CURRENT_TIMESTAMP 和 ON UPDATE CURRENT_TIMESTAMP ，该列的默认值具有当前时间戳，并自动更新为当前时间戳。
+CREATE TABLE t1 (
+ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+dt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+有 DEFAULT 子句但没有 ON
+UPDATE CURRENT_TIMESTAMP 子句，该列具有给定的默认值，并且不会自动更新为当前时间戳。
+默认值取决于 DEFAULT 子句指定 CURRENT_TIMESTAMP 的还是常量值。对于 CURRENT_TIMESTAMP ，默认值为当前时间戳。
+CREATE TABLE t1 (
+ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+dt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+对于常量，默认值为给定值。在这种情况下，该列根本没有自动属性。
+CREATE TABLE t1 (
+ts TIMESTAMP DEFAULT 0,
+dt DATETIME DEFAULT 0
+);
+使用 ON UPDATE CURRENT_TIMESTAMP 子句和常量 DEFAULT 子句，列会自动更新为当前时间戳并具有给定的常量默认值。
+CREATE TABLE t1 (
+ts TIMESTAMP DEFAULT 0 ON UPDATE CURRENT_TIMESTAMP,
+dt DATETIME DEFAULT 0 ON UPDATE CURRENT_TIMESTAMP
+);
+有 ON UPDATE CURRENT_TIMESTAMP 子句但没有 DEFAULT 子句，该列会自动更新为当前时间戳，但没有当前时间戳作为其默认值。
+这种情况下的默认值取决于类型。 TIMESTAMP 除非使用属性定义，否则默认值为 0 NULL ，在这种情况下，默认值为 NULL .
+CREATE TABLE t1 (
+ts1 TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- default 0
+ts2 TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP -- default NULL
+);
+DATETIME NULL 除非使用属性定义，
+否则 NOT
+NULL 默认值为 0，在这种情况下默认值为 0。
+CREATE TABLE t1 (
+dt1 DATETIME ON UPDATE CURRENT_TIMESTAMP, -- default NULL
+dt2 DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP -- default 0
+);
+TIMESTAMP DATETIME 除非明确指定，否则列没有自动属性，但以下情况除外：如果
+系统 explicit_defaults_for_timestamp 变量被禁用，则 第一 TIMESTAMP 列同时具有这两个
+属性 DEFAULT CURRENT_TIMESTAMP ， ON
+UPDATE CURRENT_TIMESTAMP 如果两者都没有明确指定。要抑制第一 TIMESTAMP 列的自动属性，请使用以下策略之一：
+启用 explicit_defaults_for_timestamp 系统变量。在这种情况下，指定自动初始化和更新的 DEFAULT
+CURRENT_TIMESTAMP 和 ON UPDATE
+CURRENT_TIMESTAMP 子句可用，但不会分配给任何 TIMESTAMP 列，除非明确包含在列定义中。
+或者，如果 explicit_defaults_for_timestamp 禁用，请执行以下任一操作：
+DEFAULT 使用指定常量默认值
+
+的子句定义列。
+指定 NULL 属性。这也会导致列允许 NULL 值，这意味着您不能通过将列设置为来分配当前时间戳 NULL 。分配 NULL 将列设置为 NULL ，而不是当前时间戳。要分配当前时间戳，请将列设置为 CURRENT_TIMESTAMP 或同义词，例如 NOW() 。
+考虑这些表定义：
+CREATE TABLE t1 (
+ts1 TIMESTAMP DEFAULT 0,
+ts2 TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ON UPDATE CURRENT_TIMESTAMP);
+CREATE TABLE t2 (
+ts1 TIMESTAMP NULL,
+ts2 TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ON UPDATE CURRENT_TIMESTAMP);
+CREATE TABLE t3 (
+ts1 TIMESTAMP NULL DEFAULT 0,
+ts2 TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ON UPDATE CURRENT_TIMESTAMP);
+这些表具有以下属性：
+在每个表定义中，第一 TIMESTAMP 列没有自动初始化或更新。
+这些表在 ts1 列处理 NULL 值的方式上有所不同。对于 t1 , ts1 is NOT NULL 并为其分配一个值， NULL 将其设置为当前时间戳。对于 t2 and t3 ， ts1 允许 NULL 并为其赋值 将其 NULL 设置为 NULL 。
+t2 和 t3 的默认值不同 ts1 。对于 t2 , ts1 被定义为 permit NULL ，因此默认也是 NULL 在没有显式 DEFAULT 子句的情况下。对于 t3 ， ts1 允许 NULL 但具有明确的默认值 0。
+如果 TIMESTAMP 或 DATETIME 列定义在任何地方包含显式小数秒精度值，则必须在整个列定义中使用相同的值。这是允许的：
+CREATE TABLE t1 (
+ts TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+);
+这是不允许的：
+CREATE TABLE t1 (
+ts TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP(3)
+);
+TIMESTAMP 初始化和 NULL 属性
+如果 explicit_defaults_for_timestamp 系统变量被禁用， TIMESTAMP 列默认为 NOT NULL , 不能包含 NULL 值，并且分配 NULL 分配当前时间戳。要允许 TIMESTAMP 列包含
+，请使用属性 NULL 显式声明它
+。 NULL 在这种情况下，默认值也变为 NULL 除非被 DEFAULT 指定不同默认值的子句覆盖。 DEFAULT NULL 可用于明确指定 NULL 为默认值。（对于未用属性 TIMESTAMP 声明的列，无效。）如果
+列允许 NULL DEFAULT NULL TIMESTAMP NULL 值，分配 NULL 将其设置为 NULL ，而不是当前时间戳。
+下表包含多个 TIMESTAMP 允许 NULL 值的列：
+CREATE TABLE t
+(
+ts1 TIMESTAMP NULL DEFAULT NULL,
+ts2 TIMESTAMP NULL DEFAULT 0,
+ts3 TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP
+);
+TIMESTAMP 允许 NULL 值
+的列在插入时 不 采用当前时间戳，除非在以下情况之一：
+它的默认值定义为 CURRENT_TIMESTAMP 并且没有为该列指定值
+CURRENT_TIMESTAMP 或其任何同义词，例如 NOW() is explicitly inserted into the column
+换句话说， TIMESTAMP 定义为允许 NULL 值的列只有在其定义包括以下内容时才会自动初始化 DEFAULT CURRENT_TIMESTAMP ：
+CREATE TABLE t (ts TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP);
+如果 TIMESTAMP 列允许 NULL 值但其定义不包括 DEFAULT CURRENT_TIMESTAMP ，则必须显式插入与当前日期和时间对应的值。假设表 t1 和 t2 具有以下定义：
+CREATE TABLE t1 (ts TIMESTAMP NULL DEFAULT '0000-00-00 00:00:00');
+CREATE TABLE t2 (ts TIMESTAMP NULL DEFAULT NULL);
+要 TIMESTAMP 在插入时将任一表中的列设置为当前时间戳，请显式为其分配该值。例如：
+INSERT INTO t2 VALUES (CURRENT_TIMESTAMP);
+INSERT INTO t1 VALUES (NOW());
+如果 explicit_defaults_for_timestamp 启用了系统变量，则 TIMESTAMP 列
+仅在使用属性 NULL 声明时才允许值
+。 NULL 此外， TIMESTAMP 列不允许分配 NULL 以分配当前时间戳，无论是用 NULL or NOT NULL 属性声明的。要分配当前时间戳，请将列设置为 CURRENT_TIMESTAMP 或同义词，例如 NOW() 。

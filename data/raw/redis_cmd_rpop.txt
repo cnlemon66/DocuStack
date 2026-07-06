@@ -1,0 +1,75 @@
+Redis RPOP 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis RPOP 命令
+移除并返回 List 尾部（右侧）的一个元素。
+* 语法
+RPOP key [count]
+* 参数说明
+参数 类型 必填 说明
+key String 是 List 的键名
+count Integer 否 移除并返回的元素数量（Redis 6.2+）
+* 返回值
+条件 返回值
+key 存在且非空 返回尾部元素（String）
+多个 count 返回元素数组（Redis 6.2+）
+List 为空 (nil)
+key 不存在 (nil)
+* 时间复杂度
+O(1)（单个元素），O(N)（count 个元素）
+* 示例
+> RPUSH queue job1 job2 job3
+(integer) 3
+
+> RPOP queue
+"job3"
+
+> RPOP queue
+"job2"
+
+# 批量弹出（Redis 6.2+）
+> RPOP queue 2
+1) "job1"
+
+# 空 List
+> RPOP emptylist
+(nil)
+* 常见错误
+对非 List 类型使用 ：返回 WRONGTYPE。
+空 List 返回 nil ：业务层需处理 nil，避免空指针。
+* 最佳实践
+FIFO 队列 ： LPUSH key value + RPOP key 实现生产者-消费者队列。
+阻塞消费 ：使用 BRPOP key timeout 阻塞等待元素，避免轮询。
+批量处理 ：Redis 6.2+ 用 RPOP key count 一次获取多个任务，减少网络往返。
+* FAQ
+Q: RPOP 和 BRPOP 有什么区别？ A: RPOP 立即返回，List 为空返回 nil； BRPOP 阻塞等待直到有元素或超时，避免空轮询。
+Q: RPOP 会删除 key 吗？ A: 当 List 最后一个元素被弹出后，key 会自动删除。
+Q: RPOP count 所有元素不够怎么办？ A: 返回实际存在的元素，不会报错。例如 List 只有 1 个元素， RPOP key 5 返回包含 1 个元素的数组。
+相关命令
+BLMOVE
+BLMPOP
+BLPOP
+BRPOP
+BRPOPLPUSH
+LINDEX
+LINSERT
+LLEN
+LMOVE
+LMPOP
+LPOP
+LPOS
+LPUSH
+LPUSHX
+LRANGE
+LREM
+LSET
+LTRIM
+RPOP
+RPOPLPUSH
+RPUSH
+RPUSHX

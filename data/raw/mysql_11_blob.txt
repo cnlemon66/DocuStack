@@ -1,0 +1,36 @@
+11.3.4 BLOB 和 TEXT 类型_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 11 章数据类型 / 11.3 字符串数据类型 / 
+11.3.4 BLOB 和 TEXT 类型
+11.3.4 BLOB 和 TEXT 类型
+A BLOB 是一个二进制大对象，可以容纳可变数量的数据。四种 BLOB 类型是 TINYBLOB 、 BLOB 、 MEDIUMBLOB 和 LONGBLOB 。它们仅在它们可以容纳的值的最大长度上有所不同。四种 TEXT 类型是 TINYTEXT 、 TEXT 、 MEDIUMTEXT 和 LONGTEXT 。它们对应于四种 BLOB 类型，并且具有相同的最大长度和存储要求。请参阅 第 11.7 节，“数据类型存储要求” 。
+BLOB 值被视为二进制字符串（字节字符串）。它们有 binary 字符集和排序规则，比较和排序是基于列值中字节的数值。 TEXT 值被视为非二进制字符串（字符串）。它们具有 以外的字符集 binary ，并且根据字符集的排序规则对值进行排序和比较。
+如果未启用严格的 SQL 模式，并且您为 BLOB 或 TEXT 列分配了一个超过该列最大长度的值，该值将被截断以适合并生成警告。对于非空格字符的截断，您可能会导致发生错误（而不是警告）并通过使用严格的 SQL 模式禁止插入值。请参阅 第 5.1.11 节，“服务器 SQL 模式” 。
+无论 SQL 模式如何，从要插入 TEXT 列的值中截断多余的尾随空格总是会生成警告。
+对于 TEXT 和 BLOB 列，插入时没有填充，选择时也没有删除字节。
+如果 TEXT 列被索引，则索引条目比较在末尾用空格填充。这意味着，如果索引需要唯一值，则对于仅尾随空格数不同的值会发生重复键错误。例如，如果表包含 'a' ，则尝试存储 'a ' 会导致重复键错误。 BLOB 对于列
+来说情况并非如此。
+在大多数方面，您可以将 BLOB 列视为任意 VARBINARY 大的列。同样，你可以把一 TEXT 列看成一 VARCHAR 列。 BLOB 并在以下方面
+有所 TEXT 不同
+： VARBINARY VARCHAR
+对于 BLOB 和 TEXT 列的索引，您必须指定索引前缀长度。对于 CHAR and VARCHAR ，前缀长度是可选的。请参阅 第 8.3.5 节，“列索引” 。
+BLOB 并且 TEXT 列不能有 DEFAULT 值。
+如果将 BINARY 属性与 TEXT 数据类型一起使用，则会为该列分配 _bin 列字符集的二进制 ( ) 排序规则。
+LONG 并 LONG VARCHAR 映射到 MEDIUMTEXT 数据类型。这是一个兼容性功能。
+MySQL Connector/ODBC 将 BLOB 值定义为 LONGVARBINARY 和将 TEXT 值定义为 LONGVARCHAR .
+因为 BLOB 和 TEXT 值可能非常长，您可能会在使用它们时遇到一些限制：
+排序时仅使用列的第一个 max_sort_length 字节。的默认值为 max_sort_length 1024。您可以通过增加 max_sort_length 在服务器启动或运行时的值来使更多字节在排序或分组中有效。任何客户端都可以更改其会话 max_sort_length 变量的值：
+mysql> SET max_sort_length = 2000;
+mysql> SELECT id, comment FROM t
+-> ORDER BY comment;
+使用临时表处理的查询结果中的实例 BLOB 或 TEXT 列导致服务器使用磁盘上的表而不是内存中的表，因为 MEMORY 存储引擎不支持这些数据类型（请参阅 第 8.4.4 节，“内部临时表” MySQL 中的表使用” ）。使用磁盘会导致性能下降，因此
+只有在确实需要时才在查询结果中包含 BLOB 或列。 TEXT 例如，避免使用 SELECT * , 它会选择所有列。
+BLOB 或
+对象
+的最大大小 TEXT 由其类型决定，但您实际可以在客户端和服务器之间传输的最大值由可用内存量和通信缓冲区的大小决定。您可以通过更改 max_allowed_packet 变量的值来更改消息缓冲区的大小，但是您必须对服务器和客户端程序都这样做。例如， mysql 和 mysqldump 都允许您更改客户端 max_allowed_packet 值。参见 第 5.1.1 节，“配置服务器” ， 第 4.5.1 节，“mysql — MySQL 命令行客户端” 和 第 4.5.4 节，“mysqldump — 数据库备份程序” 。您可能还想将数据包大小和要存储的数据对象的大小与存储要求进行比较，请参阅 第 11.7 节，“数据类型存储要求”
+每个 BLOB 或 TEXT 值在内部由单独分配的对象表示。这与所有其他数据类型形成对比，在打开表时，为每列分配一次存储空间。
+在某些情况下，可能需要将二进制数据（例如媒体文件）存储在 BLOB 或 TEXT 列中。您可能会发现 MySQL 的字符串处理函数对于处理此类数据很有用。请参阅 第 12.8 节，“字符串函数和运算符” 。出于安全和其他原因，通常最好使用应用程序代码而不是为应用程序用户提供 FILE 特权。 您可以在 MySQL 论坛 ( http://forums.mysql.com/ )
+中讨论各种语言和平台的细节。
+笔记
+在 mysql 客户端中，二进制字符串使用十六进制表示法显示，具体取决于 --binary-as-hex . 有关该选项的更多信息，请参阅 第 4.5.1 节，“mysql — MySQL 命令行客户端” 。

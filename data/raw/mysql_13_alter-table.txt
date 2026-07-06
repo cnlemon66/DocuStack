@@ -1,0 +1,506 @@
+13.1.9 ALTER TABLE 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.9 ALTER TABLE 语句
+13.1.9 ALTER TABLE 语句
+13.1.9.1 ALTER TABLE 分区操作 13.1.9.2 ALTER TABLE 和生成的列 13.1.9.3 更改表示例
+ALTER TABLE tbl_name [ alter_option [, alter_option ] ...]
+[ partition_options ] alter_option : { table_options | ADD [COLUMN] col_name column_definition [FIRST | AFTER col_name ]
+| ADD [COLUMN] ( col_name column_definition ,...)
+| ADD {INDEX | KEY} [ index_name ]
+[ index_type ] ( key_part ,...) [ index_option ] ...
+| ADD {FULLTEXT | SPATIAL} [INDEX | KEY] [ index_name ]
+( key_part ,...) [ index_option ] ...
+| ADD [CONSTRAINT [ symbol ]] PRIMARY KEY
+[ index_type ] ( key_part ,...)
+[ index_option ] ...
+| ADD [CONSTRAINT [ symbol ]] UNIQUE [INDEX | KEY]
+[ index_name ] [ index_type ] ( key_part ,...)
+[ index_option ] ...
+| ADD [CONSTRAINT [ symbol ]] FOREIGN KEY
+[ index_name ] ( col_name ,...) reference_definition | ADD [CONSTRAINT [ symbol ]] CHECK ( expr ) [[NOT] ENFORCED]
+| DROP {CHECK | CONSTRAINT} symbol | ALTER {CHECK | CONSTRAINT} symbol [NOT] ENFORCED
+| ALGORITHM [=] {DEFAULT | INSTANT | INPLACE | COPY}
+| ALTER [COLUMN] col_name {
+SET DEFAULT { literal | ( expr )}
+| SET {VISIBLE | INVISIBLE}
+| DROP DEFAULT
+}
+| ALTER INDEX index_name {VISIBLE | INVISIBLE}
+| CHANGE [COLUMN] old_col_name new_col_name column_definition [FIRST | AFTER col_name ]
+| [DEFAULT] CHARACTER SET [=] charset_name [COLLATE [=] collation_name ]
+| CONVERT TO CHARACTER SET charset_name [COLLATE collation_name ]
+| {DISABLE | ENABLE} KEYS
+| {DISCARD | IMPORT} TABLESPACE
+| DROP [COLUMN] col_name | DROP {INDEX | KEY} index_name | DROP PRIMARY KEY
+| DROP FOREIGN KEY fk_symbol | FORCE
+| LOCK [=] {DEFAULT | NONE | SHARED | EXCLUSIVE}
+| MODIFY [COLUMN] col_name column_definition [FIRST | AFTER col_name ]
+| ORDER BY col_name [, col_name ] ...
+| RENAME COLUMN old_col_name TO new_col_name | RENAME {INDEX | KEY} old_index_name TO new_index_name | RENAME [TO | AS] new_tbl_name | {WITHOUT | WITH} VALIDATION
+} partition_options : partition_option [ partition_option ] ... partition_option : {
+ADD PARTITION ( partition_definition )
+| DROP PARTITION partition_names | DISCARD PARTITION { partition_names | ALL} TABLESPACE
+| IMPORT PARTITION { partition_names | ALL} TABLESPACE
+| TRUNCATE PARTITION { partition_names | ALL}
+| COALESCE PARTITION number | REORGANIZE PARTITION partition_names INTO ( partition_definitions )
+| EXCHANGE PARTITION partition_name WITH TABLE tbl_name [{WITH | WITHOUT} VALIDATION]
+| ANALYZE PARTITION { partition_names | ALL}
+| CHECK PARTITION { partition_names | ALL}
+| OPTIMIZE PARTITION { partition_names | ALL}
+| REBUILD PARTITION { partition_names | ALL}
+| REPAIR PARTITION { partition_names | ALL}
+| REMOVE PARTITIONING
+} key_part : { col_name [( length )] | ( expr )} [ASC | DESC] index_type :
+USING {BTREE | HASH} index_option : {
+KEY_BLOCK_SIZE [=] value | index_type | WITH PARSER parser_name | COMMENT ' string '
+| {VISIBLE | INVISIBLE}
+} table_options : table_option [[,] table_option ] ... table_option : {
+AUTOEXTEND_SIZE [=] value | AUTO_INCREMENT [=] value | AVG_ROW_LENGTH [=] value | [DEFAULT] CHARACTER SET [=] charset_name | CHECKSUM [=] {0 | 1}
+| [DEFAULT] COLLATE [=] collation_name | COMMENT [=] ' string '
+| COMPRESSION [=] {'ZLIB' | 'LZ4' | 'NONE'}
+| CONNECTION [=] ' connect_string '
+| {DATA | INDEX} DIRECTORY [=] ' absolute path to directory '
+| DELAY_KEY_WRITE [=] {0 | 1}
+| ENCRYPTION [=] {'Y' | 'N'}
+| ENGINE [=] engine_name | ENGINE_ATTRIBUTE [=] ' string '
+| INSERT_METHOD [=] { NO | FIRST | LAST }
+| KEY_BLOCK_SIZE [=] value | MAX_ROWS [=] value | MIN_ROWS [=] value | PACK_KEYS [=] {0 | 1 | DEFAULT}
+| PASSWORD [=] ' string '
+| ROW_FORMAT [=] {DEFAULT | DYNAMIC | FIXED | COMPRESSED | REDUNDANT | COMPACT}
+| SECONDARY_ENGINE_ATTRIBUTE [=] ' string '
+| STATS_AUTO_RECALC [=] {DEFAULT | 0 | 1}
+| STATS_PERSISTENT [=] {DEFAULT | 0 | 1}
+| STATS_SAMPLE_PAGES [=] value | TABLESPACE tablespace_name [STORAGE {DISK | MEMORY}]
+| UNION [=] ( tbl_name [, tbl_name ]...)
+} partition_options :
+(see CREATE TABLE options)
+ALTER TABLE 改变表的结构。例如，您可以添加或删除列、创建或销毁索引、更改现有列的类型或重命名列或表本身。您还可以更改特性，例如用于表或表注释的存储引擎。
+要使用 ALTER TABLE ，您需要 ALTER 、 CREATE 和 INSERT 表权限。重命名表需要
+在旧表上、
+、
+和 ALTER 新
+表上。 DROP ALTER CREATE INSERT
+在表名之后，指定要进行的更改。如果没有给出， ALTER TABLE 什么都不做。
+许多允许的更改的语法类似于语句的子句 CREATE TABLE 。 column_definition 子句使用与 for ADD 和 CHANGE for相同的语法 CREATE
+TABLE 。有关详细信息，请参阅 第 13.1.20 节，“CREATE TABLE 语句” 。
+该词 COLUMN 是可选的，可以省略，除了 RENAME COLUMN （以区分列重命名操作和 RENAME 表重命名操作）。
+单个语句中允许有
+多个 ADD , ALTER , DROP , 和子句，以逗号分隔。这是标准 SQL 的 MySQL 扩展，它只允许每个
+语句中的每个子句之一。例如，要在单个语句中删除多个列，请执行以下操作： CHANGE ALTER
+TABLE ALTER TABLE
+ALTER TABLE t2 DROP COLUMN c, DROP COLUMN d;
+如果存储引擎不支持尝试的 ALTER TABLE 操作，则可能会产生警告。此类警告可以用 显示 SHOW WARNINGS 。请参阅 第 13.7.7.42 节，“显示警告声明” 。有关故障排除的信息 ALTER TABLE ，请参阅 第 B.3.6.1 节，“ALTER TABLE 的问题” 。
+有关生成的列的信息，请参阅 第 13.1.9.2 节，“ALTER TABLE 和生成的列” 。
+有关用法示例，请参阅 第 13.1.9.3 节，“ALTER TABLE 示例” 。
+InnoDB 在 MySQL 8.0.17 及更高版本中支持使用规范在 JSON 列上添加多值索引 key_part 可以采用. 有关 多 值索引的创建和使用以及多值索引的约束和限制的详细信息，请参阅多值索引。 (CAST json_path AS type ARRAY)
+使用 mysql_info() C API 函数，您可以找出 .copy 了多少行 ALTER TABLE 。请参阅 mysql_info() 。
+该声明还有几个其他方面， ALTER
+TABLE 在本节的以下主题下进行了描述：
+表格选项
+性能和空间要求
+并发控制
+添加和删​​除列
+重命名、重新定义和重新排序列
+主键和索引
+外键和其他约束
+更改字符集
+导入 InnoDB 表
+MyISAM 表的行顺序
+分区选项
+表格选项
+table_options 表示可在 CREATE
+TABLE 语句中使用的那种表选项，例如 ENGINE 、 AUTO_INCREMENT 、 AVG_ROW_LENGTH 、 MAX_ROWS 、 ROW_FORMAT 或 TABLESPACE 。
+有关所有表选项的说明，请参阅 第 13.1.20 节，“CREATE TABLE 语句” 。但是， ALTER TABLE 忽略 DATA
+DIRECTORY 和 INDEX DIRECTORY 作为表选项给出时。 ALTER TABLE 只允许它们作为分区选项，并要求您有 FILE 权限。
+使用表选项 ALTER
+TABLE 提供了一种更改单个表特征的便捷方法。例如：
+如果 t1 当前不是 InnoDB 表，则此语句将其存储引擎更改为 InnoDB ：
+ALTER TABLE t1 ENGINE = InnoDB;
+有关将表切换到
+存储引擎
+时的注意事项，
+请参阅 第 15.6.1.5 节，“将表从 MyISAM 转换为 InnoDB” 。 InnoDB
+当您指定一个 ENGINE 子句时， ALTER TABLE 重建表。即使表已经具有指定的存储引擎也是如此。
+在现有
+表上
+运行会执行 “ 空 ” 操作，可用于对表进行碎片整理，如 第 15.11.4 节“对表进行碎片整理” 中所述。在
+表上运行
+执行相同的功能。 ALTER
+TABLE tbl_name ENGINE=INNODB InnoDB ALTER
+TABLE InnoDB ALTER TABLE tbl_name FORCE InnoDB
+ALTER TABLE tbl_name ENGINE=INNODB 并
+使用 在线 DDL 。有关详细信息，请参阅 第 15.12 节，“InnoDB 和在线 DDL” 。 ALTER TABLE tbl_name FORCE
+尝试更改表的存储引擎的结果受所需存储引擎是否可用和 NO_ENGINE_SUBSTITUTION SQL 模式设置的影响，如 第 5.1.11 节，“服务器 SQL 模式” 中所述。
+为防止无意中丢失数据， ALTER TABLE 不能用于将表的存储引擎更改为 MERGE 或 BLACKHOLE 。
+要更改 InnoDB 表以使用压缩行存储格式：
+ALTER TABLE t1 ROW_FORMAT = COMPRESSED;
+该 ENCRYPTION 子句为表启用或禁用页级数据加密 InnoDB 。必须安装并配置密钥环插件以启用加密。
+如果 table_encryption_privilege_check 启用该变量， TABLE_ENCRYPTION_ADMIN 则需要特权才能使用具有 ENCRYPTION 不同于默认模式加密设置的设置的子句。
+在 MySQL 8.0.16 之前， ENCRYPTION 只有在更改驻留在 file-per-table 表空间中的表时才支持该子句。从 MySQL 8.0.16 开始， ENCRYPTION 驻留在通用表空间中的表也支持该子句。
+对于驻留在通用表空间中的表，表和表空间加密必须匹配。
+ENCRYPTION 在没有明确指定子句
+
+的情况下，不允许通过将表移动到不同的表空间或更改存储引擎来更改表加密。
+从 MySQL 8.0.16 开始，如果表使用不支持加密的存储引擎，则不允许使用or ENCRYPTION 以外的值
+
+指定
+子句。此前，该条款被接受。也不允许
+尝试使用不支持加密的存储引擎在启用加密的模式中创建没有子句的表
+。 'N' '' ENCRYPTION
+有关更多信息，请参阅 第 15.13 节，“InnoDB 静态数据加密” 。
+要重置当前的自动增量值：
+ALTER TABLE t1 AUTO_INCREMENT = 13;
+您不能将计数器重置为小于或等于当前使用的值的值。对于 InnoDB 和 MyISAM ，如果值小于或等于 AUTO_INCREMENT 列中当前的最大值，则将值重置为当前最大 AUTO_INCREMENT 列值加一。
+要更改默认表字符集：
+ALTER TABLE t1 CHARACTER SET = utf8mb4;
+另请参阅 更改字符集 。
+添加（或更改）表注释：
+ALTER TABLE t1 COMMENT = 'New table comment';
+ALTER TABLE 与 TABLESPACE 选项一起
+
+使用可 InnoDB 在现有 通用表空间 、 file-per-table 表 空间和 系统表 空间之间移动表。请参阅 使用 ALTER TABLE 在表空间之间移动表 。
+ALTER TABLE ... TABLESPACE 操作总是会导致完整的表重建，即使该 TABLESPACE 属性未从其先前的值更改。
+ALTER TABLE ... TABLESPACE 语法不支持将表从临时表空间移动到持久表空间。
+支持的 DATA DIRECTORY 子句不受支持 CREATE TABLE
+... TABLESPACE ， ALTER TABLE ... TABLESPACE 如果指定则忽略。
+有关该 TABLESPACE 选项的功能和限制的更多信息，请参阅 CREATE TABLE 。
+MySQL NDB Cluster 8.0 支持设置 NDB_TABLE 选项来控制表的分区平衡（片段计数类型）、从任何副本读取能力、完全复制或这些的任意组合，作为 ALTER TABLE 语句的表注释的一部分以相同的方式至于 CREATE TABLE ，如本例所示：
+ALTER TABLE t1 COMMENT = "NDB_TABLE=READ_BACKUP=0,PARTITION_BALANCE=FOR_RA_BY_NODE";
+也可以将表 NDB_COMMENT 列的选项设置为语句 NDB 的一部分，如下所示： ALTER TABLE
+ALTER TABLE t1
+CHANGE COLUMN c1 c1 BLOB
+COMMENT = 'NDB_COLUMN=BLOB_INLINE_SIZE=4096,MAX_BLOB_PART_SIZE';
+NDB 8.0.30 及更高版本支持以这种方式设置 blob 内联大小。请记住， ALTER TABLE
+... COMMENT ... 丢弃表的任何现有注释。有关其他信息和示例，
+请参阅 设置 NDB_TABLE 选项。
+ENGINE_ATTRIBUTE 和 SECONDARY_ENGINE_ATTRIBUTE 选项（自 MySQL 8.0.21 起可用）用于指定主存储引擎和辅助存储引擎的表、列和索引属性。这些选项保留供将来使用。不能更改索引属性。必须删除一个索引并用所需的更改添加回来，这可以在单个 ALTER TABLE 语句中执行。
+要验证表选项是否按预期更改，请使用 SHOW CREATE TABLE 或查询 INFORMATION_SCHEMA.TABLES 表。
+性能和空间要求
+ALTER TABLE 使用以下算法之一处理操作：
+COPY ：对原表的副本进行操作，将原表的表数据逐行复制到新表中。不允许并发 DML。
+INPLACE ：操作避免复制表数据，但可能会重建表。在操作的准备和执行阶段可能会短暂地获取表上的独占元数据锁。通常，支持并发 DML。
+INSTANT ：操作只修改数据字典中的元数据。在操作的执行阶段可能会短暂地获取表上的独占元数据锁。表数据不受影响，使操作即时进行。允许并发 DML。(MySQL 8.0.12引入)
+对于使用 NDB 存储引擎的表，这些算法的工作原理如下：
+COPY ： NDB 创建表的副本并更改它；NDB Cluster 处理程序然后在表的旧版本和新版本之间复制数据。随后， NDB 删除旧表并重命名新表。
+这有时也称为 “ 复制 ” 或 “ 离线 ” ALTER TABLE 。
+INPLACE ：数据节点进行所需的更改；NDB Cluster 处理程序不复制数据或以其他方式参与。
+这有时也称为 “ 非复制 ” 或 “ 在线 ” ALTER TABLE 。
+INSTANT : 不支持 NDB 。
+有关更多信息，请参阅 第 23.6.11 节，“在 NDB Cluster 中使用 ALTER TABLE 进行在线操作” 。
+该 ALGORITHM 子句是可选的。如果 ALGORITHM 省略该子句，MySQL 将使用
+支持它 ALGORITHM=INSTANT 的存储引擎和 ALTER TABLE 子句。否则， ALGORITHM=INPLACE 使用。如果 ALGORITHM=INPLACE 不支持， ALGORITHM=COPY 则使用。
+笔记
+使用 向分区表添加列后 ALGORITHM=INSTANT ，无法再 ALTER
+TABLE ... EXCHANGE PARTITION 对该表执行操作。
+指定一个 ALGORITHM 子句要求操作对支持它的子句和存储引擎使用指定的算法，否则会失败并出现错误。指定 ALGORITHM=DEFAULT 与省略 ALGORITHM 子句相同。
+ALTER TABLE 使用该 COPY 算法的操作等待正在修改表的其他操作完成。对表副本应用更改后，数据被复制过来，原始表被删除，表副本被重命名为原始表的名称。当 ALTER TABLE 操作执行时，原始表可被其他会话读取（例外情况稍后会注明）。操作开始后对表的更新和写入将 ALTER
+TABLE 停止，直到新表准备就绪，然后自动重定向到新表。表的临时副本在原始表的数据库目录中创建，除非它是 RENAME TO 将表移动到驻留在不同目录中的数据库的操作。
+前面提到的例外是 ALTER TABLE 在准备好从表和表定义缓存中清除过时的表结构时阻止读取（而不仅仅是写入）。此时，它必须获得一个独占锁。为此，它等待当前读者完成，并阻止新的读写。
+ALTER TABLE 使用该算法
+的操作 COPY 可防止并发 DML 操作。仍然允许并发查询。也就是说，一个表复制操作总是至少包括 LOCK=SHARED （允许查询但不包括 DML）的并发限制。您可以通过指定 来进一步限制支持该 LOCK 子句的
+操作的并发性 LOCK=EXCLUSIVE ，这会阻止 DML 和查询。有关详细信息，请参阅 并发控制 。
+要强制将 COPY 算法用于 ALTER TABLE 原本不会使用它的操作，请指定 ALGORITHM=COPY 或启用 old_alter_table 系统变量。 old_alter_table 如果设置与 ALGORITHM 值不是 的子句
+之间存在冲突 DEFAULT ，则该 ALGORITHM 子句优先。
+对于 InnoDB 表，
+对驻留在 共享表空间 ALTER TABLE 中的表使用该算法的操作
+
+会增加表空间使用的空间量。此类操作需要与表中的数据加上索引一样多的额外空间。对于驻留在共享表空间中的表，操作期间使用的额外空间不会释放回操作系统，就像驻留在 file-per-table 表 空间中的表一样
+。 COPY
+有关在线 DDL 操作的空间要求的信息，请参阅 第 15.12.3 节，“在线 DDL 空间要求” 。
+ALTER TABLE 支持该 INPLACE 算法的操作包括：
+ALTER TABLE InnoDB 在线 DDL 功能支持的操作
+。请参阅 第 15.12.1 节，“在线 DDL 操作” 。
+重命名表。MySQL 重命名与表对应的文件 tbl_name 而不制作副本。（您也可以使用 RENAME
+TABLE 语句重命名表。请参阅 第 13.1.36 节，“RENAME TABLE 语句” 。）专门为重命名表授予的权限不会迁移到新名称。它们必须手动更改。
+仅修改表元数据的操作。这些操作是即时的，因为服务器不接触表内容。仅元数据操作包括：
+重命名列。在 NDB Cluster 8.0.18 及更高版本中，此操作也可以在线执行。
+更改列的默认值（ NDB 表除外）。
+通过将新的枚举或集合成员添加到有效成员值列表的 末尾 ENUM 来修改or
+列
+的定义
+
+，只要数据类型的存储大小不变即可。例如，向具有 8 个成员的列添加一个成员会将每个值所需的存储空间从 1 个字节更改为 2 个字节；这需要一个表副本。在列表中间添加成员会导致现有成员重新编号，这需要表副本。 SET SET
+更改空间列的定义以删除 SRID 属性。（添加或更改 SRID 属性需要重建，并且不能就地完成，因为服务器必须验证所有值是否都具有指定 SRID 值。）
+从 MySQL 8.0.14 开始，当这些条件适用时，更改列字符集：
+列数据类型是 CHAR 、 VARCHAR 、 TEXT 类型或 ENUM 。
+字符集更改是从 utf8mb3 到 utf8mb4 ，或任何字符集到 binary 。
+列上没有索引。
+从 MySQL 8.0.14 开始，当这些条件适用时，更改生成的列：
+对于 InnoDB 表，修改生成的存储列但不更改其类型、表达式或可空性的语句。
+对于非 InnoDB 表，修改生成的存储列或虚拟列但不更改其类型、表达式或可空性的语句。
+此类更改的一个示例是对列注释的更改。
+重命名索引。
+InnoDB 为和 NDB 表
+添加或删除二级索引
+。请参阅 第 15.12.1 节，“在线 DDL 操作” 。
+对于 NDB 表，在可变宽度列上添加和删除索引的操作。这些操作在线发生，没有表复制，也没有在大部分持续时间内阻止并发 DML 操作。请参阅 第 23.6.11 节，“在 NDB Cluster 中使用 ALTER TABLE 进行在线操作” 。
+使用操作修改索引可见性 ALTER
+INDEX 。
+DEFAULT 如果修改的列不包含在生成的列表达式中，则
+包含生成的列的表的列修改依赖于具有值的列。例如，更改 NULL 单独列的属性可以在不重建表的情况下就地完成。
+ALTER TABLE 支持该 INSTANT 算法的操作包括：
+添加一列。此功能称为 “ 即时 ADD COLUMN ” 。限制适用。请参阅 第 15.12.1 节，“在线 DDL 操作” 。
+删除列。此功能称为 “ 即时 DROP COLUMN ” 。限制适用。请参阅 第 15.12.1 节，“在线 DDL 操作” 。
+添加或删除虚拟列。
+添加或删除列默认值。
+修改 ENUM or SET 列的定义。与上述相同的限制适用于 ALGORITHM=INSTANT .
+更改索引类型。
+重命名表。与上述相同的限制适用于 ALGORITHM=INSTANT .
+有关支持的操作的更多信息 ALGORITHM=INSTANT ，请参阅 第 15.12.1 节，“在线 DDL 操作” 。
+ALTER TABLE 将 MySQL 5.5 临时列升级到 5.6 格式，用于 ADD COLUMN 、 CHANGE COLUMN 、 MODIFY
+COLUMN 、 ADD INDEX 和 FORCE 操作。 INPLACE 由于必须重建表，因此
+无法使用该算法完成此转换，因此 ALGORITHM=INPLACE 在这些情况下指定会导致错误。 ALGORITHM=COPY 必要时
+指定。
+如果 ALTER TABLE 对用于对表进行分区的多列索引的操作 KEY 更改了列的顺序，则只能使用 ALGORITHM=COPY .
+WITHOUT VALIDATION and WITH
+VALIDATION 子句影响是否
+
+对 虚拟生成的列 修改 ALTER TABLE 执行就地操作
+。请参阅 第 13.1.9.2 节，“ALTER TABLE 和生成的列” 。
+ALGORITHM=INPLACE NDB Cluster 8.0使用与标准 MySQL 服务器
+相同的语法支持在线操作
+。 NDB 不支持在线更改表空间；从 NDB 8.0.21 开始，这是不允许的。有关更多信息，请参阅 第 23.6.11 节，“在 NDB Cluster 中使用 ALTER TABLE 进行在线操作” 。
+NDB 8.0.27 及更高版本，在执行复制时 ALTER
+TABLE ，检查以确保没有对受影响的表进行并发写入。如果它发现已经做了任何事情，则 NDB 拒绝该 ALTER
+TABLE 声明并提出 ER_TABLE_DEF_CHANGED .
+ALTER TABLE 使用 DISCARD ... PARTITION
+... TABLESPACE 或 IMPORT ... PARTITION ...
+TABLESPACE 不创建任何临时表或临时分区文件。
+ALTER TABLE with ADD
+PARTITION , DROP PARTITION , COALESCE PARTITION , REBUILD
+PARTITION , or REORGANIZE PARTITION 不创建临时表（与 NDB 表一起使用时除外）；但是，这些操作可以而且确实会创建临时分区文件。
+ADD or或partitions 的 DROP 操作
+是立即操作或几乎是立即操作。or
+操作
+或分区在所有分区之间复制数据，除非使用or
+；这实际上与创建新表相同，尽管
+or操作是逐个分区执行的。操作仅复制已更改的分区，而不会触及未更改的分区。 RANGE LIST ADD COALESCE HASH KEY LINEAR HASH LINEAR KEY ADD COALESCE REORGANIZE
+对于表，您可以通过将系统变量设置为较高的值 MyISAM 来加快重新创建索引（更改过程中最慢的部分）
+。 myisam_sort_buffer_size
+并发控制
+对于 ALTER TABLE 支持它的操作，您可以使用该 LOCK 子句来控制表被更改时的并发读写级别。为该子句指定一个非默认值使您能够在更改操作期间要求一定数量的并发访问或排他性，并在请求的锁定程度不可用时停止操作。
+仅 LOCK = DEFAULT 允许使用 ALGORITHM=INSTANT . 其他 LOCK 子句参数不适用。
+该 LOCK 子句的参数是：
+LOCK = DEFAULT
+给定 ALGORITHM 子句（如果有）和 ALTER TABLE 操作的最大并发级别：如果支持，则允许并发读取和写入。如果不支持，则允许并发读取（如果支持）。如果不是，则强制执行独占访问。
+LOCK = NONE
+如果支持，则允许并发读取和写入。否则，会发生错误。
+LOCK = SHARED
+如果支持，则允许并发读取但阻止写入。即使给定 ALGORITHM 子句（如果有）和 ALTER TABLE 操作的存储引擎支持并发写入，写入也会被阻止。如果不支持并发读取，则会发生错误。
+LOCK = EXCLUSIVE
+强制执行独占访问。即使存储引擎支持给定 ALGORITHM 子句（如果有）和 ALTER TABLE 操作的并发读/写，也会这样做。
+添加和删​​除列
+用于 ADD 向表中添加新列，以及 DROP 删除现有列。是标准 SQL 的 MySQL 扩展。 DROP col_name
+要在表格行内的特定位置添加列，请使用 FIRST 或。默认是最后添加列。 AFTER col_name
+如果一个表只包含一列，则不能删除该列。如果您打算删除表，请改用该 DROP TABLE 语句。
+如果从表中删除列，则这些列也会从它们所属的任何索引中删除。如果组成索引的所有列都被删除，那么索引也会被删除。如果使用 CHANGE or MODIFY 来缩短列上存在索引的列，并且生成的列长度小于索引长度，MySQL 会自动缩短索引。
+对于 ALTER TABLE ... ADD ，如果该列具有使用非确定性函数的表达式默认值，则该语句可能会产生警告或错误。有关详细信息，请参阅 第 11.6 节，“数据类型默认值” 和 第 17.1.3.7 节，“使用 GTID 进行复制的限制” 。
+重命名、重新定义和重新排序列
+、 CHANGE 、 MODIFY 和
+
+子句允许更改现有列的名称和定义 RENAME COLUMN 。 ALTER 它们具有以下比较特征：
+CHANGE :
+可以重命名列并更改其定义，或两者兼而有之。
+MODIFY 比or
+
+具有更多的能力 RENAME COLUMN ，但以牺牲某些操作的便利性为代价。 CHANGE 如果不重命名，则需要对列命名两次，如果仅重命名，则需要重新指定列定义。
+使用 FIRST 或 AFTER ，可以对列重新排序。
+MODIFY :
+可以更改列定义但不能更改其名称。
+CHANGE 比在不重命名的情况下更改列定义
+
+更方便。
+使用 FIRST 或 AFTER ，可以对列重新排序。
+RENAME COLUMN :
+可以更改列名但不能更改其定义。
+CHANGE 比在不更改其定义的情况下重命名列
+
+更方便。
+ALTER ：仅用于更改列默认值。
+CHANGE 是标准 SQL 的 MySQL 扩展。 MODIFY 并且 RENAME COLUMN 是 Oracle 兼容性的 MySQL 扩展。
+要更改列以更改其名称和定义，请使用 CHANGE ，指定旧名称和新名称以及新定义。例如，要将 INT NOT
+NULL 列从重命名为 a to b 并将其定义更改为 BIGINT 在保留 NOT NULL 属性的同时使用数据类型，请执行以下操作：
+ALTER TABLE t1 CHANGE a b BIGINT NOT NULL;
+要更改列定义但不更改其名称，请使用 CHANGE 或 MODIFY 。对于 CHANGE ，语法需要两个列名，因此您必须指定相同的名称两次才能保持名称不变。例如，要更改 column 的定义 b ，请执行以下操作：
+ALTER TABLE t1 CHANGE b b INT NOT NULL;
+MODIFY 在不更改名称的情况下更改定义更方便，因为它只需要列名一次：
+ALTER TABLE t1 MODIFY b INT NOT NULL;
+要更改列名但不更改其定义，请使用 CHANGE 或 RENAME COLUMN 。对于 CHANGE ，语法需要列定义，因此要保持定义不变，您必须重新指定列当前具有的定义。例如，要将 INT NOT NULL 列
+从重命名 b 为 a ，请执行以下操作：
+ALTER TABLE t1 CHANGE b a INT NOT NULL;
+RENAME COLUMN 在不更改定义的情况下更改名称更方便，因为它只需要旧名称和新名称：
+ALTER TABLE t1 RENAME COLUMN b TO a;
+通常，您不能将列重命名为表中已存在的名称。但是，有时情况并非如此，例如当您交换名称或在循环中移动它们时。如果表中有名为 a 、 b 和
+的列 c ，则这些是有效操作：
+-- swap a and b
+ALTER TABLE t1 RENAME COLUMN a TO b,
+RENAME COLUMN b TO a;
+-- "rotate" a, b, c through a cycle
+ALTER TABLE t1 RENAME COLUMN a TO b,
+RENAME COLUMN b TO c,
+RENAME COLUMN c TO a;
+CHANGE 对于使用or
+的
+列定义更改 MODIFY ，定义必须包括数据类型和应应用于新列的所有属性，而不是诸如 PRIMARY KEY or
+之类的索引属性 UNIQUE 。原始定义中存在但未为新定义指定的属性不会被继承。假设一列 col1 定义为 INT UNSIGNED DEFAULT 1 COMMENT 'my
+column' ，您按如下方式修改该列，仅打算更改 INT 为 BIGINT ：
+ALTER TABLE t1 MODIFY col1 BIGINT;
+该语句将数据类型从 更改 INT 为 BIGINT ，但它也删除了 UNSIGNED 、 DEFAULT 和 COMMENT 属性。要保留它们，语句必须明确包括它们：
+ALTER TABLE t1 MODIFY col1 BIGINT UNSIGNED DEFAULT 1 COMMENT 'my column';
+CHANGE 对于使用or
+
+的数据类型更改 MODIFY ，MySQL 会尽可能地将现有列值转换为新类型。
+警告
+这种转换可能会导致数据更改。例如，如果您缩短字符串列，值可能会被截断。如果转换为新数据类型会导致数据丢失，为防止操作成功，请在使用前启用严格 SQL 模式 ALTER TABLE （请参阅 第 5.1.11 节，“服务器 SQL 模式” ）。
+如果使用 CHANGE or MODIFY 来缩短列上存在索引的列，并且生成的列长度小于索引长度，MySQL 会自动缩短索引。
+对于由 CHANGE or
+重命名的列 RENAME COLUMN ，MySQL 自动将这些引用重命名为重命名的列：
+引用旧列的索引，包括不可见索引和禁用 MyISAM 索引。
+引用旧列的外键。
+对于由 CHANGE or
+重命名的列 RENAME COLUMN ，MySQL 不会自动将这些引用重命名为重命名的列：
+生成的列和分区表达式引用重命名的列。您必须在与重命名列 CHANGE 的语句相同的语句中使用重新定义此类表达式
+。 ALTER TABLE
+引用重命名列的视图和存储程序。您必须手动更改这些对象的定义以引用新的列名。
+要对表中的列重新排序，请使用 FIRST and AFTER in CHANGE or MODIFY 操作。
+ALTER ... SET DEFAULT 或 ALTER ...
+DROP DEFAULT 分别为列指定新的默认值或删除旧的默认值。如果删除旧的默认值并且列可以是 NULL ，则新的默认值是 NULL 。如果该列不能是
+，MySQL 将按照 第 11.6 节，“数据类型默认值” NULL 中的描述分配一个默认值。
+从 MySQL 8.0.23 开始， ALTER ... SET VISIBLE 启用 ALTER ... SET INVISIBLE 要更改的列可见性。请参阅 第 13.1.20.10 节，“不可见的列” 。
+主键和索引
+DROP PRIMARY KEY 删除 主键 。如果没有主键，就会出错。有关主键性能特征的信息，尤其是 InnoDB 表，请参阅 第 8.3.2 节，“主键优化” 。
+如果 sql_require_primary_key 启用了系统变量，则尝试删除主键会产生错误。
+如果你添加一个 UNIQUE INDEX 或 PRIMARY
+KEY 到一个表，MySQL 将它存储在任何非唯一索引之前，以允许尽早检测重复键。
+DROP INDEX 删除索引。这是标准 SQL 的 MySQL 扩展。请参阅 第 13.1.27 节，“DROP INDEX 语句” 。要确定索引名称，请使用
+. SHOW INDEX FROM tbl_name
+一些存储引擎允许您在创建索引时指定索引类型。说明符的语法 index_type 是. 有关详细信息
+，请参阅 第 13.1.15 节，“CREATE INDEX 语句” 。首选位置在列列表之后。期望支持在将来的 MySQL 版本中删除列列表之前的选项。 USING type_name USING
+index_option 值指定索引的附加选项。 USING 就是这样一种选择。有关允许 index_option 值的详细信息，请参阅 第 13.1.15 节，“CREATE INDEX 语句” 。
+RENAME INDEX old_index_name TO new_index_name 重命名索引。这是标准 SQL 的 MySQL 扩展。表的内容保持不变。 old_index_name 必须是表中未被同一 ALTER TABLE 语句删除的现有索引的名称。 new_index_name 是新的索引名称，它不能在应用更改后复制结果表中的索引名称。两个索引名称都不能是 PRIMARY .
+如果您 ALTER TABLE 在 MyISAM 表上使用，则所有非唯一索引都在单独的批次中创建（对于 REPAIR
+TABLE ）。当你有很多索引时，这应该会 ALTER
+TABLE 更快。
+对于 MyISAM 表，可以显式控制键更新。用于 ALTER TABLE ... DISABLE
+KEYS 告诉 MySQL 停止更新非唯一索引。然后用于 ALTER TABLE ... ENABLE KEYS 重新创建丢失的索引。 MyISAM 使用一种比逐个插入键快得多的特殊算法来执行此操作，因此在执行批量插入操作之前禁用键应该会大大加快速度。除了前面提到
+的特权之外，使用
+还 ALTER TABLE ... DISABLE KEYS 需要
+特权。 INDEX
+虽然非唯一索引被禁用，但对于诸如 SELECT 和
+之类的语句，它们将被忽略 EXPLAIN ，否则将使用它们。
+在 ALTER TABLE 语句之后，可能需要运行 ANALYZE
+TABLE 以更新索引基数信息。请参阅 第 13.7.7.22 节，“SHOW INDEX 语句” 。
+该 ALTER INDEX 操作允许索引可见或不可见。优化器不使用不可见索引。索引可见性的修改适用于主键以外的索引（显式或隐式）。此功能是存储引擎中立的（支持任何引擎）。有关详细信息，请参阅 第 8.3.12 节，“不可见索引” 。
+外键和其他约束
+FOREIGN KEY 和
+子句 REFERENCES 由
+实现.
+_ 请参阅 第 13.1.20.5 节，“外键约束” 。对于其他存储引擎，这些子句被解析但被忽略。 InnoDB NDB ADD [CONSTRAINT
+[ symbol ]] FOREIGN KEY
+[ index_name ] (...) REFERENCES ...
+(...)
+对于 ALTER TABLE ，与 不同 CREATE TABLE ，如果给定则 ADD FOREIGN
+KEY 忽略 index_name 并使用自动生成的外键名称。作为解决方法，包括 CONSTRAINT 用于指定外键名称的子句：
+ADD CONSTRAINT name FOREIGN KEY (....) ...
+重要的
+MySQL 默默地忽略内联 REFERENCES 规范，其中引用被定义为列规范的一部分。MySQL 只接受 REFERENCES 定义为单独 FOREIGN KEY 规范的一部分的子句。
+笔记
+分区 InnoDB 表不支持外键。此限制不适用于 NDB 表，包括由 显式分区的表 [LINEAR] KEY 。有关详细信息，请参阅 第 24.6.2 节，“与存储引擎相关的分区限制” 。
+MySQL Server 和 NDB Cluster 都支持使用 ALTER TABLE 删除外键：
+ALTER TABLE tbl_name DROP FOREIGN KEY fk_symbol ;
+支持在同一 ALTER TABLE 语句中添加和删除外键， ALTER TABLE ...
+ALGORITHM=INPLACE 但不支持 ALTER TABLE ...
+ALGORITHM=COPY .
+服务器禁止更改可能导致引用完整性丢失的外键列。解决方法是 ALTER TABLE
+... DROP FOREIGN KEY 在更改列定义之前和 ALTER
+TABLE ... ADD FOREIGN KEY 之后使用。禁止更改的示例包括：
+更改可能不安全的外键列的数据类型。例如，允许更改 VARCHAR(20) 为 VARCHAR(30) ，但 VARCHAR(1024) 不能更改为，因为这会改变存储单个值所需的长度字节数。
+禁止在非严格模式下将 NULL 列
+更改为，以防止将值转换为默认的非值，因为这些值在引用表中没有对应的值。该操作在严格模式下是允许的，但如果需要任何此类转换，则会返回错误。 NOT
+NULL NULL NULL
+ALTER TABLE tbl_name RENAME new_tbl_name 更改内部生成的外键约束名称和以字符串“ tbl_name _ibfk_ ” 开头的用户定义的外键约束名称
+以反映新的表名称。 将以字符串“ _ibfk_ ” InnoDB 开头的外键约束名称解释
+为内部生成的名称。 tbl_name
+在 MySQL 8.0.16 之前， ALTER TABLE 只允许以下有限版本的 CHECK 约束添加语法，它被解析并被忽略：
+ADD CHECK ( expr )
+从 MySQL 8.0.16 开始， ALTER TABLE 允许 CHECK 添加、删除或更改现有表的约束：
+添加新 CHECK 约束：
+ALTER TABLE tbl_name ADD [CONSTRAINT [ symbol ]] CHECK ( expr ) [[NOT] ENFORCED];
+约束语法元素的含义与 for 相同 CREATE TABLE 。请参阅 第 13.1.20.6 节，“检查约束” 。
+删除名为 的现有 CHECK 约束 symbol ：
+ALTER TABLE tbl_name DROP CHECK symbol ;
+更改是否强制执行名为的现有 CHECK 约束 symbol ：
+ALTER TABLE tbl_name ALTER CHECK symbol [NOT] ENFORCED;
+DROP CHECK and子句是 MySQL 对标准 SQL
+的 ALTER
+CHECK 扩展。
+从 MySQL 8.0.19 开始， ALTER TABLE 允许使用更通用（和 SQL 标准）的语法来删除和更改任何类型的现有约束，其中约束类型由约束名称确定：
+删除名为 的现有约束 symbol ：
+ALTER TABLE tbl_name DROP CONSTRAINT symbol ;
+如果 sql_require_primary_key 启用了系统变量，则尝试删除主键会产生错误。
+更改是否强制执行名为的现有约束 symbol ：
+ALTER TABLE tbl_name ALTER CONSTRAINT symbol [NOT] ENFORCED;
+只有 CHECK 约束可以更改为未强制执行。始终强制执行所有其他约束类型。
+SQL 标准规定所有类型的约束（主键、唯一索引、外键、校验）都属于同一个命名空间。在 MySQL 中，每个约束类型在每个模式中都有自己的命名空间。因此，每个模式的每种约束类型的名称必须是唯一的，但不同类型的约束可以具有相同的名称。当多个约束具有相同的名称 DROP CONSTRAINT 并且 ADD
+CONSTRAINT 不明确时会发生错误。在这种情况下，必须使用特定于约束的语法来修改约束。例如，使用 DROP PRIMARY KEY 或 DROP FOREIGN KEY 删除主键或外键。
+如果表更改导致违反强制 CHECK 约束，则会发生错误并且不会修改表。发生错误的操作示例：
+尝试将 AUTO_INCREMENT 属性添加到 CHECK 约束中使用的列。
+尝试添加强制 CHECK 约束或强制非强制 CHECK 约束，但现有行违反了约束条件。
+尝试修改、重命名或删除约束中使用的列 CHECK ，除非该约束也在同一语句中删除。例外：如果 CHECK 约束仅引用单个列，则删除该列会自动删除该约束。
+ALTER TABLE tbl_name RENAME new_tbl_name 更改以字符串“ _chk_ ” CHECK 开头的
+内部生成的和用户定义的约束名称以反映新的表名称。MySQL将以字符串 “ _chk_ ” 开头的约束名称
+解释为内部生成的名称。 tbl_name CHECK tbl_name
+更改字符集
+要将表默认字符集和所有字符列 ( CHAR , VARCHAR , TEXT ) 更改为新字符集，请使用如下语句：
+ALTER TABLE tbl_name CONVERT TO CHARACTER SET charset_name ;
+该语句还更改所有字符列的排序规则。如果您没有指定任何 COLLATE 子句来指示要使用的排序规则，该语句将使用字符集的默认排序规则。如果此归类不适合预期的表用途（例如，如果它将从区分大小写的归类更改为不区分大小写的归类），请明确指定归类。
+对于具有一种数据类型 VARCHAR 或其中一种 TEXT 类型的列， CONVERT TO
+CHARACTER SET 根据需要更改数据类型以确保新列的长度足以存储与原始列一样多的字符。例如，一个 TEXT 列有两个长度字节，存储列中值的字节长度，最大为 65,535。对于一 latin1 TEXT 列，每个字符需要一个字节，因此该列最多可以存储 65,535 个字符。如果将列转换为 utf8mb4 ，则每个字符最多可能需要 4 个字节，最大可能长度为 4 × 65,535 = 262,140 字节。该长度不适合 TEXT 列的长度字节，因此 MySQL 将数据类型转换为 MEDIUMTEXT ，这是最小的字符串类型，其长度字节可以记录值 262,140。同样， VARCHAR 列可能会转换为 MEDIUMTEXT .
+为避免刚才描述的类型的数据类型更改，请勿使用 CONVERT TO CHARACTER SET . 相反，用于 MODIFY 更改单个列。例如：
+ALTER TABLE t MODIFY latin1_text_col TEXT CHARACTER SET utf8mb4;
+ALTER TABLE t MODIFY latin1_varchar_col VARCHAR( M ) CHARACTER SET utf8mb4;
+如果指定 CONVERT TO CHARACTER SET binary ，则 CHAR 、 VARCHAR 和 TEXT 列将转换为其相应的二进制字符串类型 ( BINARY 、 VARBINARY 、 BLOB )。这意味着列不再具有字符集，后续 CONVERT
+TO 操作也不适用于它们。
+如果 charset_name 在
+操作 DEFAULT 中，则使用系统变量 CONVERT TO CHARACTER
+SET 命名的字符集
+。 character_set_database
+警告
+该 CONVERT TO 操作在原始字符集和命名字符集之间转换列值。如果您在一个字符集中有一列（如），但存储的值实际上使用其他一些不兼容的字符集（如），则这 不是 您想要的。在这种情况下，您必须为每个这样的列执行以下操作： latin1 utf8mb4
+ALTER TABLE t1 CHANGE c1 c1 BLOB;
+ALTER TABLE t1 CHANGE c1 c1 TEXT CHARACTER SET utf8mb4;
+BLOB 这样做的原因是当您转换到列或从列
+
+转换时没有转换。
+要仅更改表的 默认 字符集，请使用以下语句：
+ALTER TABLE tbl_name DEFAULT CHARACTER SET charset_name ;
+这个词 DEFAULT 是可选的。默认字符集是在您没有为稍后添加到表中的列指定字符集时使用的字符集（例如，使用 ALTER TABLE ... ADD
+column ）。
+启用系统变量（默认设置）时 foreign_key_checks ，不允许在包含外键约束中使用的字符串列的表上进行字符集转换。 foreign_key_checks 解决方法是在执行字符集转换之前禁用
+。在重新启用之前，必须对外键约束涉及的两个表进行转换 foreign_key_checks 。 foreign_key_checks 如果您仅在转换其中一个表后重新启用，则 ON DELETE
+CASCADE or ON UPDATE CASCADE 操作可能会由于在这些操作期间发生隐式转换而损坏引用表中的数据（错误 #45290、错误 #74816）。
+导入 InnoDB 表
+InnoDB 在其自己的 file-per-table 表空间中创建的
+
+表 可以 使用 DISCARD TABLEPACE 和 IMPORT TABLESPACE 子句从备份或从另一个 MySQL 服务器实例导入。请参阅 第 15.6.1.3 节，“导入 InnoDB 表” 。
+MyISAM 表的行顺序
+ORDER BY 使您能够创建具有特定顺序的行的新表。此选项主要在您知道大多数时间以特定顺序查询行时有用。通过在对表进行重大更改后使用此选项，您可能可以获得更高的性能。在某些情况下，如果表是按您以后要按其排序的列排序的，则 MySQL 的排序可能会更容易。
+笔记
+表在插入和删除后没有保持指定的顺序。
+ORDER BY 语法允许为排序指定一个或多个列名，每个列名后面可选地跟有 ASC or DESC 以分别指示升序或降序排序顺序。默认是升序。只允许列名作为排序标准；不允许任意表达。该子句应在任何其他子句之后给出。
+ORDER BY 对表没有意义， InnoDB 因为 InnoDB 总是根据 聚集索引 对表行进行排序。
+在分区表上使用时， ALTER TABLE ... ORDER
+BY 仅对每个分区内的行进行排序。
+分区选项
+partition_options 表示可与分区表一起用于重新分区、添加、删除、丢弃、导入、合并和拆分分区以及执行分区维护的选项。
+一个 ALTER TABLE 语句可以包含一个 PARTITION BY or REMOVE PARTITIONING 子句作为对其他更改规范的补充，但 PARTITION
+BY or REMOVE PARTITIONING 子句必须在任何其他规范之后最后指定。、 ADD
+PARTITION 、 DROP PARTITION 、 DISCARD PARTITION 、 IMPORT
+PARTITION 、 COALESCE PARTITION 、 REORGANIZE PARTITION 、 EXCHANGE
+PARTITION 、和选项不能与单个 中的其他更改规范组合 ANALYZE PARTITION ，
+因为刚刚列出的选项作用于单个分区。 CHECK PARTITION REPAIR
+PARTITION ALTER TABLE
+有关分区选项的更多信息，请参阅 第 13.1.20 节，“CREATE TABLE 语句” 和 第 13.1.9.1 节，“ALTER TABLE 分区操作” 。有关 ALTER TABLE ...
+EXCHANGE PARTITION 语句的信息和示例，请参阅 第 24.3.3 节，“使用表交换分区和子分区” 。

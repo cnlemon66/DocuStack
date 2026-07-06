@@ -1,0 +1,11 @@
+15.8.5 配置后台InnoDB I/O线程数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.8 InnoDB配置 / 
+15.8.5 配置后台InnoDB I/O线程数
+15.8.5 配置后台InnoDB I/O线程数
+InnoDB 使用后台 线程 来服务各种类型的 I/O 请求。 innodb_read_io_threads 您可以使用和 innodb_write_io_threads 配置参数配置为数据页上的读写 I/O 服务的后台线程
+数。这些参数分别表示用于读取和写入请求的后台线程数。它们在所有支持的平台上都有效。您可以在 MySQL 选项文件中设置这些参数的值（ my.cnf 或 my.ini ）；您不能动态更改值。这些参数的默认值为 4 ，允许的值范围为 1-64 .
+这些配置选项的目的是使 InnoDB 高端系统更具可扩展性。每个后台线程最多可以处理 256 个挂起的 I/O 请求。后台 I/O 的一个主要来源是 预读 请求。 InnoDB 尝试以大多数后台线程平均共享工作的方式来平衡传入请求的负载。 InnoDB 还尝试将来自同一范围的读取请求分配给同一线程，以增加合并请求的机会。如果您有一个高端 I/O 子系统并且您 innodb_read_io_threads 在输出中看到超过 64 × 待处理的读取请求 SHOW ENGINE INNODB STATUS ，您可以通过增加 的值来提高性能 innodb_read_io_threads 。
+在 Linux 系统上， InnoDB 默认使用异步 I/O 子系统来执行数据文件页面的预读和写入请求，这改变了 InnoDB 后台线程为这些类型的 I/O 请求提供服务的方式。有关详细信息，请参阅 第 15.8.6 节，“在 Linux 上使用异步 I/O” 。
+有关 InnoDB I/O 性能的更多信息，请参阅 第 8.5.8 节，“优化 InnoDB 磁盘 I/O” 。

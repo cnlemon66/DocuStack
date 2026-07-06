@@ -1,0 +1,28 @@
+8.14 查看服务器线程（进程）信息_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第8章优化 / 
+8.14 查看服务器线程（进程）信息
+8.14 查看服务器线程（进程）信息
+8.14.1 访问进程列表 8.14.2 线程命令值 8.14.3 一般线程状态 8.14.4 复制源线程状态 8.14.5 复制 I/O（接收器）线程状态 8.14.6 复制 SQL 线程状态 8.14.7 复制连接线程状态 8.14.8 NDB Cluster 线程状态 8.14.9 事件调度器线程状态
+要确定您的 MySQL 服务器正在做什么，检查进程列表可能会有所帮助，该列表指示服务器内执行的线程集当前正在执行的操作。例如：
+mysql> SHOW PROCESSLIST\G
+*************************** 1. row ***************************
+Id: 5
+User: event_scheduler
+Host: localhost
+db: NULL
+Command: Daemon
+Time: 2756681
+State: Waiting on empty queue
+Info: NULL
+*************************** 2. row ***************************
+Id: 20
+User: me
+Host: localhost:52943
+db: test
+Command: Query
+Time: 0
+State: starting
+Info: SHOW PROCESSLIST
+可以使用该 KILL 语句终止线程。请参阅 第 13.7.8.4 节，“KILL 语句” 。

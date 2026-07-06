@@ -1,0 +1,10 @@
+5.5.4 查询属性组件_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.5 MySQL组件 / 
+5.5.4 查询属性组件
+5.5.4 查询属性组件
+从 MySQL 8.0.23 开始，组件服务提供对查询属性的访问（请参阅 第 9.6 节，“查询属性” ）。该 query_attributes 组件使用此服务提供对 SQL 语句中查询属性的访问。
+目的：实现 mysql_query_attribute_string() 接受属性名称参数并以字符串形式返回属性值或 NULL 属性不存在时返回的函数。
+瓮： file://component_query_attributes
+希望合并所使用的相同查询属性组件服务的开发人员 query_attributes 应该查阅 mysql_query_attributes.h MySQL 源代码分发中的文件。

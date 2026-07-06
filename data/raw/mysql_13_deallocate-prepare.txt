@@ -1,0 +1,10 @@
+13.5.3 解除分配准备语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.5 准备好的语句 / 
+13.5.3 解除分配准备语句
+13.5.3 解除分配准备语句
+{DEALLOCATE | DROP} PREPARE stmt_name
+要释放使用 生成的准备好的语句 PREPARE ，请使用 DEALLOCATE PREPARE 引用准备好的语句名称的语句。在解除分配后尝试执行准备好的语句会导致错误。如果创建了太多准备好的语句，并且没有被语句或会话结束释放，您可能会遇到
+系统变量 DEALLOCATE PREPARE 强制执行的上限。 max_prepared_stmt_count
+有关示例，请参阅 第 13.5 节，“准备好的语句” 。

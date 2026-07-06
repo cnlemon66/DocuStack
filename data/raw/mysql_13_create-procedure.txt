@@ -1,0 +1,188 @@
+13.1.17 CREATE PROCEDURE 和 CREATE FUNCTION 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.1 数据定义语句 / 
+13.1.17 CREATE PROCEDURE 和 CREATE FUNCTION 语句
+13.1.17 CREATE PROCEDURE 和 CREATE FUNCTION 语句
+CREATE
+[DEFINER = user ]
+PROCEDURE [IF NOT EXISTS] sp_name ([ proc_parameter [,...]])
+[ characteristic ...] routine_body CREATE
+[DEFINER = user ]
+FUNCTION [IF NOT EXISTS] sp_name ([ func_parameter [,...]])
+RETURNS type [ characteristic ...] routine_body proc_parameter :
+[ IN | OUT | INOUT ] param_name type func_parameter : param_name type type : Any valid MySQL data type characteristic : {
+COMMENT ' string '
+| LANGUAGE SQL
+| [NOT] DETERMINISTIC
+| { CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }
+| SQL SECURITY { DEFINER | INVOKER }
+} routine_body : Valid SQL routine statement
+这些语句用于创建存储例程（存储过程或函数）。也就是说，指定的例程对服务器来说是已知的。默认情况下，存储例程与默认数据库相关联。要将例程与给定数据库显式关联，请指定 db_name.sp_name 创建它时的名称。
+该 CREATE FUNCTION 语句还用于 MySQL 以支持可加载函数。请参阅 第 13.7.4.1 节，“可加载函数的 CREATE FUNCTION 语句” 。可加载函数可以被视为外部存储函数。存储函数与可加载函数共享它们的命名空间。有关描述服务器如何解释对不同类型函数的引用的规则，
+请参见 第 9.2.5 节，“函数名称解析和解析” 。
+要调用存储过程，请使用 CALL 语句（请参阅 第 13.2.1 节，“CALL 语句” ）。要调用存储函数，请在表达式中引用它。该函数在表达式计算期间返回一个值。
+CREATE PROCEDURE 并 CREATE FUNCTION 需要 CREATE ROUTINE 特权。如果 DEFINER 存在该子句，则所需的权限取决于 user 值，如 第 25.6 节“存储对象访问控制” 中所述。如果启用二进制日志记录， CREATE FUNCTION 可能需要 SUPER 权限，如 第 25.7 节“存储程序二进制日志记录” 中所述。
+默认情况下，MySQL 自动授予
+例程创建者权限 ALTER ROUTINE 和
+权限。 EXECUTE 可以通过禁用 automatic_sp_privileges 系统变量来更改此行为。请参阅 第 25.2.2 节，“存储例程和 MySQL 特权” 。
+DEFINER 和 SQL SECURITY 子句指定在例程执行时检查访问权限时要使用的安全上下文，如本节后面所述
+
+。
+如果例程名称与内置 SQL 函数的名称相同，则会出现语法错误，除非您在定义例程或稍后调用例程时在名称和后面的括号之间使用空格。因此，请避免将现有 SQL 函数的名称用于您自己的存储例程。
+SQL 模式适用于 IGNORE_SPACE 内置函数，不适用于存储例程。无论是否 IGNORE_SPACE 启用，存储例程名称后始终允许有空格。
+IF NOT EXISTS 如果已经存在具有相同名称的例程，则防止发生错误。 CREATE FUNCTION MySQL 8.0.29和
+从 MySQL 8.0.29 开始都支持此选项 CREATE PROCEDURE 。
+如果已经存在同名的内置函数，则尝试创建存储函数会 CREATE
+FUNCTION ... IF NOT EXISTS 成功，并会发出警告，表明它与本机函数同名； CREATE
+FUNCTION 这与在不指定 的情况下执行相同的语句没有什么不同 IF NOT
+EXISTS 。
+如果已存在具有相同名称的可加载函数，则尝试使用 IF NOT
+EXISTS 成功创建存储函数并出现警告。这与不指定 相同 IF NOT EXISTS 。
+有关详细信息，请参阅 函数名称解析 。
+括号内的参数列表必须始终存在。如果没有参数， () 则应使用空参数列表。参数名称不区分大小写。
+默认情况下，每个参数都是一个 IN 参数。要为参数指定其他方式，请
+在参数名称之前
+使用关键字 OUT 或。 INOUT
+笔记
+将参数指定为 IN 、 OUT 或 INOUT 仅对 PROCEDURE . 对于 a FUNCTION ，参数始终被视为 IN 参数。
+参数将 IN 值传递给过程。过程可能会修改该值，但当过程返回时，调用者看不到修改。参数将过程中的 OUT 值传递回调用者。它的初始值 NULL 在过程中，当过程返回时，它的值对调用者可见。参数由 INOUT 调用者初始化，可以由过程修改，过程返回时调用者可以看到过程所做的任何更改。
+对于每个 OUT 或 INOUT 参数，在 CALL 调用该过程的语句中传递一个用户定义的变量，以便您可以在该过程返回时获取它的值。如果您从另一个存储过程或函数中调用该过程，您还可以将例程参数或局部例程变量作为 OUT or INOUT 参数传递。如果您从触发器中调用该过程，您还可以
+作为
+or参数传递。 NEW. col_name OUT INOUT
+有关未处理条件对过程参数的影响的信息，请参阅 第 13.6.7.8 节，“条件处理和 OUT 或 INOUT 参数” 。
+在例程内准备的语句中不能引用例程参数；参见 第 25.8 节，“存储程序的限制” 。
+以下示例显示了一个简单的存储过程，在给定国家/地区代码的情况下，计算数据库 city 表中
+出现的该国家/地区的城市数。 world 国家代码使用参数传递 IN ，城市计数使用 OUT 参数返回：
+mysql> delimiter //
+
+mysql> CREATE PROCEDURE citycount (IN country CHAR(3), OUT cities INT)
+BEGIN
+SELECT COUNT(*) INTO cities FROM world.city
+WHERE CountryCode = country;
+END//
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> delimiter ;
+
+mysql> CALL citycount('JPN', @cities); -- cities in Japan
+Query OK, 1 row affected (0.00 sec)
+
+mysql> SELECT @cities;
++---------+
+| @cities |
++---------+
+| 248 |
++---------+
+1 row in set (0.00 sec)
+
+mysql> CALL citycount('FRA', @cities); -- cities in France
+Query OK, 1 row affected (0.00 sec)
+
+mysql> SELECT @cities;
++---------+
+| @cities |
++---------+
+| 40 |
++---------+
+1 row in set (0.00 sec)
+该示例使用 mysql 客户端 delimiter 命令在定义过程时将语句定界符从 更改 ; 为 // 。这使得 ; 过程主体中使用的定界符能够传递到服务器，而不是被 mysql 本身解释。请参阅 第 25.1 节，“定义存储程序” 。
+RETURNS 只能为 a 指定
+
+该子句 FUNCTION ，这是强制性的。它表示函数的返回类型，函数体必须包含一个语句。如果该
+语句返回不同类型的值，则该值被强制转换为正确的类型。例如，如果一个函数在子句中指定一个
+或
+值
+，但该
+语句返回一个整数，则该函数返回的值是成员集合中相应成员的字符串。 RETURN value RETURN ENUM SET RETURNS RETURN ENUM SET
+以下示例函数采用一个参数，使用 SQL 函数执行操作，然后返回结果。在这种情况下，不需要使用 delimiter ，因为函数定义不包含内部 ; 语句定界符：
+mysql> CREATE FUNCTION hello (s CHAR(20))
+mysql> RETURNS CHAR(50) DETERMINISTIC
+RETURN CONCAT('Hello, ',s,'!');
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT hello('world');
++----------------+
+| hello('world') |
++----------------+
+| Hello, world! |
++----------------+
+1 row in set (0.00 sec)
+参数类型和函数返回类型可以声明为使用任何有效的数据类型。
+如果前面有规范 COLLATE ，则可以使用该属性。 CHARACTER SET
+由 routine_body 有效的 SQL 例程语句组成。这可以是诸如 SELECT or
+之类的简单语句，也可以是使用and INSERT 编写的复合语句。复合语句可以包含声明、循环和其他控制结构语句。这些语句的语法在 第 13.6 节，“复合语句语法” 中描述。实际上，存储函数倾向于使用复合语句，除非主体由单个
+语句组成。 BEGIN END RETURN
+MySQL 允许例程包含 DDL 语句，例如 CREATE and DROP 。MySQL 还允许存储过程（但不是存储函数）包含 SQL 事务语句，例如 COMMIT . 存储函数可能不包含执行显式或隐式提交或回滚的语句。SQL 标准不要求支持这些语句，它声明每个 DBMS 供应商都可以决定是否允许它们。
+返回结果集的语句可以在存储过程中使用，但不能在存储函数中使用。此禁令包括 SELECT 没有子句的语句和其他语句，例如、
+和
+。对于可以在函数定义时确定返回结果集的语句，会发生错误（）。对于只能在运行时确定返回结果集的语句，会出现
+错误（）。 INTO var_list SHOW EXPLAIN CHECK TABLE Not allowed to return a result set from a
+function ER_SP_NO_RETSET PROCEDURE %s can't return a result set in the given
+context ER_SP_BADSELECT
+USE 存储例程中的语句是不允许的。调用例程时，将
+执行隐式（并在例程终止时撤消）。这导致例程在执行时具有给定的默认数据库。对数据库中除常规默认数据库之外的对象的引用应使用适当的数据库名称进行限定。 USE db_name
+有关存储例程中不允许的语句的其他信息，请参阅 第 25.8 节，“存储程序的限制” 。
+有关从使用具有 MySQL 接口的语言编写的程序中调用存储过程的信息，请参阅 第 13.2.1 节，“CALL 语句” 。
+MySQL sql_mode 在创建或更改例程时存储有效的系统变量设置，并且始终使用此设置执行例程， 而不管例程开始执行时当前服务器 SQL 模式如何 。
+从调用程序的 SQL 模式切换到例程的 SQL 模式发生在对参数求值并将结果值赋给例程参数之后。如果您在严格 SQL 模式下定义例程但在非严格模式下调用它，则在严格模式下不会将参数分配给例程参数。如果您要求传递给例程的表达式在严格 SQL 模式下赋值，您应该以有效的严格模式调用例程。
+该 COMMENT 特性是一个MySQL扩展，可用于描述存储例程。此信息由 SHOW CREATE
+PROCEDURE and SHOW CREATE
+FUNCTION 语句显示。
+该 LANGUAGE 特性指示编写例程所用的语言。服务器忽略这个特性；仅支持 SQL 例程。
+如果例程总是对相同的输入参数产生相同的结果，则该
+
+例程被认为是 “ 确定性 的” ，否则被认为是 “ 非确定性 的” 。如果
+例程定义中既未给出 nor ，则默认 DETERMINISTIC 为. 要声明一个函数是确定性的，您必须
+明确指定。 NOT
+DETERMINISTIC NOT DETERMINISTIC DETERMINISTIC
+例程性质的评估基于创建者的 “ 诚实 ” ：MySQL 不检查声明的例程 DETERMINISTIC 是否没有产生不确定结果的语句。但是，错误声明例程可能会影响结果或影响性能。声明一个不确定的例程 DETERMINISTIC 可能会导致优化器做出不正确的执行计划选择，从而导致意外的结果。声明确定性例程 as NONDETERMINISTIC 可能会导致不使用可用的优化，从而降低性能。
+如果启用二进制日志记录，该 DETERMINISTIC 特性会影响 MySQL 接受哪些例程定义。请参阅 第 25.7 节，“存储程序二进制日志记录” 。
+包含 NOW() 函数（或其同义词）或 RAND() 不确定的例程，但它可能仍然是复制安全的。对于 NOW() ，二进制日志包含时间戳并正确复制。 RAND() 只要在例程执行期间仅调用一次，它也能正确复制。（您可以将例程执行时间戳和随机数种子视为源和副本上相同的隐式输入。）
+几个特征提供了有关例程使用的数据的性质的信息。在 MySQL 中，这些特性仅供参考。服务器不使用它们来限制允许例程执行的语句类型。
+CONTAINS SQL 表示例程不包含读取或写入数据的语句。如果没有明确给出这些特征，则这是默认值。此类语句的示例是 SET @x =
+1 or DO RELEASE_LOCK('abc') ，它们执行但既不读取也不写入数据。
+NO SQL 表示例程不包含 SQL 语句。
+READS SQL DATA 指示例程包含读取数据的语句（例如， SELECT ），但不包含写入数据的语句。
+MODIFIES SQL DATA 指示例程包含可能写入数据的语句（例如， INSERT 或 DELETE ）。
+SQL SECURITY 特性可以是
+
+或 DEFINER 指定 INVOKER 安全上下文；也就是说，例程是使用例程 DEFINER 子句中指定的帐户的权限还是调用它的用户的权限执行。此帐户必须有权访问与例程关联的数据库。默认值为 DEFINER 。调用例程的用户必须拥有 EXECUTE 它的特权， DEFINER 如果例程在定义者安全上下文中执行，则帐户也必须具有特权。
+该 DEFINER 子句指定在例程执行时检查具有该 SQL SECURITY
+DEFINER 特征的例程的访问权限时要使用的 MySQL 帐户。
+如果 DEFINER 存在该子句，则该 user 值应该是指定为 、 或 的
+MySQL
+帐户
+。允许的
+值取决于您拥有的权限，如 第 25.6 节“存储对象访问控制” 中所述。另请参阅该部分以获取有关存储例程安全性的其他信息。 ' user_name '@' host_name ' CURRENT_USER CURRENT_USER() user
+如果 DEFINER 省略子句，则默认定义者是执行 CREATE
+PROCEDURE or CREATE
+FUNCTION 语句的用户。这与明确指定相同 DEFINER = CURRENT_USER 。
+SQL SECURITY DEFINER 在用特性
+
+定义的存储例程的主体内
+， CURRENT_USER 函数返回例程的 DEFINER 值。有关存储例程中的用户审计的信息，请参阅 第 6.2.23 节，“基于 SQL 的帐户活动审计” 。
+考虑以下过程，它显示 mysql.user 系统表中列出的 MySQL 帐户数：
+CREATE DEFINER = 'admin'@'localhost' PROCEDURE account_count()
+BEGIN
+SELECT 'Number of accounts:', COUNT(*) FROM mysql.user;
+END;
+该过程被分配一个 DEFINER 帐户， 'admin'@'localhost' 无论哪个用户定义它。无论哪个用户调用它，它都以该帐户的权限执行（因为默认安全特性是 DEFINER ）。该过程成功或失败取决于调用者是否拥有 EXECUTE 它 'admin'@'localhost' 的 SELECT 权限和表的权限 mysql.user 。
+现在假设该过程是用以下 SQL
+SECURITY INVOKER 特征定义的：
+CREATE DEFINER = 'admin'@'localhost' PROCEDURE account_count()
+SQL SECURITY INVOKER
+BEGIN
+SELECT 'Number of accounts:', COUNT(*) FROM mysql.user;
+END;
+该过程仍然有一个 DEFINER of 'admin'@'localhost' ，但在这种情况下，它以调用用户的权限执行。因此，过程的成功或失败取决于调用者是否拥有 EXECUTE 它的 SELECT 特权和表的特权 mysql.user 。
+默认情况下，当 SQL SECURITY
+DEFINER 执行具有该特征的例程时，MySQL Server 不会为该 DEFINER 子句中指定的 MySQL 帐户设置任何活动角色，只会设置默认角色。例外情况 activate_all_roles_on_login 是启用了系统变量，在这种情况下，MySQL 服务器设置授予 DEFINER 用户的所有角色，包括强制角色。 CREATE PROCEDURE 因此，在发出or CREATE FUNCTION 语句时，默认情况下不会检查通过角色授予的任何特权
+。对于存储的程序，如果以不同于默认的角色执行，则程序主体可以执行 SET ROLE 激活所需的角色。必须谨慎执行此操作，因为分配给角色的权限可以更改。
+服务器按如下方式处理例程参数的数据类型、使用创建的局部例程变量 DECLARE 或函数返回值：
+检查分配是否存在数据类型不匹配和溢出。转换和溢出问题会导致警告或严格 SQL 模式下的错误。
+只能分配标量值。例如，这样的语句 SET x = (SELECT 1, 2) 是无效的。
+对于字符数据类型，如果 CHARACTER SET 包含在声明中，则使用指定的字符集及其默认排序规则。如果该 COLLATE 属性也存在，则使用该排序规则而不是默认排序规则。
+如果 CHARACTER SET 和 COLLATE 不存在，则使用在例程创建时有效的数据库字符集和排序规则。为避免让服务器使用数据库字符集和排序规则，请为字符数据参数提供显式 CHARACTER SET 和 COLLATE 属性。
+如果更改数据库默认字符集或排序规则，则必须删除并重新创建要使用新数据库默认值的存储例程。
+数据库字符集和排序规则由 character_set_database 和 collation_database 系统变量的值给出。有关详细信息，请参阅 第 10.3.3 节，“数据库字符集和排序规则” 。

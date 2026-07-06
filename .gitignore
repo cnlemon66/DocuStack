@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+
+# 配置（含 API Key，不可提交）
+config.json
+
+# 向量索引（构建产物，运行 index.py 重新生成）
+data/vector_db/
+data/conversations/
+
+# Java 编译产物
+java-backend/target/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

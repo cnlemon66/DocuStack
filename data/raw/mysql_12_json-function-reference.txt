@@ -1,0 +1,44 @@
+12.18.1 JSON函数参考_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.17空间分析函数 / 12.17.11 空间 GeoJSON 函数 / 
+12.18.1 JSON函数参考
+12.18.1 JSON函数参考
+表 12.22 JSON 函数
+姓名 描述 介绍 弃用
+-> 评估路径后从 JSON 列返回值；相当于 JSON_EXTRACT()。
+->> 在评估路径并取消引用结果后从 JSON 列返回值；相当于 JSON_UNQUOTE(JSON_EXTRACT())。
+JSON_ARRAY() 创建 JSON 数组
+JSON_ARRAY_APPEND() 将数据附加到 JSON 文档
+JSON_ARRAY_INSERT() 插入 JSON 数组
+JSON_CONTAINS() JSON 文档是否包含路径中的特定对象
+JSON_CONTAINS_PATH() JSON 文档是否包含路径中的任何数据
+JSON_DEPTH() JSON文档的最大深度
+JSON_EXTRACT() 从 JSON 文档返回数据
+JSON_INSERT() 向 JSON 文档中插入数据
+JSON_KEYS() 来自 JSON 文档的键数组
+JSON_LENGTH() JSON 文档中的元素数量
+JSON_MERGE() 合并 JSON 文档，保留重复键。JSON_MERGE_PRESERVE() 的弃用同义词 是的
+JSON_MERGE_PATCH() 合并 JSON 文档，替换重复键的值
+JSON_MERGE_PRESERVE() 合并 JSON 文档，保留重复键
+JSON_OBJECT() 创建 JSON 对象
+JSON_OVERLAPS() 比较两个 JSON 文档，如果它们具有任何共同的键值对或数组元素，则返回 TRUE (1)，否则返回 FALSE (0) 8.0.17
+JSON_PRETTY() 以人类可读的格式打印 JSON 文档
+JSON_QUOTE() 引用 JSON 文档
+JSON_REMOVE() 从 JSON 文档中删除数据
+JSON_REPLACE() 替换 JSON 文档中的值
+JSON_SCHEMA_VALID() 根据 JSON 模式验证 JSON 文档；如果文档针对架构进行验证，则返回 TRUE/1，否则返回 FALSE/0 8.0.17
+JSON_SCHEMA_VALIDATION_REPORT() 根据 JSON 模式验证 JSON 文档；返回 JSON 格式的验证结果报告，包括成功或失败以及失败原因 8.0.17
+JSON_SEARCH() JSON 文档中的值路径
+JSON_SET() 向 JSON 文档中插入数据
+JSON_STORAGE_FREE() 部分更新后 JSON 列值的二进制表示中的释放空间
+JSON_STORAGE_SIZE() 用于存储 JSON 文档的二进制表示的空间
+JSON_TABLE() 从 JSON 表达式返回数据作为关系表
+JSON_TYPE() JSON 值的类型
+JSON_UNQUOTE() 取消引用 JSON 值
+JSON_VALID() JSON值是否有效
+JSON_VALUE() 在提供的路径指向的位置从 JSON 文档中提取值；将此值作为 VARCHAR(512) 或指定类型返回 8.0.21
+MEMBER OF() 如果第一个操作数与作为第二个操作数传递的 JSON 数组的任何元素匹配，则返回真 (1)，否则返回假 (0) 8.0.17
+MySQL 支持两个聚合 JSON 函数 JSON_ARRAYAGG() 和 JSON_OBJECTAGG() . 有关这些的描述，请参阅 第 12.20 节，“聚合函数” 。
+MySQL 还支持使用该函数以易于阅读的格式 “ 漂亮地打印 ” JSON 值。 您可以分别使用和 JSON_PRETTY() 来查看给定 JSON 值占用了多少存储空间，以及剩余多少空间用于额外存储
+。有关这些功能的完整描述，请参阅 第 12.18.8 节，“JSON 实用程序功能” 。 JSON_STORAGE_SIZE() JSON_STORAGE_FREE()

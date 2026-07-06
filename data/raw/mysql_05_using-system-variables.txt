@@ -1,0 +1,105 @@
+5.1.9 使用系统变量_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 5 章 MySQL 服务器管理 / 5.1 MySQL 服务器 / 
+5.1.9 使用系统变量
+5.1.9 使用系统变量
+5.1.9.1 系统变量权限 5.1.9.2 动态系统变量 5.1.9.3 持久化系统变量 5.1.9.4 不可持久和持久受限的系统变量 5.1.9.5 结构化系统变量
+MySQL 服务器维护许多配置其操作的系统变量。 第 5.1.8 节，“服务器系统变量” ，描述了这些变量的含义。每个系统变量都有一个默认值。可以在服务器启动时使用命令行或选项文件中的选项设置系统变量。其中大部分可以在服务器运行时通过 SET 语句动态更改，这使您无需停止并重新启动服务器即可修改服务器的操作。您还可以在表达式中使用系统变量值。
+许多系统变量是内置的。系统变量也可以通过服务器插件或组件安装：
+由服务器插件实现的系统变量在安装插件时公开，并且名称以插件名称开头。例如， audit_log 插件实现了一个名为 audit_log_policy .
+组件实现的系统变量在安装组件时公开，并且名称以特定于组件的前缀开头。例如， log_filter_dragnet 错误日志过滤组件实现了一个名为 的系统变量 log_error_filter_rules ，全名是 dragnet.log_error_filter_rules 。要引用此变量，请使用全名。
+系统变量存在两个范围。全局变量影响服务器的整体运行。会话变量影响其对单个客户端连接的操作。给定的系统变量可以同时具有全局值和会话值。全局和会话系统变量的关系如下：
+服务器启动时，它会将每个全局变量初始化为其默认值。这些默认值可以通过命令行或选项文件中指定的选项进行更改。（请参阅 第 4.2.2 节，“指定程序选项” 。）
+服务器还为每个连接的客户端维护一组会话变量。客户端的会话变量在连接时使用相应全局变量的当前值进行初始化。例如，客户端的 SQL 模式由会话 sql_mode 值控制，在客户端连接到全局值的值时初始化该会话 sql_mode 值。
+对于一些系统变量，session值不是从对应的全局值初始化的；如果是这样，则在变量描述中指出。
+通过使用命令行或选项文件中的选项，可以在服务器启动时全局设置系统变量值。启动时，系统变量的语法与命令选项的语法相同，因此在变量名称中，破折号和下划线可以互换使用。例如， --general_log=ON 和 --general-log=ON 是等价的。
+当您使用启动选项设置一个采用数值的变量时，该值可以带有后缀 K 、 M 或 G （大写或小写）以指示乘数 1024、1024 2 或 1024 3 ；即，分别以千字节、兆字节或千兆字节为单位。从 MySQL 8.0.14 开始，后缀也可以是 T , P 和 E 来表示 1024 4 、1024 5 或 1024 6 的乘数。因此，以下命令以 256 KB 的排序缓冲区大小和 1 GB 的最大数据包大小启动服务器：
+mysqld --sort-buffer-size=256K --max-allowed-packet=1G
+在选项文件中，这些变量设置如下：
+[mysqld]
+sort_buffer_size=256K
+max_allowed_packet=1G
+后缀字母的大小写无关紧要； 256K and 256k 是等价的，就像 1G and
+一样 1g 。
+要限制系统变量可以在运行时使用语句设置的
+最大值，请
+在服务器启动时 SET 使用表单的选项指定此最大值
+。例如，要防止 的值
+在运行时增加到超过 32MB，请使用选项
+. --maximum- var_name = value sort_buffer_size --maximum-sort-buffer-size=32M
+许多系统变量是动态的，可以在运行时使用 SET 语句进行更改。有关列表，请参阅 第 5.1.9.2 节，“动态系统变量” 。要使用 更改系统变量 SET ，请按名称引用它，可选地在前面加上修饰符。在运行时，系统变量名称必须使用下划线而不是破折号书写。以下示例简要说明了此语法：
+设置全局系统变量：
+SET GLOBAL max_connections = 1000;
+SET @@GLOBAL.max_connections = 1000;
+将全局系统变量持久化到 mysqld-auto.cnf 文件（并设置运行时值）：
+SET PERSIST max_connections = 1000;
+SET @@PERSIST.max_connections = 1000;
+将全局系统变量持久化到 mysqld-auto.cnf 文件（不设置运行时值）：
+SET PERSIST_ONLY back_log = 1000;
+SET @@PERSIST_ONLY.back_log = 1000;
+设置会话系统变量：
+SET SESSION sql_mode = 'TRADITIONAL';
+SET @@SESSION.sql_mode = 'TRADITIONAL';
+SET @@sql_mode = 'TRADITIONAL';
+有关 SET 语法的完整详细信息，请参阅 第 13.7.6.1 节，“变量赋值的 SET 语法” 。有关设置和持久化系统变量的权限要求的描述，请参阅 第 5.1.9.1 节，“系统变量权限”
+在服务器启动时设置变量时可以使用用于指定值乘数的后缀，但不能 SET 在运行时设置值。另一方面， SET 您可以使用表达式为变量赋值，这在服务器启动时设置变量时是不正确的。例如，以下第一行在服务器启动时是合法的，但第二行不是：
+$> mysql --max_allowed_packet=16M
+$> mysql --max_allowed_packet=16*1024*1024
+相反，下面的第二行在运行时是合法的，但第一行不是：
+mysql> SET GLOBAL max_allowed_packet=16M;
+mysql> SET GLOBAL max_allowed_packet=16*1024*1024;
+要显示系统变量名称和值，请使用以下 SHOW VARIABLES 语句：
+mysql> SHOW VARIABLES;
++---------------------------------+-----------------------------------+
+| Variable_name | Value |
++---------------------------------+-----------------------------------+
+| auto_increment_increment | 1 |
+| auto_increment_offset | 1 |
+| automatic_sp_privileges | ON |
+| back_log | 151 |
+| basedir | /home/mysql/ |
+| binlog_cache_size | 32768 |
+| bulk_insert_buffer_size | 8388608 |
+| character_set_client | utf8mb4 |
+| character_set_connection | utf8mb4 |
+| character_set_database | utf8mb4 |
+| character_set_filesystem | binary |
+| character_set_results | utf8mb4 |
+| character_set_server | utf8mb4 |
+| character_set_system | utf8mb3 |
+| character_sets_dir | /home/mysql/share/charsets/ |
+| check_proxy_users | OFF |
+| collation_connection | utf8mb4_0900_ai_ci |
+| collation_database | utf8mb4_0900_ai_ci |
+| collation_server | utf8mb4_0900_ai_ci |
+...
+| innodb_autoextend_increment | 8 |
+| innodb_buffer_pool_size | 8388608 |
+| innodb_commit_concurrency | 0 |
+| innodb_concurrency_tickets | 500 |
+| innodb_data_file_path | ibdata1:10M:autoextend |
+| innodb_data_home_dir | |
+...
+| version | 8.0.31 |
+| version_comment | Source distribution |
+| version_compile_machine | x86_64 |
+| version_compile_os | Linux |
+| version_compile_zlib | 1.2.12 |
+| wait_timeout | 28800 |
++---------------------------------+-----------------------------------+
+对于 LIKE 子句，该语句仅显示那些与模式匹配的变量。要获取特定的变量名称，请使用 LIKE 如下所示的子句：
+SHOW VARIABLES LIKE 'max_join_size';
+SHOW SESSION VARIABLES LIKE 'max_join_size';
+要获取名称与模式匹配的变量列表，请
+在子句
+中使用 % 通配符
+： LIKE
+SHOW VARIABLES LIKE '%size%';
+SHOW GLOBAL VARIABLES LIKE '%size%';
+通配符可以用在要匹配的模式中的任何位置。严格来说，因为 _ 是匹配任意单个字符的通配符，所以应该将其转义为 \_ 字面匹配。实际上，这很少是必要的。
+对于 SHOW VARIABLES ，如果您既不指定 GLOBAL 也不指定 SESSION ，则 MySQL 返回 SESSION 值。
+GLOBAL 在设置 -only 变量而不是在检索它们时需要关键字
+的原因 GLOBAL 是为了防止将来出现问题：
+如果 SESSION 要删除的变量与某个变量同名，则 GLOBAL 具有足以修改全局变量的特权的客户端可能会意外更改该 GLOBAL 变量，而不仅仅是 SESSION 其自己会话的变量。
+如果 SESSION 要添加与变量同名的 GLOBAL 变量，则打算更改 GLOBAL 变量的客户端可能会发现只更改了自己的 SESSION 变量。

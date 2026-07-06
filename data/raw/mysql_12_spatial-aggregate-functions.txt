@@ -1,0 +1,108 @@
+12.17.12 空间聚合函数_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 12 章函数和运算符 / 12.17空间分析函数 / 
+12.17.12 空间聚合函数
+12.17.12 空间聚合函数
+MySQL 支持对一组值执行计算的聚合函数。有关这些函数的一般信息，请参阅 第 12.20.1 节，“聚合函数说明” 。本节介绍 ST_Collect() 空间聚合函数。
+ST_Collect() 可以用作窗口函数，如其语法描述中所示
+，表示可选子句。
+在 第 12.21.2 节“窗口函数概念和语法” 中进行了描述，其中还包括有关窗口函数用法的其他信息。 [ over_clause ] OVER over_clause
+ST_Collect([DISTINCT] g )
+[ over_clause ]
+聚合几何值并返回单个几何集合值。使用该 DISTINCT 选项，返回不同几何参数的聚合。
+与其他聚合函数一样， GROUP BY 可用于将参数分组到子集中。 ST_Collect() 返回每个子集的聚合值。
+over_clause 如果存在，
+
+此函数将作为窗口函数执行
+。 over_clause 如 第 12.21.2 节，“窗口函数概念和语法” 中所述。与大多数支持窗口化的聚合函数相比， ST_Collect() 允许与 over_clause 一起使用 DISTINCT 。
+ST_Collect() 如下处理其参数：
+NULL 参数被忽略。
+如果所有参数都是 NULL 或聚合结果为空，则返回值为 NULL 。
+如果任何几何参数不是语法上格式正确的几何， ER_GIS_INVALID_DATA 则会发生错误。
+如果任何几何参数是未定义空间参考系统 (SRS) 中语法上格式正确的几何， ER_SRS_NOT_FOUND 则会发生错误。
+如果有多个几何参数并且这些参数在同一个 SRS 中，则返回值在该 SRS 中。如果这些参数不在同一个 SRS 中， ER_GIS_DIFFERENT_SRIDS_AGGREGATION 则会发生错误。
+结果是最窄的
+或
+可能的值，结果类型由非几何参数确定，如下所示： Multi Xxx GeometryCollection NULL
+如果所有参数都是 Point 值，则结果是一个 MultiPoint 值。
+如果所有参数都是 LineString 值，则结果是一个 MultiLineString 值。
+如果所有参数都是 Polygon 值，则结果是一个 MultiPolygon 值。
+否则，参数是几何类型的混合，结果是一个 GeometryCollection 值。
+此示例数据集按年份和制造地点显示了假设产品：
+CREATE TABLE product (
+year INTEGER,
+product VARCHAR(256),
+location Geometry
+);
+
+INSERT INTO product
+(year, product, location) VALUES
+(2000, "Calculator", ST_GeomFromText('point(60 -24)',4326)),
+(2000, "Computer" , ST_GeomFromText('point(28 -77)',4326)),
+(2000, "Abacus" , ST_GeomFromText('point(28 -77)',4326)),
+(2000, "TV" , ST_GeomFromText('point(38 60)',4326)),
+(2001, "Calculator", ST_GeomFromText('point(60 -24)',4326)),
+(2001, "Computer" , ST_GeomFromText('point(28 -77)',4326));
+ST_Collect() 在数据集上
+
+使用的一些示例查询
+：
+mysql> SELECT ST_AsText(ST_Collect(location)) AS result
+FROM product;
++------------------------------------------------------------------+
+| result |
++------------------------------------------------------------------+
+| MULTIPOINT((60 -24),(28 -77),(28 -77),(38 60),(60 -24),(28 -77)) |
++------------------------------------------------------------------+
+
+mysql> SELECT ST_AsText(ST_Collect(DISTINCT location)) AS result
+FROM product;
++---------------------------------------+
+| result |
++---------------------------------------+
+| MULTIPOINT((60 -24),(28 -77),(38 60)) |
++---------------------------------------+
+
+mysql> SELECT year, ST_AsText(ST_Collect(location)) AS result
+FROM product GROUP BY year;
++------+------------------------------------------------+
+| year | result |
++------+------------------------------------------------+
+| 2000 | MULTIPOINT((60 -24),(28 -77),(28 -77),(38 60)) |
+| 2001 | MULTIPOINT((60 -24),(28 -77)) |
++------+------------------------------------------------+
+
+mysql> SELECT year, ST_AsText(ST_Collect(DISTINCT location)) AS result
+FROM product GROUP BY year;
++------+---------------------------------------+
+| year | result |
++------+---------------------------------------+
+| 2000 | MULTIPOINT((60 -24),(28 -77),(38 60)) |
+| 2001 | MULTIPOINT((60 -24),(28 -77)) |
++------+---------------------------------------+
+
+# selects nothing
+mysql> SELECT ST_Collect(location) AS result
+FROM product WHERE year = 1999;
++--------+
+| result |
++--------+
+| NULL |
++--------+
+
+mysql> SELECT ST_AsText(ST_Collect(location)
+OVER (ORDER BY year, product ROWS BETWEEN 1 PRECEDING AND CURRENT ROW))
+AS result
+FROM product;
++-------------------------------+
+| result |
++-------------------------------+
+| MULTIPOINT((28 -77)) |
+| MULTIPOINT((28 -77),(60 -24)) |
+| MULTIPOINT((60 -24),(28 -77)) |
+| MULTIPOINT((28 -77),(38 60)) |
+| MULTIPOINT((38 60),(60 -24)) |
+| MULTIPOINT((60 -24),(28 -77)) |
++-------------------------------+
+这个函数是在 MySQL 8.0.24 中添加的。

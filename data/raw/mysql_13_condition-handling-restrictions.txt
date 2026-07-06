@@ -1,0 +1,14 @@
+13.6.8 条件处理的限制_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.6 复合语句语法 / 
+13.6.8 条件处理的限制
+13.6.8 条件处理的限制
+SIGNAL , RESIGNAL , 和 GET DIAGNOSTICS 不允许作为准备好的语句。例如，这个语句是无效的：
+PREPARE stmt1 FROM 'SIGNAL SQLSTATE "02000"';
+SQLSTATE 类 '04' 中的值没有特殊处理。它们的处理方式与其他异常相同。
+在标准 SQL 中，第一个条件与 SQLSTATE 为前一个 SQL 语句返回的值有关。在 MySQL 中，这是不能保证的，所以要得到主要错误，你不能这样做：
+GET DIAGNOSTICS CONDITION 1 @errno = MYSQL_ERRNO;
+相反，这样做：
+GET DIAGNOSTICS @cno = NUMBER;
+GET DIAGNOSTICS CONDITION @cno @errno = MYSQL_ERRNO;

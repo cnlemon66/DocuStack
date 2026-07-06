@@ -1,0 +1,18 @@
+15.11.4 对表进行碎片整理_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 15 章 InnoDB 存储引擎 / 15.11 InnoDB磁盘I/O和文件空间管理 / 
+15.11.4 对表进行碎片整理
+15.11.4 对表进行碎片整理
+对二级索引的随机插入或删除会导致索引变得碎片化。碎片是指磁盘上索引页面的物理顺序与页面上记录的索引顺序不接近，或者分配给索引的 64 页块中有许多未使用的页面。
+碎片的一个症状是表占用的空间比它 “ 应该 ” 占用的空间多。究竟有多少，很难确定。所有 InnoDB 数据和索引都存储在 B 树 中，它们的 填充因子 可能在 50% 到 100% 之间变化。碎片的另一个症状是像这样的表扫描花费的时间比它 “ 应该 ” 花费的时间多：
+SELECT COUNT(*) FROM t WHERE non_indexed_column <> 12345;
+上述查询需要MySQL进行全表扫描，这是大表最慢的查询类型。
+为了加快索引扫描，可以定期执行 “ null ” ALTER TABLE 操作，这会导致 MySQL 重建表：
+ALTER TABLE tbl_name ENGINE=INNODB
+您还可以使用它
+来执行重建表的 “ null ” 更改操作。 ALTER TABLE tbl_name FORCE
+两者都使用
+在线 DDL 。有关详细信息，请参阅 第 15.12 节，“InnoDB 和在线 DDL” 。 ALTER TABLE tbl_name ENGINE=INNODB ALTER TABLE tbl_name FORCE
+执行碎片整理操作的另一种方法是使用 mysqldump 将表转储到文本文件，删除表，然后从转储文件中重新加载它。
+如果对索引的插入总是升序的，并且只从末尾删除记录，则 InnoDB 文件空间管理算法可以保证索引中不会出现碎片。

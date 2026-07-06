@@ -1,0 +1,83 @@
+Redis ZREVRANK 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis ZREVRANK 命令
+返回 Sorted Set 中指定 member 的排名（score 从大到小，从 0 开始）。
+* 语法
+ZREVRANK key member [WITHSCORE]
+* 参数说明
+参数 类型 必填 说明
+key String 是 Sorted Set 的键名
+member String 是 成员名
+WITHSCORE 标志 否 同时返回 score（Redis 7.2+）
+* 返回值
+条件 返回值
+member 存在 排名（Integer），0 表示第一名（最高分）
+member 不存在 nil
+* 时间复杂度
+O(log(N))
+*
+* 示例
+> ZADD leaderboard 100 "p1" 200 "p2" 300 "p3"
+(integer) 3
+
+> ZREVRANK leaderboard "p3"
+(integer) 0
+
+> ZREVRANK leaderboard "p1"
+(integer) 2
+
+> ZREVRANK leaderboard "p4"
+(nil)
+* 常见错误
+错误 原因 解决
+WRONGTYPE Operation against a key holding the wrong kind of value 对非 Sorted Set 类型执行 ZREVRANK 使用 TYPE 命令确认 key 类型为 zset
+返回 nil 导致业务层异常 member 不存在于该 Sorted Set 业务层判空处理，或使用 EXISTS 检查 member 是否存在
+ERR syntax error 低版本 Redis 使用 WITHSCORE 选项 Redis 7.2+ 才支持 WITHSCORE，低版本请升级或分两次查询
+ERR wrong number of arguments 参数数量不足 确保传入 key 和 member 两个必填参数
+* 最佳实践
+查询个人排名（高分优先） ：ZREVRANK 返回的排名 0 是最高分，符合常见排行榜习惯。
+WITHSCORE 一次查询 ：Redis 7.2+ 使用 WITHSCORE 同时获取排名和分数，减少往返次数。
+处理 nil 返回值 ：业务层需处理 member 不存在时返回的 nil，避免空指针异常。
+排名+1 展示 ：内部排名从 0 开始，展示给用户时通常 +1 转换为第 1 名、第 2 名。
+* 5. 缓存热门排名 ：对频繁查询的 member 排名结果做短期缓存，减少 Redis 查询压力。
+* FAQ
+Q1: ZREVRANK 和 ZRANK 怎么选择？ A: 高分排名优先用 ZREVRANK（0=第一名）；低分排名优先用 ZRANK （0=最低分）。
+Q2: ZREVRANK 返回 nil 是什么意思？ A: 表示指定的 member 不在该 Sorted Set 中。
+Q3: ZREVRANK 和 ZRANK 的时间复杂度一样吗？ A: 一样，都是 O(log(N))。只是排序方向相反。
+Q4: 并列分数的成员排名怎么算？ A: Redis 使用字典序对相同 score 的 member 进行次级排序，并列分数不会返回相同排名。
+Q5: WITHSCORE 选项在低版本 Redis 中能用吗？ A: 不能。WITHSCORE 是 Redis 7.2+ 才支持的选项，低版本会报错。
+相关命令
+BZPOPMAX
+BZPOPMIN
+ZADD
+ZCARD
+ZCOUNT
+ZINCRBY
+ZINTER
+ZINTERSTORE
+ZLEXCOUNT
+ZMSCORE
+ZPOPMAX
+ZPOPMIN
+ZRANGE
+ZRANGEBYLEX
+ZRANGEBYSCORE
+ZRANK
+ZREM
+ZREMRANGEBYLEX
+ZREMRANGEBYRANK
+ZREMRANGEBYSCORE
+ZREVRANGE
+ZREVRANGEBYLEX
+ZREVRANGEBYSCORE
+ZREVRANK
+ZSCAN
+ZSCORE
+ZUNION
+ZUNIONSTORE

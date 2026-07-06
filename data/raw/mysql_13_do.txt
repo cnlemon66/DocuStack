@@ -1,0 +1,22 @@
+13.2.3 DO 声明_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.2 数据操作语句 / 
+13.2.3 DO 声明
+13.2.3 DO 声明
+DO expr [, expr ] ...
+DO 执行表达式但不返回任何结果。在大多数方面， DO 是 的简写，但优点是当您不关心结果时它会稍微快一些。 SELECT expr , ...
+DO 主要用于有副作用的函数，例如 RELEASE_LOCK() .
+示例：此 SELECT 语句暂停，但也会生成结果集：
+mysql> SELECT SLEEP(5);
++----------+
+| SLEEP(5) |
++----------+
+| 0 |
++----------+
+1 row in set (5.02 sec)
+DO ，另一方面，暂停而不产生结果集。：
+mysql> DO SLEEP(5);
+Query OK, 0 rows affected (4.99 sec)
+这可能很有用，例如在存储函数或触发器中，它们禁止生成结果集的语句。
+DO 只执行表达式。它不能在所有可以使用的情况下 SELECT 使用。例如， DO id FROM t1 无效，因为它引用了一个表。

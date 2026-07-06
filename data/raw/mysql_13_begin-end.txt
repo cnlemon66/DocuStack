@@ -1,0 +1,20 @@
+13.6.1 BEGIN ... END 复合语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.6 复合语句语法 / 
+13.6.1 BEGIN ... END 复合语句
+13.6.1 BEGIN ... END 复合语句
+[ begin_label :] BEGIN
+[ statement_list ]
+END [ end_label ]
+BEGIN ... END 语法用于编写复合语句，这些语句可以出现在存储程序（存储过程和函数、触发器和事件）中。复合语句可以包含多个语句，由 BEGIN and END 关键字括起来。 statement_list 表示一个或多个语句的列表，每个语句以分号 ( ; ) 语句分隔符终止。The statement_list 本身是可选的，所以空复合语句 ( BEGIN END ) 是合法的。
+BEGIN ... END 块可以嵌套。
+使用多个语句要求客户端能够发送包含 ; 语句定界符的语句字符串。在 mysql 命令行客户端中，这是用 delimiter 命令来处理的。更改 ; 语句结束分隔符（例如，更改为 // ）允许 ; 在程序主体中使用。有关示例，请参阅 第 25.1 节，“定义存储程序” 。
+块可以 BEGIN ...
+END 被标记。请参阅 第 13.6.2 节，“语句标签” 。
+[NOT] ATOMIC 不支持
+可选子句。这意味着在指令块的开头没有设置事务保存点，并且 BEGIN 在此上下文中使用的子句对当前事务没有影响。
+笔记
+在所有存储的程序中，解析器将 BEGIN [WORK] 其视为块的开头 BEGIN ...
+END 。要在此上下文中开始事务，请 START
+TRANSACTION 改用。

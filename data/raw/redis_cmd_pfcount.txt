@@ -1,0 +1,56 @@
+Redis PFCOUNT 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis PFCOUNT 命令
+PFCOUNT 返回 HyperLogLog 的基数估算值（不重复元素数量）。
+* 语法
+PFCOUNT key [key ...]
+* 参数说明
+参数 类型 必填 说明
+key String 是 HyperLogLog 键名，支持多个
+* 返回值
+Integer ：HyperLogLog 的基数估算值（不重复元素数量）
+当传入多个 key 时，返回合并后的估算值（不实际合并数据）
+如果 key 不存在，返回 0
+* 时间复杂度
+O(1) 单个 key。多个 key 为 O(M)，M 为 key 数量。每个 key 内部处理约 O(1)。
+* 示例
+* 基本用法
+> PFADD hll a b c d e f g
+(integer) 1
+> PFCOUNT hll
+(integer) 7
+* 多个 HyperLogLog 合并估算
+> PFADD hll1 user1 user2 user3
+(integer) 1
+> PFADD hll2 user3 user4 user5
+(integer) 1
+> PFCOUNT hll1 hll2
+(integer) 5
+* key 不存在的场景
+> PFCOUNT notexist
+(integer) 0
+* 常见错误
+错误 原因 解决
+ERR wrong number of arguments 未提供 key 参数 至少提供一个 key
+WRONGTYPE key 不是 HyperLogLog 类型 确认 key 类型或删除后重建
+* 最佳实践
+大规模 UV 统计、去重计数的首选方案，误差率约 0.81%
+多个 HyperLogLog 合并统计时，PFCOUNT key1 key2 ... 不会实际修改数据，只是返回估算值
+如需实际合并多个 HyperLogLog 到新的 key，使用 PFMERGE
+单个 PFCOUNT 固定 12KB 内存，多个 key 合并估算时内存使用会暂时增加，需注意并发量
+* FAQ
+Q1: PFCOUNT 的精度如何？ A: 标准误差约 0.81%。对于 10 亿级元素，误差约 800 万。绝大多数统计场景下足够使用。
+Q2: PFCOUNT 多个 key 和 PFMERGE 有什么区别？ A: PFCOUNT key1 key2 只返回估算值，不修改任何数据。 PFMERGE destkey key1 key2 会将合并结果写入 destkey，是写操作。
+Q3: PFCOUNT 对不存在的 key 返回什么？ A: 返回 (integer) 0，表示空集的基数为 0。不会报错。
+相关命令
+PFADD
+PFCOUNT
+PFDEBUG
+PFMERGE
+PFSELFTEST

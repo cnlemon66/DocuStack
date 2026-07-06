@@ -1,0 +1,108 @@
+Redis SET 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis SET 命令
+设置 key 对应的 String 类型 value。若 key 已存在则覆盖。
+* 语法
+SET key value [NX | XX] [GET] [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds | KEEPTTL]
+* 参数说明
+参数 类型 必填 说明
+key String 是 键名
+value String 是 值（二进制安全）
+NX 标志 否 仅在 key 不存在时才设置
+XX 标志 否 仅在 key 存在时才设置
+GET 标志 否 返回 key 的旧值（Redis 6.2+）
+EX 整数 否 过期时间（秒）
+PX 整数 否 过期时间（毫秒）
+EXAT 整数 否 绝对过期时间（Unix 时间戳，秒）
+PXAT 整数 否 绝对过期时间（Unix 时间戳，毫秒）
+KEEPTTL 标志 否 保留 key 原有的 TTL（Redis 6.0+）
+* 返回值
+条件 返回值
+设置成功 OK
+NX/XX 条件不满足 (nil)
+带 GET 且 key 存在 返回旧值；若旧值非 String 类型则报错
+* 时间复杂度
+O(1)
+*
+* 示例
+# 基本用法
+> SET mykey hello
+OK
+
+> GET mykey
+"hello"
+
+# 带过期时间（60 秒）
+> SET session:1001 "user_data" EX 60
+OK
+
+> TTL session:1001
+(integer) 57
+
+# NX：仅在不存在时设置（分布式锁常用）
+> SET lock:resource1 "owner1" NX EX 10
+OK
+> SET lock:resource1 "owner2" NX EX 10
+(nil)
+
+# XX：仅在存在时更新
+> SET mykey "updated" XX
+OK
+> SET newkey "value" XX
+(nil)
+
+# GET：返回旧值并设置新值（Redis 6.2+）
+> SET mykey "world" GET
+"hello"
+* 常见错误
+GET 返回 WRONGTYPE ：使用 SET key value GET 时，若旧值不是 String 类型会报错。
+NX 和 XX 同时使用 ：Redis 不允许同时设置 NX 和 XX，会报错。
+* 最佳实践
+缓存场景 ：总是设置过期时间 EX 或 PX ，避免脏数据无限存活。
+分布式锁 ： SET key value NX EX seconds 是原子实现锁的标准方式，优于旧的 SETNX + EXPIRE 。
+大 value ：String 超过 10KB 时考虑 Hash 拆分或压缩，避免阻塞。
+计数器 ： SET counter 100 后使用 INCR / DECR ，不要反复 SET。
+* FAQ
+Q: SET 和 SETNX 有什么区别？ A: SETNX 是老命令，只支持 SET key value NX 。Redis 2.6.12+ 推荐使用 SET key value NX EX 替代，原子性更好。
+Q: 如何设置 key 永不过期？ A: 不指定 EX/PX/EXAT/PXAT 即可。若 key 已有 TTL ，使用 KEEPTTL 可保留原 TTL 。
+Q: SET 是原子操作吗？ A: 是。Redis 单线程执行命令，SET 本身是原子的。配合 NX/XX/ GET 也是原子操作。
+相关命令
+APPEND
+BITCOUNT
+BITFIELD
+BITOP
+BITPOS
+DECR
+DECRBY
+DELEX
+DIGEST
+GET
+GETBIT
+GETDEL
+GETEX
+GETRANGE
+GETSET
+INCR
+INCRBY
+INCRBYFLOAT
+INCREX
+LCS
+MGET
+MSET
+MSETEX
+MSETNX
+PSETEX
+SET
+SETBIT
+SETEX
+SETNX
+SETRANGE
+STRALGO
+STRLEN
+SUBSTR

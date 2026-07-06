@@ -1,0 +1,88 @@
+Redis XRANGE 命令
+首页
+Redis 命令
+Redis 管理
+Redis 教程
+Redis 进阶
+Redis 客户端
+Redis 下载
+* Redis XRANGE 命令
+返回 Stream 中指定 ID 范围内的消息，按 ID 从小到大排序。
+* 语法
+XRANGE key start end [COUNT count]
+* 参数说明
+参数 类型 必填 说明
+key String 是 Stream 键名
+start String 是 起始 ID， - 表示最小 ID
+end String 是 结束 ID， + 表示最大 ID
+COUNT Integer 否 最多返回数量
+* 返回值
+条件 返回值
+有消息 消息数组 [[id, [field, value, ...]], ...]
+无消息 空数组 []
+* 时间复杂度
+O(log(N)+ M)，N 为 Stream 消息数，M 为返回数量。
+* 示例
+# 读取全部
+> XRANGE mystream - +
+1) 1) "1717000000000-0"
+2) 1) "temperature"
+2) "19.8"
+2) 1) "1717000000001-0"
+2) 1) "event"
+2) "click"
+
+# 指定范围
+> XRANGE mystream 1717000000000-0 1717000000000-999
+
+# 分页
+> XRANGE mystream - + COUNT 10
+* 常见错误
+错误 原因 解决
+ERR wrong number of arguments 参数数量不足 检查 key、start、end 是否都传入
+ERR Invalid stream ID start/end 不是有效的 Stream ID 格式 使用 - / + 或合法时间戳-序列号格式
+WRONGTYPE Operation against a key holding the wrong kind of value 对非 Stream 类型执行 XRANGE 使用 TYPE 命令确认 key 类型为 stream
+ERR value is not an integer COUNT 传入非整数 确保 COUNT 值为正整数
+* 最佳实践
+历史查询 ：按时间范围查询 Stream 历史消息。
+分页遍历 ：COUNT 分页读取，ID 范围精确定位。
+ID 生成策略 ：使用 * 让 Redis 自动生成时间戳-序列号 ID，避免手动构造 ID 冲突。
+分页游标 ：结合 COUNT 和具体 ID 范围实现分页，不要用固定偏移量翻页。
+* 5. 时间戳查询 ：利用 ID 前缀匹配查询某段时间范围的数据，如 XRANGE mystream 1717000000000-0 1717999999999-999 。
+* FAQ
+Q1: XRANGE 和 XREVRANGE 有什么区别？ A: XRANGE 从小到大； XREVRANGE 从大到小。
+Q2: - 和 + 是什么意思？ A: - 表示 Stream 最小 ID； + 表示最大 ID。
+Q3: XRANGE 返回的消息包含 ID 吗？ A: 包含。返回格式为 [[id, [field, value, ...]], ...] ，第一个元素就是消息 ID。
+Q4: Stream 为空时 XRANGE 返回什么？ A: 返回空数组 [] 。
+Q5: 可以用 XRANGE 实现时间序列查询吗？ A: 可以。Redis Stream ID 默认包含毫秒时间戳，XRANGE 天然支持按时间范围查询。
+相关命令
+XACK
+XACKDEL
+XADD
+XAUTOCLAIM
+XCFGSET
+XCLAIM
+XDEL
+XDELEX
+XGROUP
+XGROUP CREATE
+XGROUP CREATECONSUMER
+XGROUP DELCONSUMER
+XGROUP DESTROY
+XGROUP HELP
+XGROUP SETID
+XIDMPRECORD
+XINFO
+XINFO CONSUMERS
+XINFO GROUPS
+XINFO HELP
+XINFO STREAM
+XLEN
+XNACK
+XPENDING
+XRANGE
+XREAD
+XREADGROUP
+XREVRANGE
+XSETID
+XTRIM

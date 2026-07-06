@@ -1,0 +1,204 @@
+13.3.6 LOCK TABLES 和 UNLOCK TABLES 语句_MySQL 8.0 参考手册 Skip to Main Content
+Documentation Home
+MySQL 8.0 参考手册
+MySQL 8.0 参考手册 / 第 13 章 SQL 语句 / 13.3 事务和锁定语句 / 
+13.3.6 LOCK TABLES 和 UNLOCK TABLES 语句
+13.3.6 LOCK TABLES 和 UNLOCK TABLES 语句
+LOCK TABLES tbl_name [[AS] alias ] lock_type [, tbl_name [[AS] alias ] lock_type ] ... lock_type : {
+READ [LOCAL]
+| [LOW_PRIORITY] WRITE
+}
+
+UNLOCK TABLES
+MySQL允许客户端会话显式获取表锁，目的是为了与其他会话协作访问表，或者防止其他会话在会话需要独占访问表时修改表。会话只能为自己获取或释放锁。一个会话不能为另一个会话获取锁或释放另一个会话持有的锁。
+锁可用于模拟事务或在更新表时获得更快的速度。 这在Table-Locking Restrictions and Conditions 中有更详细的解释
+。
+LOCK TABLES 显式获取当前客户端会话的表锁。可以为基表或视图获取表锁。您必须拥有 LOCK TABLES 特权，并且 SELECT 每个对象的特权都被锁定。
+对于视图锁定， LOCK TABLES 将视图中使用的所有基表添加到要锁定的表集中并自动锁定它们。对于任何被锁定的视图下的表， LOCK TABLES 检查视图定义者（对于 SQL SECURITY DEFINER 视图）或调用者（对于所有视图）是否对表具有适当的权限。
+如果您使用 显式锁定表 LOCK
+TABLES ，则触发器中使用的任何表也会被隐式锁定，如 锁定表和触发器 中所述。
+如果您使用 显式锁定表 LOCK
+TABLES ，则任何与外键约束相关的表都会被隐式打开和锁定。 LOCK
+TABLES READ 对于外键检查，在相关表上采用共享只读锁 ( )。 LOCK TABLES
+WRITE 对于级联更新，在操作中涉及的相关表上采用
+无共享写锁 ( )。
+UNLOCK
+TABLES 显式释放当前会话持有的任何表锁。 LOCK TABLES 在获取新锁之前隐式释放当前会话持有的任何表锁。
+for 的另一个用途 UNLOCK
+TABLES 是释放语句获取的全局读锁 FLUSH TABLES WITH READ LOCK ，这使您可以锁定所有数据库中的所有表。请参阅 第 13.7.8.3 节，“FLUSH 语句” 。（如果您有 Veritas 等可以及时拍摄快照的文件系统，这是一种非常方便的备份方式。）
+表锁仅防止其他会话进行不适当的读取或写入。持有 WRITE 锁的会话可以执行表级操作，例如 DROP TABLE or TRUNCATE TABLE 。对于持有 READ 锁的会话，
+不允许进行操作 DROP
+TABLE 。 TRUNCATE TABLE
+以下讨论仅适用于非 TEMPORARY 表。 LOCK
+TABLES 允许（但忽略） TEMPORARY 表。该表可以由创建它的会话自由访问，而不管其他锁定是否有效。不需要锁定，因为没有其他会话可以看到该表。
+表锁获取
+表锁释放
+表锁定和事务的交互
+锁表和触发器
+表锁定限制和条件
+表锁获取
+要在当前会话中获取表锁，请使用 LOCK TABLES 获取元数据锁的语句（请参阅 第 8.11.4 节，“元数据锁定” ）。
+可以使用以下锁类型：
+READ [LOCAL] 锁：
+持有锁的会话可以读取表（但不能写入）。
+多个会话可以同时获取 READ 表的锁。
+其他会话可以在不显式获取 READ 锁的情况下读取该表。
+LOCAL 修饰符使其他会话的非冲突
+
+语句 INSERT （并发插入）能够在持有锁的同时执行。（请参阅 第 8.11.3 节，“并发插入” 。）但是， READ LOCAL 如果您打算在持有锁的同时使用服务器外部的进程来操作数据库，则不能使用。对于 InnoDB 表， READ
+LOCAL 与 READ .
+[LOW_PRIORITY] WRITE 锁：
+持有锁的会话可以读写表。
+只有持有锁的会话才能访问该表。在释放锁之前，没有其他会话可以访问它。
+持有锁时，其他会话对表的锁请求会阻塞 WRITE 。
+LOW_PRIORITY 修饰符无效
+。在以前的 MySQL 版本中，它会影响锁定行为，但这不再适用。它现在已被弃用，它的使用会产生警告。使用 WRITE without LOW_PRIORITY 代替。
+WRITE 锁通常比锁具有更高的优先级， READ 以确保尽快处理更新。这意味着，如果一个会话获得 READ 锁，然后另一个会话请求 WRITE 锁，则后续
+的 READ 锁请求将等待，直到请求 WRITE 锁的会话获得锁并释放锁。 max_write_lock_count （系统变量的小值可能会出现此策略的例外情况
+；请参阅 第 8.11.4 节，“元数据锁定” 。）
+如果该 LOCK TABLES 语句由于其他会话持有任何表上的锁而必须等待，它会阻塞，直到可以获取所有锁。
+需要锁的会话必须在一条 LOCK TABLES 语句中获取它需要的所有锁。当持有如此获得的锁时，会话只能访问锁定的表。例如，在下面的语句序列中，尝试访问会出错， t2 因为它没有在 LOCK TABLES 语句中锁定：
+mysql> LOCK TABLES t1 READ;
+mysql> SELECT COUNT(*) FROM t1;
++----------+
+| COUNT(*) |
++----------+
+| 3 |
++----------+
+mysql> SELECT COUNT(*) FROM t2;
+ERROR 1100 (HY000): Table 't2' was not locked with LOCK TABLES
+数据库中的表 INFORMATION_SCHEMA 是一个例外。无需显式锁定即可访问它们，即使会话持有通过 获得的表锁 LOCK TABLES 。
+您不能在单个查询中使用相同的名称多次引用锁定的表。改用别名，并为表和每个别名获取一个单独的锁：
+mysql> LOCK TABLE t WRITE, t AS t1 READ;
+mysql> INSERT INTO t SELECT * FROM t;
+ERROR 1100: Table 't' was not locked with LOCK TABLES
+mysql> INSERT INTO t SELECT * FROM t AS t1;
+第一个错误发生是 INSERT 因为有两个对锁定表的相同名称的引用。第二次 INSERT 成功是因为对表的引用使用了不同的名称。
+如果您的语句通过别名引用表，则必须使用相同的别名锁定该表。在不指定别名的情况下锁定表是行不通的：
+mysql> LOCK TABLE t READ;
+mysql> SELECT * FROM t AS myalias;
+ERROR 1100: Table 'myalias' was not locked with LOCK TABLES
+相反，如果您使用别名锁定表，则必须在使用该别名的语句中引用它：
+mysql> LOCK TABLE t AS myalias READ;
+mysql> SELECT * FROM t;
+ERROR 1100: Table 't' was not locked with LOCK TABLES
+mysql> SELECT * FROM t AS myalias;
+表锁释放
+当一个会话持有的表锁被释放时，它们会同时被释放。会话可以显式释放其锁，也可以在某些条件下隐式释放锁。
+会话可以使用 显式释放它的锁 UNLOCK
+TABLES 。
+如果会话 LOCK
+TABLES 在已经持有锁的情况下发出获取锁的语句，则在授予新锁之前会隐式释放其现有锁。
+如果会话开始事务（例如， with START
+TRANSACTION ），则会执行隐式 UNLOCK
+TABLES 操作，这会导致释放现有锁。（有关表锁定和事务之间交互的更多信息，请参阅 表锁定和事务的交互 。）
+如果客户端会话的连接终止，无论是正常终止还是异常终止，服务器都会隐式释放会话持有的所有表锁（事务性和非事务性）。如果客户端重新连接，则锁定不再有效。此外，如果客户端有一个活动事务，服务器会在断开连接时回滚事务，如果发生重新连接，新会话将在启用自动提交的情况下开始。因此，客户端可能希望禁用自动重新连接。启用自动重新连接后，如果重新连接发生但任何表锁或当前事务丢失，则不会通知客户端。在禁用自动重新连接的情况下，如果连接断开，则发出的下一条语句会发生错误。客户端可以检测到错误并采取适当的措施，例如重新获取锁或重做事务。看 自动重新连接控制 。
+笔记
+如果您 ALTER TABLE 在上锁的桌子上使用，它可能会解锁。例如，如果您尝试进行第二个 ALTER TABLE 操作，结果可能是一个错误。要处理此问题，请在第二次更改之前再次锁定表。另见 第 B.3.6.1 节，“ALTER TABLE 的问题” 。 Table
+' tbl_name ' was not locked with LOCK
+TABLES
+表锁定和事务的交互
+LOCK TABLES 并 UNLOCK
+TABLES 与交易的使用进行交互，如下所示：
+LOCK TABLES 不是事务安全的，并且在尝试锁定表之前隐式提交任何活动事务。
+UNLOCK
+TABLES 隐式提交任何活动事务，但前提是 LOCK TABLES 已用于获取表锁。例如，在下面的一组语句中， UNLOCK
+TABLES 释放全局读锁但不提交事务，因为没有有效的表锁：
+FLUSH TABLES WITH READ LOCK;
+START TRANSACTION;
+SELECT ... ;
+UNLOCK TABLES;
+开始事务（例如，使用 START
+TRANSACTION ）隐式提交任何当前事务并释放现有表锁。
+FLUSH TABLES WITH READ LOCK 获取全局读锁而不是表锁，因此它不受与表锁定和隐式提交相同的行为的 LOCK TABLES 约束 UNLOCK
+TABLES 。例如， START
+TRANSACTION 不释放全局读锁。请参阅 第 13.7.8.3 节，“FLUSH 语句” 。
+其他隐式导致事务被提交的语句不会释放现有的表锁。有关此类语句的列表，请参阅 第 13.3.3 节，“导致隐式提交的语句” 。
+LOCK
+TABLES 使用and UNLOCK
+TABLES 与事务表（例如
+表）
+一起使用的正确方法是使用(not
+) 后跟 InnoDB 开始事务，并且在明确提交事务之前不调用
+。例如，如果您需要写入表
+并从表中读取
+，您可以这样做： SET autocommit = 0 START
+TRANSACTION LOCK
+TABLES UNLOCK
+TABLES t1 t2
+SET autocommit=0;
+LOCK TABLES t1 WRITE, t2 READ, ...; ... do something with tables t1 and t2 here ... COMMIT;
+UNLOCK TABLES;
+当你调用时 LOCK TABLES ， InnoDB 内部获取它自己的表锁，而 MySQL 获取它自己的表锁。 InnoDB 在下一次提交时释放它的内部表锁，但是对于 MySQL 释放它的表锁，你必须调用 UNLOCK
+TABLES . 您不应该有 autocommit = 1 ，因为 then InnoDB 在调用 之后立即释放其内部表锁 LOCK
+TABLES ，并且很容易发生死锁。 InnoDB 根本不获取内部表锁 if autocommit =
+1 ，以帮助旧应用程序避免不必要的死锁。
+ROLLBACK 不释放表锁。
+锁表和触发器
+如果您使用 显式锁定表 LOCK
+TABLES ，则触发器中使用的任何表也将被隐式锁定：
+LOCK
+TABLES 锁的获取时间与使用语句
+
+显式获取的锁的获取时间相同。
+触发器中使用的表锁取决于该表是否仅用于读取。如果是这样，读锁就足够了。否则，使用写锁。
+如果使用 显式锁定表以供读取 LOCK TABLES ，但需要锁定以进行写入，因为它可能在触发器内被修改，则采用写锁而不是读锁。（也就是说，由于表在触发器中出现而需要的隐式写锁会导致对表的显式读锁请求转换为写锁请求。）
+假设您使用以下语句锁定两个表 t1 和 t2 ：
+LOCK TABLES t1 WRITE, t2 READ;
+如果 t1 或 t2 有任何触发器，触发器中使用的表也会被锁定。假设 t1 有一个这样定义的触发器：
+CREATE TRIGGER t1_a_ins AFTER INSERT ON t1 FOR EACH ROW
+BEGIN
+UPDATE t4 SET count = count+1
+WHERE id = NEW.id AND EXISTS (SELECT a FROM t3);
+INSERT INTO t2 VALUES(1, 2);
+END;
+该 LOCK TABLES 语句的结果是 t1 和 t2 被锁定，因为它们出现在语句中，而 t3 和 t4 被锁定，因为它们在触发器中使用：
+t1 WRITE 根据锁定请求
+锁定写入
+。
+t2 被锁定写入，即使请求是 READ 锁定。发生这种情况是因为 t2 插入到触发器内部，所以 READ 请求被转换为 WRITE 请求。
+t3 被锁定以供读取，因为它只能从触发器内部读取。
+t4 已锁定写入，因为它可能会在触发器内更新。
+表锁定限制和条件
+您可以安全地使用 KILL 来终止正在等待表锁的会话。请参阅 第 13.7.8.4 节，“KILL 语句” 。
+LOCK TABLES 并且 UNLOCK
+TABLES 不能在存储的程序中使用。
+数据库中的表 performance_schema 不能用 锁定 LOCK
+TABLES ，表除外
+。 setup_ xxx
+生成的锁的范围 LOCK TABLES 是单个 MySQL 服务器。 它与 NDB Cluster 不兼容，NDB Cluster 无法跨mysqld 的多个实例强制执行 SQL 级锁定。您可以改为在 API 应用程序中强制锁定。有关更多信息，请参阅 第 23.2.7.10 节，“与多个 NDB Cluster 节点相关的限制” 。
+以下语句在 LOCK TABLES 语句生效时被禁止： CREATE TABLE 、 CREATE TABLE ...
+LIKE 、 CREATE VIEW 、 DROP VIEW 和 DDL 语句对存储的函数和过程和事件。
+对于某些操作， mysql 必须访问数据库中的系统表。例如，该 HELP 语句需要服务器端帮助表的内容，并且 CONVERT_TZ() 可能需要读取时区表。服务器根据需要隐式锁定系统表以供读取，因此您无需显式锁定它们。这些表的处理方式与刚才描述的一样：
+mysql.help_category
+mysql.help_keyword
+mysql.help_relation
+mysql.help_topic
+mysql.time_zone
+mysql.time_zone_leap_second
+mysql.time_zone_name
+mysql.time_zone_transition
+mysql.time_zone_transition_type
+如果你想 WRITE 用语句显式地锁定这些表中的任何一个 LOCK
+TABLES ，该表必须是唯一被锁定的表；不能用同一条语句锁定其他表。
+通常，您不需要锁定表，因为所有单个 UPDATE 语句都是原子的；没有其他会话可以干扰任何其他当前正在执行的 SQL 语句。但是，在某些情况下，锁定表可能会带来优势：
+如果您要对一组 MyISAM 表运行许多操作，那么锁定您将要使用的表要快得多。锁定 MyISAM 表可以加快插入、更新或删除它们的速度，因为 MySQL 在 UNLOCK
+TABLES 调用之前不会刷新锁定表的键缓存。通常，在每个 SQL 语句之后刷新键缓存。
+锁定表的缺点是没有会话可以更新 READ -locked 表（包括持有锁的表）并且没有会话可以访问 WRITE 持有锁的表以外的 -locked 表。
+如果您正在为非事务性存储引擎使用表，并且 LOCK
+TABLES 要确保没有其他会话修改 a SELECT 和
+. 之间的表，则必须使用 UPDATE . 此处显示的示例需要 LOCK TABLES 安全执行：
+LOCK TABLES trans READ, customer WRITE;
+SELECT SUM(value) FROM trans WHERE customer_id= some_id ;
+UPDATE customer
+SET total_value= sum_from_previous_statement WHERE customer_id= some_id ;
+UNLOCK TABLES;
+如果没有 LOCK TABLES ，另一个会话可能会 trans 在执行 SELECT and UPDATE 语句之间在表中插入一个新行。
+LOCK TABLES 在许多情况下，您可以通过使用相对更新 ( ) 或函数
+
+来避免使用。 UPDATE
+customer SET value = value + new_value LAST_INSERT_ID()
+在某些情况下，您还可以通过使用用户级咨询锁功能 GET_LOCK() 和 RELEASE_LOCK() . 这些锁保存在服务器的哈希表中， pthread_mutex_lock() 并 pthread_mutex_unlock() 以高速实现。请参阅 第 12.15 节，“锁定功能” 。
+有关锁定策略的更多信息，
+
+请参阅 第 8.11.1 节，“内部锁定方法” 。
