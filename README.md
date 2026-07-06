@@ -93,7 +93,3 @@ mybatis-rag/
 ├── java-backend/      # Spring Boot 对照版本
 └── DEVLOG.md          # 开发日志
 ```
-
-## License
-
-MIT
