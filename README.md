@@ -16,14 +16,18 @@
 
 ## 快速开始
 
-### 1. 配置 API Key
+### 1. 一键启动
+
+双击 `start.bat`，首次运行会提示输入 DeepSeek API Key，输入后自动保存并启动。
+
+### 2. 手动配置
 
 ```bash
 cp config.example.json config.json
 # 编辑 config.json，填入你的 DeepSeek API Key
 ```
 
-### 2. 启动服务
+### 3. 启动服务
 
 ```bash
 python server.py
