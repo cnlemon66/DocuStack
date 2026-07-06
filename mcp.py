@@ -7,7 +7,7 @@ import uuid
 from tools import execute_tool, TOOLS
 
 PROTOCOL_VERSION = "2025-03-26"
-SERVER_NAME = "mybatis-rag-mcp"
+SERVER_NAME = "DocuStack-mcp"
 SERVER_VERSION = "1.0.0"
 
 # 会话管理

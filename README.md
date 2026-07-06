@@ -1,4 +1,4 @@
-# MyBatis RAG
+# DocuStack
 
 面向 Java 后端开发者的智能文档问答系统。自研七层 Agent 架构，支持 MyBatis / MySQL / Redis 三大知识库，562 篇文档，370 万字。
 
