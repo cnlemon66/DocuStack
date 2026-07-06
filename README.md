@@ -16,20 +16,22 @@
 
 ## 快速开始
 
+```bash
+git clone https://github.com/cnlemon66/DocuStack.git
+cd DocuStack
+```
+
 ### 1. 一键启动
 
-双击 `start.bat`，首次运行会提示输入 DeepSeek API Key，输入后自动保存并启动。
+双击 `start.bat`，首次运行会提示输入 API Key，输入后自动保存并启动。
 
-### 2. 手动配置
+支持 DeepSeek、OpenAI、智谱、硅基流动、Moonshot、MiMo 等多个 LLM Provider，在 Web 设置页面可切换。
+
+### 2. 手动启动
 
 ```bash
 cp config.example.json config.json
-# 编辑 config.json，填入你的 DeepSeek API Key
-```
-
-### 3. 启动服务
-
-```bash
+# 编辑 config.json，填入你的 API Key
 python server.py
 ```
 

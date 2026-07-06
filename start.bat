@@ -21,11 +21,11 @@ python -c "import json;c=json.load(open('config.json','r',encoding='utf-8'));k=c
 if errorlevel 1 (
     echo.
     echo   ┌────────────────────────────────────────┐
-    echo   │  需要配置 DeepSeek API Key               │
-    echo   │  获取地址: https://platform.deepseek.com  │
+    echo   │  需要配置 API Key                          │
+    echo   │  支持 DeepSeek/OpenAI/智谱/Moonshot 等      │
     echo   └────────────────────────────────────────┘
     echo.
-    set /p APIKEY="  请输入 DeepSeek API Key: "
+    set /p APIKEY="  请输入 API Key: "
     if "%APIKEY%"=="" (
         echo   [✗] 未输入 Key，退出
         pause
