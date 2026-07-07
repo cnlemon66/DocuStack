@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul 2>&1
+setlocal enabledelayedexpansion
 cd /d "%~dp0"
 title DocuStack
 
@@ -25,12 +26,12 @@ if errorlevel 1 (
     echo   +--------------------------------------+
     echo.
     set /p APIKEY="  Enter API Key: "
-    if "%APIKEY%"=="" (
+    if "!APIKEY!"=="" (
         echo   [X] No key, exit
         pause
         exit
     )
-    python scripts\set_key.py "%APIKEY%"
+    python scripts\set_key.py "!APIKEY!"
     if errorlevel 1 (
         echo   [X] Failed to save key
         pause
