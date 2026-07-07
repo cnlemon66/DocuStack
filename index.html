@@ -718,7 +718,7 @@ async function s(){
               head.onclick=function(){
                 let body=thinkWrap.querySelector('.think-body');
                 let arrow=head.querySelector('span');
-                if(body.style.display===&apos;none&apos;){ body.style.display='block'; arrow.textContent='▼'; }
+                if(body.style.display==='none'){ body.style.display='block'; arrow.textContent='▼'; }
                 else{ body.style.display='none'; arrow.textContent='▶'; }
               };
               let body=document.createElement('div'); body.className='think-body';
@@ -744,7 +744,7 @@ async function s(){
               head.onclick=function(){
                 let body=thinkWrap.querySelector('.think-body');
                 let arrow=head.querySelector('span');
-                if(body.style.display===&apos;none&apos;){ body.style.display='block'; arrow.textContent='▼'; }
+                if(body.style.display==='none'){ body.style.display='block'; arrow.textContent='▼'; }
                 else{ body.style.display='none'; arrow.textContent='▶'; }
               };
               let body=document.createElement('div'); body.className='think-body';
@@ -901,7 +901,7 @@ function buildSearchSummary(chunks,elapsed,total,subQueries){
     info+=' (拆为 '+subQueries.length+' 路)';
   }
   head.innerHTML='<span class="arw">▶</span> '+info;
-  head.onclick=function(){ div.classList.toggle(&apos;open&apos;); };
+  head.onclick=function(){ div.classList.toggle('open'); };
   div.appendChild(head);
 
   // 显示子查询
