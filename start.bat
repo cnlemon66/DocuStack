@@ -17,7 +17,7 @@ if not exist "config.json" (
 )
 
 :: check API key
-python -c "import json;c=json.load(open('config.json','r',encoding='utf-8'));k=c.get('llm',{}).get('api_key','');exit(0 if k and 'sk-' in k and len(k)>10 else 1)" >nul 2>&1
+python -c "import json;c=json.load(open('config.json','r',encoding='utf-8'));k=c.get('llm',{}).get('api_key','');exit(0 if k and k.startswith('sk-') and '\u4f60\u7684' not in k and len(k)>10 else 1)" >nul 2>&1
 if errorlevel 1 (
     echo.
     echo   +--------------------------------------+
