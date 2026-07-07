@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN" data-theme="new-warm-paper">
 <head>
 <meta charset="UTF-8">
@@ -502,7 +502,7 @@ function M(r,c,meta){
       // 思考过程折叠区
       if(meta._analysis || meta._plan){
         html+='<div class="think-wrap" style="margin-bottom:6px;border:1px solid var(--border);border-radius:6px;overflow:hidden">';
-        html+='<div class="think-head" onclick="var b=this.nextElementSibling;var a=this.querySelector('.arw');if(b.style.display==='none'){b.style.display='block';a.textContent='▼'}else{b.style.display='none';a.textContent='▶'}" style="font-size:12px;color:var(--text-muted);padding:6px 10px;cursor:pointer;background:var(--bg);display:flex;align-items:center;gap:6px;user-select:none"><span class="arw">▶</span> 思考过程</div>';
+        html+='<div class="think-head" onclick="var b=this.nextElementSibling;var a=this.querySelector(&apos;.arw&apos;);if(b.style.display===&apos;none&apos;){b.style.display=&apos;block&apos;;a.textContent=&apos;▼&apos;}else{b.style.display=&apos;none&apos;;a.textContent=&apos;▶&apos;}" style="font-size:12px;color:var(--text-muted);padding:6px 10px;cursor:pointer;background:var(--bg);display:flex;align-items:center;gap:6px;user-select:none"><span class="arw">▶</span> 思考过程</div>';
         html+='<div class="think-body" style="display:none;padding:0 10px 6px">';
         if(meta._analysis){
           html+='<div style="font-size:13px;color:var(--text);padding:4px 0"><b>📋 分析</b> '+E(meta._analysis)+'</div>';
@@ -520,7 +520,7 @@ function M(r,c,meta){
       let info='🔍 检索完成 · '+s.total_docs+' 条索引 · '+s.elapsed_ms+'ms · 命中 '+s.chunks.length+' 条';
       if(s.sub_queries && s.sub_queries.length>1) info+=' (拆为 '+s.sub_queries.length+' 路)';
       html+='<div class="search-summary">';
-      html+='<div class="ss-head" onclick="this.parentElement.classList.toggle('open')"><span class="arw">▶</span> '+info+'</div>';
+      html+='<div class="ss-head" onclick="this.parentElement.classList.toggle(&apos;open&apos;)"><span class="arw">▶</span> '+info+'</div>';
       html+='<div class="ss-body">';
       if(s.sub_queries && s.sub_queries.length>1){
         html+='<div style="font-size:11px;color:var(--text-muted);margin:4px 0">子查询: '+s.sub_queries.map(E).join(' | ')+'</div>';
@@ -718,7 +718,7 @@ async function s(){
               head.onclick=function(){
                 let body=thinkWrap.querySelector('.think-body');
                 let arrow=head.querySelector('span');
-                if(body.style.display==='none'){ body.style.display='block'; arrow.textContent='▼'; }
+                if(body.style.display===&apos;none&apos;){ body.style.display='block'; arrow.textContent='▼'; }
                 else{ body.style.display='none'; arrow.textContent='▶'; }
               };
               let body=document.createElement('div'); body.className='think-body';
@@ -744,7 +744,7 @@ async function s(){
               head.onclick=function(){
                 let body=thinkWrap.querySelector('.think-body');
                 let arrow=head.querySelector('span');
-                if(body.style.display==='none'){ body.style.display='block'; arrow.textContent='▼'; }
+                if(body.style.display===&apos;none&apos;){ body.style.display='block'; arrow.textContent='▼'; }
                 else{ body.style.display='none'; arrow.textContent='▶'; }
               };
               let body=document.createElement('div'); body.className='think-body';
@@ -901,7 +901,7 @@ function buildSearchSummary(chunks,elapsed,total,subQueries){
     info+=' (拆为 '+subQueries.length+' 路)';
   }
   head.innerHTML='<span class="arw">▶</span> '+info;
-  head.onclick=function(){ div.classList.toggle('open'); };
+  head.onclick=function(){ div.classList.toggle(&apos;open&apos;); };
   div.appendChild(head);
 
   // 显示子查询
