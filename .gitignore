@@ -21,3 +21,7 @@ java-backend/target/
 # OS
 .DS_Store
 Thumbs.db
+
+# Temp / build artifacts
+tmp/
+10
