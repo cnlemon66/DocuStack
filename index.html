@@ -494,10 +494,49 @@ async function rebuildIdx(){ await saveK(true); M('system','⏳ 正在用 Embedd
 }
 
 let _msgIdx=0;
-function M(r,c){
+function M(r,c,meta){
   let d=document.createElement('div'); d.className='msg '+r; d.dataset.msgIndex=_msgIdx;
   if(r==='agent'){
-    d.innerHTML='<div class="answer-label">📝 回答</div><div class="answer-body">'+R(c)+'</div>';
+    if(meta && meta._search){
+      let html='';
+      // 思考过程折叠区
+      if(meta._analysis || meta._plan){
+        html+='<div class="think-wrap" style="margin-bottom:6px;border:1px solid var(--border);border-radius:6px;overflow:hidden">';
+        html+='<div class="think-head" onclick="var b=this.nextElementSibling;var a=this.querySelector('.arw');if(b.style.display==='none'){b.style.display='block';a.textContent='▼'}else{b.style.display='none';a.textContent='▶'}" style="font-size:12px;color:var(--text-muted);padding:6px 10px;cursor:pointer;background:var(--bg);display:flex;align-items:center;gap:6px;user-select:none"><span class="arw">▶</span> 思考过程</div>';
+        html+='<div class="think-body" style="display:none;padding:0 10px 6px">';
+        if(meta._analysis){
+          html+='<div style="font-size:13px;color:var(--text);padding:4px 0"><b>📋 分析</b> '+E(meta._analysis)+'</div>';
+        }
+        if(meta._plan){
+          let p=meta._plan;
+          let emoji={simple:'📋',compare:'⚖️',multi_step:'🗂️',debug:'🔧',off_topic:'🚫'};
+          let e=emoji[p.intent]||'📋';
+          html+='<div style="font-size:12px;color:var(--text-muted);padding:4px 0">'+e+' <b>'+E(p.intent_name||'')+'</b> · 难度 '+(p.difficulty||0)+'/5</div>';
+        }
+        html+='</div></div>';
+      }
+      // 搜索摘要块
+      let s=meta._search;
+      let info='🔍 检索完成 · '+s.total_docs+' 条索引 · '+s.elapsed_ms+'ms · 命中 '+s.chunks.length+' 条';
+      if(s.sub_queries && s.sub_queries.length>1) info+=' (拆为 '+s.sub_queries.length+' 路)';
+      html+='<div class="search-summary">';
+      html+='<div class="ss-head" onclick="this.parentElement.classList.toggle('open')"><span class="arw">▶</span> '+info+'</div>';
+      html+='<div class="ss-body">';
+      if(s.sub_queries && s.sub_queries.length>1){
+        html+='<div style="font-size:11px;color:var(--text-muted);margin:4px 0">子查询: '+s.sub_queries.map(E).join(' | ')+'</div>';
+      }
+      for(let i=0;i<Math.min(s.chunks.length,5);i++){
+        let ch=s.chunks[i],sc=ch.score>.5?'hi':ch.score>.2?'mi':'lo';
+        html+='<div class="ss-item"><span class="ss-src">'+E(ch.source)+'</span><span class="ss-score '+sc+'">'+ch.score+'</span><div class="ss-prev">'+E((ch.text||'').substring(0,100))+'…</div></div>';
+      }
+      if(s.chunks.length>5) html+='<div style="color:var(--text-muted);font-size:11px;padding-top:4px">… 还有 '+(s.chunks.length-5)+' 条结果，右侧面板查看全部</div>';
+      html+='</div></div>';
+      // 回答块
+      html+='<div><div class="answer-label">📝 回答</div><div class="answer-body">'+R(c)+'</div></div>';
+      d.innerHTML=html;
+    } else {
+      d.innerHTML='<div class="answer-label">📝 回答</div><div class="answer-body">'+R(c)+'</div>';
+    }
   } else {
     d.innerHTML=R(c);
   }
@@ -616,7 +655,7 @@ async function loadConv(id){
     CID=id; H=c.messages||[]; totalTokens=c.total_tokens||0;
     document.getElementById('msgs').innerHTML='';
     _msgIdx=0;
-    for(let m of H) M(m.role,m.content);
+    for(let m of H) M(m.role,m.content,m);
     // 恢复统计栏
     let bar=document.getElementById('stats-bar');
     if(totalTokens>0){ bar.style.display='flex'; document.getElementById('stats-tokens').textContent='Token ≈'+totalTokens; }
@@ -647,6 +686,7 @@ async function s(){
   a.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
   document.getElementById('msgs').appendChild(a);
   let searchBlock=null, answerBlock=null, thinkWrap=null, full='';
+  let _searchData=null, _planData=null, _analysisData=null;
 
   // SSE 连接看门狗：60 秒无响应自动断开
   _aborter=new AbortController(); _watchdog=setTimeout(()=>_aborter.abort(),60000);
@@ -667,6 +707,7 @@ async function s(){
         try{ let dd=JSON.parse(l.slice(6));
 
           if(dd.type==='analysis'){
+            _analysisData=dd.content;
             // 创建思考折叠区
             if(!thinkWrap){
               thinkWrap=document.createElement('div');
@@ -693,6 +734,7 @@ async function s(){
           }
 
           else if(dd.type==='plan'){
+            _planData={intent:dd.intent,intent_name:dd.intent_name,difficulty:dd.difficulty,steps:dd.steps,domain:dd.domain};
             if(!thinkWrap){
               thinkWrap=document.createElement('div');
               thinkWrap.style.cssText='margin-bottom:6px;border:1px solid var(--border);border-radius:6px;overflow:hidden';
@@ -730,6 +772,7 @@ async function s(){
           }
 
           else if(dd.type==='search'){
+            _searchData={chunks:dd.chunks,elapsed_ms:dd.elapsed_ms,total_docs:dd.total_docs,sub_queries:dd.sub_queries||[]};
             P(dd.chunks,dd.elapsed_ms,dd.total_docs);
             searchBlock=buildSearchSummary(dd.chunks,dd.elapsed_ms,dd.total_docs,
               dd.sub_queries||[]);
@@ -801,7 +844,7 @@ async function s(){
         }catch(e){}
       }
     }
-    H.push({role:'assistant',content:full||'(空)'});
+    H.push({role:'assistant',content:full||'(空)',_search:_searchData,_plan:_planData,_analysis:_analysisData});
   }catch(e){ 
     let msg=e.name==='AbortError'?'⏹ 已停止生成':('网络错误: '+e.message);
     a.innerHTML='❌ '+msg; H.push({role:'assistant',content:msg});
