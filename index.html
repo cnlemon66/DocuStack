@@ -538,6 +538,23 @@ function M(r,c,meta){
     } else {
       d.innerHTML='<div class="answer-label">📝 回答</div><div class="answer-body">'+R(c)+'</div>';
     }
+    // 历史对话加载时重建 timing 信息
+    if(meta && meta._timings){
+      let body=d.querySelector('.answer-body');
+      if(body){
+        let td=document.createElement('div');
+        td.style.cssText='font-size:11px;color:var(--text-muted);margin-top:8px;padding-top:6px;border-top:1px solid var(--border)';
+        let p=['总耗时 '+meta._timings.total+'ms'];
+        if(meta._timings.rewrite) p.unshift('重写 '+meta._timings.rewrite+'ms');
+        if(meta._timings.search) p.unshift('检索 '+meta._timings.search+'ms');
+        if(meta._timings.review) p.unshift('审查 '+meta._timings.review+'ms');
+        if(meta._timings.generation) p.unshift('生成 '+meta._timings.generation+'ms');
+        if(meta._timings.tokens) p.push('Token ≈'+meta._timings.tokens);
+        if(meta._timings.timestamp) p.push(meta._timings.timestamp);
+        td.textContent=p.join(' · ');
+        body.appendChild(td);
+      }
+    }
   } else {
     d.innerHTML=R(c);
   }
@@ -687,7 +704,7 @@ async function s(){
   a.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
   document.getElementById('msgs').appendChild(a);
   let searchBlock=null, answerBlock=null, thinkWrap=null, full='';
-  let _searchData=null, _planData=null, _analysisData=null;
+  let _searchData=null, _planData=null, _analysisData=null, _timingsData=null;
 
   // SSE 连接看门狗：60 秒无响应自动断开
   _aborter=new AbortController(); _watchdog=setTimeout(()=>_aborter.abort(),60000);
@@ -824,6 +841,7 @@ async function s(){
             if(dd.timings && answerBlock){
               let body=answerBlock.querySelector('.answer-body');
               let timeDiv=document.createElement('div');
+              timeDiv.className='msg-timing';
               timeDiv.style.cssText='font-size:11px;color:var(--text-muted);margin-top:8px;padding-top:6px;border-top:1px solid var(--border)';
               let parts=['总耗时 '+dd.timings.total+'ms'];
               if(dd.timings.rewrite) parts.unshift('重写 '+dd.timings.rewrite+'ms');
@@ -835,8 +853,16 @@ async function s(){
               parts.push(now);
               timeDiv.textContent=parts.join(' · ');
               body.appendChild(timeDiv);
-              // 同步写入 full 以便保存到历史
-              full+='\n\n('+parts.join(' · ')+')';
+              // 保存 timing 数据到消息对象，供历史加载时重建
+              _timingsData={
+                total:dd.timings.total,
+                rewrite:dd.timings.rewrite,
+                search:dd.timings.search,
+                review:dd.timings.review,
+                generation:dd.timings.generation,
+                tokens:dd.tokens,
+                timestamp:now
+              };
             }
             // 推荐问题可点击
             if(answerBlock){ makeRecsClickable(answerBlock); }
@@ -845,7 +871,7 @@ async function s(){
         }catch(e){}
       }
     }
-    H.push({role:'assistant',content:full||'(空)',_search:_searchData,_plan:_planData,_analysis:_analysisData});
+    H.push({role:'assistant',content:full||'(空)',_search:_searchData,_plan:_planData,_analysis:_analysisData,_timings:_timingsData});
   }catch(e){ 
     let msg=e.name==='AbortError'?'⏹ 已停止生成':('网络错误: '+e.message);
     a.innerHTML='❌ '+msg; H.push({role:'assistant',content:msg});
