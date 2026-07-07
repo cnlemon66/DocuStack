@@ -495,8 +495,9 @@ async function rebuildIdx(){ await saveK(true); M('system','⏳ 正在用 Embedd
 
 let _msgIdx=0;
 function M(r,c,meta){
-  let d=document.createElement('div'); d.className='msg '+r; d.dataset.msgIndex=_msgIdx;
-  if(r==='agent'){
+  let role=r==='assistant'?'agent':r;
+  let d=document.createElement('div'); d.className='msg '+role; d.dataset.msgIndex=_msgIdx;
+  if(role==='agent'){
     if(meta && meta._search){
       let html='';
       // 思考过程折叠区
