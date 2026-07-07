@@ -335,7 +335,8 @@ def execute_tool(tool_name: str, params: dict, index=None, domain=None) -> dict:
     """
     try:
         if tool_name == "search_index":
-            results, _ = core_search(params.get("query", ""), index or {"chunks": [], "meta": [], "embeddings": [], "embedding_type": "tfidf"}, domain=domain)
+            search_domain = params.get("domain") or domain
+            results, _ = core_search(params.get("query", ""), index or {"chunks": [], "meta": [], "embeddings": [], "embedding_type": "tfidf"}, domain=search_domain)
             texts = [f"[{r['source']}] {r['text'][:300]}" for r in results[:5]]
             return {"ok": True, "result": "\n\n".join(texts) if texts else "未找到", "tool": tool_name}
 

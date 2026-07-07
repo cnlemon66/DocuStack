@@ -45,7 +45,7 @@ def detect_provider():
         key = os.environ.get(cfg["key_env"], "")
         if key:
             return forced, cfg, key
-        print(f"⚠ EMBEDDING_PROVIDER={forced} 但未找到 {cfg['key_env']}")
+        print(f"[WARN] EMBEDDING_PROVIDER={forced} 但未找到 {cfg['key_env']}")
 
     for pid, cfg in PROVIDERS.items():
         key = os.environ.get(cfg["key_env"], "")
@@ -264,7 +264,7 @@ def build_index():
         print(f"使用 {pcfg['name']}（{pid}）")
         print(f"  模型: {pcfg['model']}")
     else:
-        print("⚠ 未检测到任何 Embedding API Key")
+        print("[WARN] 未检测到任何 Embedding API Key")
         print("  支持的 Provider:")
         for p, c in PROVIDERS.items():
             print(f"    {c['name']:35s}  set {c['key_env']}=sk-xxx")
@@ -297,16 +297,16 @@ def build_index():
                 print(f"  {i + 1}/{len(all_chunks)}", flush=True)
             emb = get_embedding(chunk, pcfg, api_key)
             all_embeddings.append(emb)
-        print(f"  {len(all_chunks)}/{len(all_chunks)} ✓")
+        print(f"  {len(all_chunks)}/{len(all_chunks)} [OK]")
     else:
         print("计算 TF-IDF 向量 ...", end=" ", flush=True)
         all_embeddings = compute_tfidf(all_chunks)
-        print("✓")
+        print("[OK]")
 
     # 始终计算 TF-IDF 向量（用于混合检索重排序）
     print("计算 TF-IDF 向量（用于混合检索）...", end=" ", flush=True)
     tfidf_vectors = compute_tfidf(all_chunks)
-    print("✓")
+    print("[OK]")
 
     # 存盘
     VECTOR_DIR.mkdir(parents=True, exist_ok=True)

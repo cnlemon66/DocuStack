@@ -482,7 +482,12 @@ async function rebuildIdx(){ await saveK(true); M('system','⏳ 正在用 Embedd
 
 let _msgIdx=0;
 function M(r,c){
-  let d=document.createElement('div'); d.className='msg '+r; d.dataset.msgIndex=_msgIdx; d.innerHTML=R(c);
+  let d=document.createElement('div'); d.className='msg '+r; d.dataset.msgIndex=_msgIdx;
+  if(r==='agent'){
+    d.innerHTML='<div class="answer-label">📝 回答</div><div class="answer-body">'+R(c)+'</div>';
+  } else {
+    d.innerHTML=R(c);
+  }
   document.getElementById('msgs').appendChild(d);
   // 用户消息：双击可编辑
   if(r==='user'){
@@ -490,6 +495,8 @@ function M(r,c){
     d.title='双击编辑消息';
     d.ondblclick=function(){ editMessage(_msgIdx); };
   }
+  // 恢复推荐问题可点击
+  if(r==='agent') makeRecsClickable(d);
   _msgIdx++; U(); return d;
 }
 function L(t){ let m=document.querySelectorAll('.msg.system'); if(m.length) m[m.length-1].textContent=t; U(); }
@@ -602,9 +609,6 @@ async function loadConv(id){
     if(totalTokens>0){ bar.style.display='flex'; document.getElementById('stats-tokens').textContent='Token ≈'+totalTokens; }
     let ctxN=Math.ceil(H.length/2);
     if(ctxN>0) document.getElementById('stats-ctx').textContent='热记忆 '+ctxN+' 轮';
-    // 恢复推荐问题可点击
-    let agents=document.querySelectorAll('.msg.agent');
-    for(let a of agents) makeRecsClickable(a);
     refreshConvList();
   }catch(e){}
 }
@@ -872,3 +876,5 @@ I();
 </script>
 </body>
 </html>
+
+<!-- auto-save test 20:29:21 -->

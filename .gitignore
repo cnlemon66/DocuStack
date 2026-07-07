@@ -25,3 +25,5 @@ Thumbs.db
 # Temp / build artifacts
 tmp/
 10
+
+_auto-save.ps1

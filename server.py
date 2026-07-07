@@ -325,7 +325,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
 
             try:
-                rebuild_index(pcfg, api_key, self)
+                rebuild_index(pcfg, api_key, pid, self)
                 self.idx = load_index()
                 self.wfile.write(
                     f"data: {{\"type\": \"done\", \"chunk_count\": {len(self.idx['chunks'])}}}\n\n".encode("utf-8"))
@@ -395,7 +395,7 @@ def delete_conversation(handler, conv_id):
     handler.send_json({"ok":True})
 # ═══════════ 重建索引 ═══════════
 
-def rebuild_index(pcfg, api_key, handler=None):
+def rebuild_index(pcfg, api_key, pid, handler=None):
     import re as _re2
     RAW_DIR = ROOT / "data" / "raw"
     CHUNK_SIZE = 500
@@ -476,11 +476,20 @@ def rebuild_index(pcfg, api_key, handler=None):
         emb = get_embedding(chunk, pcfg, api_key)
         all_embeddings.append(emb)
 
+    # calculate TF-IDF vectors for hybrid search reranking
+    if handler:
+        handler.wfile.write(
+            'data: {"type": "status", "content": "TF-IDF..."}\n\n'.encode("utf-8"))
+        handler.wfile.flush()
+    from index import compute_tfidf
+    tfidf_vectors = compute_tfidf(all_chunks)
+
     index_data = {
         "chunks": all_chunks,
         "meta": all_meta,
         "embeddings": all_embeddings,
-        "embedding_type": "siliconflow" if "siliconflow" in pcfg["url"] else ("openai" if "openai" in pcfg["url"] else "zhipu"),
+        "tfidf_vectors": tfidf_vectors,
+        "embedding_type": pid,
     }
     VECTOR_DIR = ROOT / "data" / "vector_db"
     VECTOR_DIR.mkdir(parents=True, exist_ok=True)
