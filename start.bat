@@ -56,7 +56,9 @@ if not exist "data\vector_db\index.json" (
 
 echo   [OK] Starting server on http://localhost:8765
 echo.
-timeout /t 2 >nul
+start "DocuStack Server" python server.py
+timeout /t 3 >nul
 start "" http://localhost:8765
-python server.py
+echo.
+echo   Server is running. Close this window or the server window to stop.
 pause
