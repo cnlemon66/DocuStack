@@ -549,7 +549,7 @@ function M(r,c,meta){
     d.ondblclick=function(){ editMessage(_msgIdx); };
   }
   // 恢复推荐问题可点击
-  if(r==='agent') makeRecsClickable(d);
+  if(role==='agent') makeRecsClickable(d);
   _msgIdx++; U(); return d;
 }
 function L(t){ let m=document.querySelectorAll('.msg.system'); if(m.length) m[m.length-1].textContent=t; U(); }
