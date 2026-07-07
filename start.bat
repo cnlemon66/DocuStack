@@ -1,61 +1,59 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >nul 2>&1
 cd /d "%~dp0"
 title DocuStack
 
 echo.
-echo   ╔═════════════════════════════════╗
-echo   ║        DocuStack               ║
-echo   ║  Java 技术文档智能问答系统       ║
-echo   ╚═════════════════════════════════╝
+echo   ========================================
+echo         DocuStack - Java Doc AI Q&A
+echo   ========================================
 echo.
 
-:: 检查 config.json
+:: check config
 if not exist "config.json" (
-    echo [⚠]  未找到 config.json，正在从模板创建...
+    echo [!] config.json not found, creating from template...
     copy "config.example.json" "config.json" >nul
 )
 
-:: 检查 API Key
-python -c "import json;c=json.load(open('config.json','r',encoding='utf-8'));k=c.get('llm',{}).get('api_key','');exit(0 if k and '你的' not in k and len(k)>10 else 1)" >nul 2>&1
+:: check API key
+python -c "import json;c=json.load(open('config.json','r',encoding='utf-8'));k=c.get('llm',{}).get('api_key','');exit(0 if k and 'sk-' in k and len(k)>10 else 1)" >nul 2>&1
 if errorlevel 1 (
     echo.
-    echo   ┌────────────────────────────────────────┐
-    echo   │  需要配置 API Key                          │
-    echo   │  支持 DeepSeek/OpenAI/智谱/Moonshot 等      │
-    echo   └────────────────────────────────────────┘
+    echo   +--------------------------------------+
+    echo   ^|  API Key required                    ^|
+    echo   ^|  Supports DeepSeek/OpenAI/Zhipu/...  ^|
+    echo   +--------------------------------------+
     echo.
-    set /p APIKEY="  请输入 API Key: "
+    set /p APIKEY="  Enter API Key: "
     if "%APIKEY%"=="" (
-        echo   [✗] 未输入 Key，退出
+        echo   [X] No key, exit
         pause
         exit
     )
-    python scripts/set_key.py "%APIKEY%"
+    python scripts\set_key.py "%APIKEY%"
     if errorlevel 1 (
-        echo   [✗] 保存失败
+        echo   [X] Failed to save key
         pause
         exit
     )
-    echo   [✓] Key 已保存
+    echo   [OK] Key saved
 ) else (
-    echo   [✓] API Key 已配置
+    echo   [OK] API key configured
 )
 
-:: 检查索引
+:: check index
 if not exist "data\vector_db\index.json" (
     echo.
-    echo   [⚠]  未找到向量索引，构建约需 5-10 分钟
-    choice /c yn /m "  是否现在构建？"
+    echo   [!] No index found. Build now? (Y/N)
+    choice /c yn /m "  "
     if errorlevel 2 goto :skip_index
-    echo   正在构建...
+    echo   Building index...
     python index.py
 :skip_index
     echo.
 )
 
-echo   [✓] 正在启动服务...
-echo   打开浏览器访问: http://localhost:8765
+echo   [OK] Starting server on http://localhost:8765
 echo.
 timeout /t 2 >nul
 start "" http://localhost:8765
